@@ -63,3 +63,6 @@ Thumbs.db
 # Claude (keep skills; ignore local agent chatter)
 .claude/logs/
 .claude/cache/
+
+# OMC (oh-my-claudecode) local session cache
+.omc/
