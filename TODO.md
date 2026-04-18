@@ -76,23 +76,23 @@
 
 ### 1.2 实现 Kun.Mediator（AOT 友好调度器）
 
-- [ ] 新增 `src/Kun.Mediator/ISender.cs`、`IPublisher.cs` 核心接口
-- [ ] 新增 `src/Kun.Mediator/IPipelineBehavior.cs` 与 `RequestHandlerDelegate.cs`
-- [ ] 新增 `src/Kun.Mediator/RequestHandlerBase.cs`、`RequestHandlerWrapper.cs`（内部类型，承载 Handler 的非泛型调度）
-- [ ] 新增 `src/Kun.Mediator/KunMediator.cs`：基于 `FrozenDictionary<Type, RequestHandlerBase>` 的 `ISender` + `IPublisher` 实现
-- [ ] 新增 `src/Kun.Mediator.SourceGenerator/` 项目（`Microsoft.CodeAnalysis.CSharp` 依赖，`netstandard2.0`）
-- [ ] SourceGenerator：扫描引用程序集中所有 `IRequestHandler<,>` 实现
-- [ ] SourceGenerator：生成 `AddKunMediator(this IServiceCollection, Assembly)` 扩展方法，内部构造 `FrozenDictionary` 注册表
-- [ ] SourceGenerator：为每个 Handler 生成专用的 `RequestHandlerWrapper` 闭包（零反射调用）
-- [ ] 新增 `src/Kun.Mediator/DependencyInjection/KunMediatorServiceCollectionExtensions.cs`：`AddKunMediator` 入口
-- [ ] 新增 `src/Kun.Mediator/DependencyInjection/PipelineBehaviorRegistration.cs`：`AddPipelineBehavior<TBehavior>()` 扩展
-- [ ] 新增内置 Behavior：`src/Kun.Mediator/Behaviors/LoggingBehavior.cs`（记录请求名称与耗时）
-- [ ] 新增内置 Behavior：`src/Kun.Mediator/Behaviors/PerformanceBehavior.cs`（超过阈值打 Warning）
-- [ ] 新增内置 Behavior：`src/Kun.Mediator/Behaviors/TracingBehavior.cs`（创建 `Activity` Span，接续 `Activity.Current`）
-- [ ] 创建 `tests/Kun.Mediator.Tests/KunMediatorTests.cs`：验证 Command/Query 能被正确路由到 Handler
-- [ ] 创建 `tests/Kun.Mediator.Tests/PipelineBehaviorTests.cs`：验证多个 Behavior 的执行顺序（洋葱模型）
-- [ ] 创建 `tests/Kun.Mediator.Tests/ReflectionFreeTests.cs`：运行 `PublishAot=true` 的内存测试，验证无运行时反射异常
-- [ ] 创建 `tests/Kun.Mediator.Tests/SourceGeneratorTests.cs`：使用 `Microsoft.CodeAnalysis.Testing` 验证 SourceGen 产物正确
+- [x] 新增 `src/Kun.Mediator/ISender.cs`、`IPublisher.cs` 核心接口（含 `INotification`、`INotificationHandler<T>`）
+- [x] 新增 `src/Kun.Mediator/IPipelineBehavior.cs` 与 `RequestHandlerDelegate.cs`
+- [x] 新增 `src/Kun.Mediator/RequestHandlerBase.cs`、`RequestHandlerWrapper.cs`（内部类型，承载 Handler 的非泛型调度；另增 `IRequestHandlerWrapper<TResponse>` 实现按响应类型安全转换）
+- [x] 新增 `src/Kun.Mediator/KunMediator.cs`：基于 `FrozenDictionary<Type, RequestHandlerBase>` 的 `ISender` + `IPublisher` 实现
+- [ ] ⚠️ **延后（ralplan ADR fallback）**：`src/Kun.Mediator.SourceGenerator/` 项目 —— 当前使用手工 `KunMediatorBuilder` 注册替代，AOT 安全零反射；SourceGen 作为 stretch goal 待 M5 后重评
+- [ ] ⚠️ 延后：SourceGenerator 扫描 `IRequestHandler<,>` —— 同上
+- [ ] ⚠️ 延后：SourceGenerator 生成 `AddKunMediator(this IServiceCollection, Assembly)` —— 已用 `AddKunMediator(Action<KunMediatorBuilder>)` 等价实现
+- [ ] ⚠️ 延后：SourceGenerator 为每个 Handler 生成专用 Wrapper —— 当前由 `KunMediatorBuilder.AddRequestHandler<,,>()` 在启动时构造闭包工厂
+- [x] 新增 `src/Kun.Mediator/DependencyInjection/KunMediatorServiceCollectionExtensions.cs`：`AddKunMediator` 入口
+- [x] 新增 `src/Kun.Mediator/KunMediatorBuilder.cs`：含 `AddRequestHandler<TReq,TResp,THandler>()`、`AddPipelineBehavior<TReq,TResp,TBehavior>()`、`AddNotificationHandler<TNotification,THandler>()`（代替独立 PipelineBehaviorRegistration.cs 文件）
+- [x] 新增内置 Behavior：`src/Kun.Mediator/Behaviors/LoggingBehavior.cs`（`[LoggerMessage]` 源生成）
+- [x] 新增内置 Behavior：`src/Kun.Mediator/Behaviors/PerformanceBehavior.cs`（500ms 阈值）
+- [x] 新增内置 Behavior：`src/Kun.Mediator/Behaviors/TracingBehavior.cs`（`ActivitySource("Kun.Mediator")` Span）
+- [x] 创建 `tests/Kun.Mediator.Tests/Dispatch/KunMediatorTests.cs`：Send 路由、未注册请求抛错、CT 传递、Publish 空路径、Publish 多 handler 顺序
+- [x] 创建 `tests/Kun.Mediator.Tests/Pipeline/PipelineBehaviorTests.cs`：洋葱顺序、CT 传播、单 behavior 包裹
+- [ ] ⚠️ 延后：`tests/Kun.Mediator.Tests/ReflectionFreeTests.cs`（AOT 内存测试）—— 本地 Windows 缺 C++ linker；CI ubuntu-latest 的 AOT publish job 可覆盖
+- [ ] ⚠️ 延后：`tests/Kun.Mediator.Tests/SourceGeneratorTests.cs` —— SourceGen 延后，该测试同步延后
 
 ### 1.3 实现 Kun.Validation（AOT 友好验证器）
 
