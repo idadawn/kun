@@ -1,4 +1,18 @@
 #nullable enable
+Kun.EntityFrameworkCore.EfRepository<T>
+Kun.EntityFrameworkCore.EfRepository<T>.EfRepository(Kun.EntityFrameworkCore.KunDbContext! dbContext) -> void
+Kun.EntityFrameworkCore.EfRepository<T>.DbContext.get -> Kun.EntityFrameworkCore.KunDbContext!
+virtual Kun.EntityFrameworkCore.EfRepository<T>.GetByIdAsync(object! id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<T?>!
+virtual Kun.EntityFrameworkCore.EfRepository<T>.ListAsync(Kun.Infrastructure.Abstractions.ISpecification<T!>! specification, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<T!>!>!
+virtual Kun.EntityFrameworkCore.EfRepository<T>.CountAsync(Kun.Infrastructure.Abstractions.ISpecification<T!>! specification, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<int>!
+virtual Kun.EntityFrameworkCore.EfRepository<T>.AddAsync(T! entity, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+virtual Kun.EntityFrameworkCore.EfRepository<T>.Update(T! entity) -> void
+virtual Kun.EntityFrameworkCore.EfRepository<T>.Remove(T! entity) -> void
+Kun.EntityFrameworkCore.InProcessDomainEventDispatcher
+Kun.EntityFrameworkCore.InProcessDomainEventDispatcher.InProcessDomainEventDispatcher(Kun.Mediator.IPublisher! publisher) -> void
+Kun.EntityFrameworkCore.InProcessDomainEventDispatcher.DispatchAsync(System.Collections.Generic.IReadOnlyCollection<Kun.Core.Domain.IDomainEvent!>! domainEvents, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Kun.EntityFrameworkCore.SpecificationEvaluator
+static Kun.EntityFrameworkCore.SpecificationEvaluator.Apply<T>(System.Linq.IQueryable<T!>! query, Kun.Infrastructure.Abstractions.ISpecification<T!>! spec) -> System.Linq.IQueryable<T!>!
 Kun.EntityFrameworkCore.Behaviors.UnitOfWorkPipelineBehavior<TRequest, TResponse>
 Kun.EntityFrameworkCore.Behaviors.UnitOfWorkPipelineBehavior<TRequest, TResponse>.UnitOfWorkPipelineBehavior(Kun.EntityFrameworkCore.IUnitOfWork! unitOfWork) -> void
 Kun.EntityFrameworkCore.Behaviors.UnitOfWorkPipelineBehavior<TRequest, TResponse>.Handle(TRequest request, Kun.Mediator.RequestHandlerDelegate<TResponse>! next, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<TResponse>

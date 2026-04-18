@@ -19,6 +19,7 @@ public sealed partial class OutboxPublisherBackgroundService : BackgroundService
 
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IIntegrationEventPublisher _publisher;
+    private readonly IOutboxLockProvider _lockProvider;
     private readonly OutboxPublisherOptions _options;
     private readonly ILogger<OutboxPublisherBackgroundService> _logger;
     private readonly TimeProvider _timeProvider;
@@ -27,18 +28,21 @@ public sealed partial class OutboxPublisherBackgroundService : BackgroundService
     public OutboxPublisherBackgroundService(
         IServiceScopeFactory scopeFactory,
         IIntegrationEventPublisher publisher,
+        IOutboxLockProvider lockProvider,
         IOptions<OutboxPublisherOptions> options,
         ILogger<OutboxPublisherBackgroundService> logger,
         TimeProvider timeProvider)
     {
         ArgumentNullException.ThrowIfNull(scopeFactory);
         ArgumentNullException.ThrowIfNull(publisher);
+        ArgumentNullException.ThrowIfNull(lockProvider);
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(timeProvider);
 
         _scopeFactory = scopeFactory;
         _publisher = publisher;
+        _lockProvider = lockProvider;
         _options = options.Value;
         _logger = logger;
         _timeProvider = timeProvider;
@@ -79,6 +83,19 @@ public sealed partial class OutboxPublisherBackgroundService : BackgroundService
 
     internal async Task ProcessBatchAsync(CancellationToken cancellationToken)
     {
+        // Acquire a distributed lock so only one pod processes the batch at a time.
+        // The TTL is twice the poll interval to cover slow batches without starving others.
+        var lockTtl = _options.PollInterval + _options.PollInterval;
+        await using var lease = await _lockProvider
+            .TryAcquireAsync("outbox-publisher", lockTtl, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (lease is null)
+        {
+            LogLockSkipped(_logger);
+            return;
+        }
+
         await using var scope = _scopeFactory.CreateAsyncScope();
         var store = scope.ServiceProvider.GetRequiredService<IOutboxMessageStore>();
 
@@ -143,4 +160,7 @@ public sealed partial class OutboxPublisherBackgroundService : BackgroundService
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Unexpected error in outbox publisher loop.")]
     private static partial void LogUnexpectedError(ILogger logger, Exception ex);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Outbox publisher skipped batch — lock held by another instance.")]
+    private static partial void LogLockSkipped(ILogger logger);
 }

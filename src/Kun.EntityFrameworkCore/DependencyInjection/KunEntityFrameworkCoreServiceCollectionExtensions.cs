@@ -23,7 +23,7 @@ public static class KunEntityFrameworkCoreServiceCollectionExtensions
         services.TryAddScoped<IntegrationEventBuffer>();
         services.TryAddScoped<IUnitOfWork, EfUnitOfWork>();
         services.TryAddScoped<IIntegrationEventBus, IntegrationEventOutboxAccumulator>();
-        services.TryAddSingleton<IDomainEventDispatcher, NoOpDomainEventDispatcher>();
+        services.TryAddScoped<IDomainEventDispatcher, InProcessDomainEventDispatcher>();
 
         return services;
     }

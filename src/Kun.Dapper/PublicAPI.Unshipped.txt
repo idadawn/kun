@@ -1,8 +1,14 @@
 #nullable enable
 Kun.Dapper.DependencyInjection.KunDapperServiceCollectionExtensions
 static Kun.Dapper.DependencyInjection.KunDapperServiceCollectionExtensions.AddKunDapper(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.Dapper.ReadDbOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Kun.Dapper.DependencyInjection.KunDapperServiceCollectionExtensions.AddKunDapperNpgsql(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.Dapper.ReadDbOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Kun.Dapper.Extensions.DapperAotExtensions
+static Kun.Dapper.Extensions.DapperAotExtensions.QueryPageAsync<T>(this System.Data.IDbConnection! connection, string! countSql, string! pageSql, Kun.Dapper.PageRequest! request, object? param = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Dapper.PagedResult<T>!>!
 Kun.Dapper.IReadDbConnectionFactory
 Kun.Dapper.IReadDbConnectionFactory.OpenAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Data.IDbConnection!>!
+Kun.Dapper.Npgsql.NpgsqlReadDbConnectionFactory
+Kun.Dapper.Npgsql.NpgsqlReadDbConnectionFactory.NpgsqlReadDbConnectionFactory(Kun.Dapper.ReadDbOptions! options) -> void
+Kun.Dapper.Npgsql.NpgsqlReadDbConnectionFactory.OpenAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Data.IDbConnection!>!
 Kun.Dapper.PagedResult<T>
 Kun.Dapper.PagedResult<T>.HasNextPage.get -> bool
 Kun.Dapper.PagedResult<T>.HasPreviousPage.get -> bool

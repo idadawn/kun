@@ -61,7 +61,8 @@ public sealed class OutboxPublisherBackgroundServiceTests
     private static OutboxPublisherBackgroundService BuildService(
         FakeOutboxMessageStore store,
         FakeIntegrationEventPublisher publisher,
-        OutboxPublisherOptions? options = null)
+        OutboxPublisherOptions? options = null,
+        IOutboxLockProvider? lockProvider = null)
     {
         var services = new ServiceCollection();
         services.AddSingleton<IOutboxMessageStore>(store);
@@ -71,6 +72,7 @@ public sealed class OutboxPublisherBackgroundServiceTests
         return new OutboxPublisherBackgroundService(
             scopeFactory,
             publisher,
+            lockProvider ?? NullOutboxLockProvider.Instance,
             Options.Create(options ?? new OutboxPublisherOptions()),
             NullLogger<OutboxPublisherBackgroundService>.Instance,
             TimeProvider.System);
@@ -171,5 +173,27 @@ public sealed class OutboxPublisherBackgroundServiceTests
         await svc.StartAsync(TestContext.Current.CancellationToken);
         await Task.Delay(150, TestContext.Current.CancellationToken);
         await svc.StopAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task ProcessBatch_WhenLockUnavailable_NoMessagesArePublished()
+    {
+        // Lock provider that always returns null — simulates another pod holding the lock.
+        var message = MakePendingMessage();
+        var store = new FakeOutboxMessageStore([message]);
+        var publisher = new FakeIntegrationEventPublisher();
+
+        var svc = BuildService(store, publisher, lockProvider: new AlwaysLockedLockProvider());
+        await svc.ProcessBatchAsync(TestContext.Current.CancellationToken);
+
+        Assert.Empty(publisher.Published);
+        Assert.Empty(store.Updated);
+        Assert.Equal(OutboxStatus.Pending, message.Status);
+    }
+
+    private sealed class AlwaysLockedLockProvider : IOutboxLockProvider
+    {
+        public ValueTask<IAsyncDisposable?> TryAcquireAsync(string lockName, TimeSpan ttl, CancellationToken ct = default)
+            => ValueTask.FromResult<IAsyncDisposable?>(null);
     }
 }
