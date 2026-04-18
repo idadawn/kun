@@ -1,6 +1,57 @@
-// Placeholder entry point. The real YARP gateway host (S2S JWT issuance,
-// rate limiting, gRPC-Web transcoding) is implemented in Phase 5.
+using Kun.Gateway.DependencyInjection;
+using Kun.Gateway.Endpoints;
+using Kun.Gateway.RateLimiting;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+
 var builder = WebApplication.CreateBuilder(args);
+
+// ── Gateway core (S2sTokenIssuer, YARP with S2sAuthTransform) ─────────────────
+builder.Services.AddKunGateway(opts =>
+    builder.Configuration.GetSection("KunGateway").Bind(opts));
+
+// ── Rate limiting (tenant-partitioned, 100 req/min) ───────────────────────────
+builder.Services.AddKunRateLimiter();
+
+// ── External JWT validation (IdP-issued; gateway validates before proxying) ───
+// Note: AddKunServiceAuthentication is for downstream services validating S2S tokens.
+// The gateway validates external IdP tokens directly with JwtBearer.
+var gatewaySection = builder.Configuration.GetSection("KunGateway");
+var externalIssuer = gatewaySection["ExternalIssuer"] ?? string.Empty;
+var externalAudience = gatewaySection["ExternalAudience"] ?? string.Empty;
+var externalJwksUri = gatewaySection["ExternalJwksUri"] ?? string.Empty;
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.MetadataAddress = externalJwksUri;
+        options.RequireHttpsMetadata = false; // may be HTTP in dev; enforce in prod via config
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = externalIssuer,
+            ValidateAudience = true,
+            ValidAudience = externalAudience,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidAlgorithms = ["RS256", "ES256"],
+            ClockSkew = TimeSpan.FromSeconds(30),
+        };
+    });
+
+builder.Services.AddAuthorization();
+
 var app = builder.Build();
-app.MapGet("/", () => "Kun.Gateway placeholder — implementation lands in Phase 5.");
+
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseRateLimiter();
+
+// Expose the gateway's public key for downstream S2S JWT validation
+app.MapKunJwks();
+
+// YARP reverse proxy — routes and clusters configured via appsettings.json
+app.MapReverseProxy();
+
 app.Run();

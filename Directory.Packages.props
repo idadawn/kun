@@ -58,6 +58,7 @@
 
   <ItemGroup Label="Authentication">
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.2.0" />
+    <PackageVersion Include="Microsoft.IdentityModel.Tokens" Version="8.2.0" />
     <PackageVersion Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.2.0" />
   </ItemGroup>
 

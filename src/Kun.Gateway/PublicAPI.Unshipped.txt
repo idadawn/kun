@@ -1,0 +1,50 @@
+#nullable enable
+Kun.Gateway.Configuration.KunGatewayOptions
+Kun.Gateway.Configuration.KunGatewayOptions.ExternalAudience.get -> string!
+Kun.Gateway.Configuration.KunGatewayOptions.ExternalAudience.set -> void
+Kun.Gateway.Configuration.KunGatewayOptions.ExternalIssuer.get -> string!
+Kun.Gateway.Configuration.KunGatewayOptions.ExternalIssuer.set -> void
+Kun.Gateway.Configuration.KunGatewayOptions.ExternalJwksUri.get -> string!
+Kun.Gateway.Configuration.KunGatewayOptions.ExternalJwksUri.set -> void
+Kun.Gateway.Configuration.KunGatewayOptions.InternalAudience.get -> string!
+Kun.Gateway.Configuration.KunGatewayOptions.InternalAudience.set -> void
+Kun.Gateway.Configuration.KunGatewayOptions.InternalIssuer.get -> string!
+Kun.Gateway.Configuration.KunGatewayOptions.InternalIssuer.set -> void
+Kun.Gateway.Configuration.KunGatewayOptions.InternalTokenLifetime.get -> System.TimeSpan
+Kun.Gateway.Configuration.KunGatewayOptions.InternalTokenLifetime.set -> void
+Kun.Gateway.Configuration.KunGatewayOptions.KunGatewayOptions() -> void
+Kun.Gateway.Configuration.KunGatewayOptions.PublicKeyPath.get -> string!
+Kun.Gateway.Configuration.KunGatewayOptions.PublicKeyPath.set -> void
+Kun.Gateway.Configuration.KunGatewayOptions.SigningKeyPath.get -> string!
+Kun.Gateway.Configuration.KunGatewayOptions.SigningKeyPath.set -> void
+Kun.Gateway.DependencyInjection.KunGatewayServiceCollectionExtensions
+Kun.Gateway.Endpoints.JwkDto
+Kun.Gateway.Endpoints.JwkDto.Alg.get -> string?
+Kun.Gateway.Endpoints.JwkDto.E.get -> string?
+Kun.Gateway.Endpoints.JwkDto.JwkDto(Microsoft.IdentityModel.Tokens.JsonWebKey! jwk) -> void
+Kun.Gateway.Endpoints.JwkDto.Kid.get -> string?
+Kun.Gateway.Endpoints.JwkDto.Kty.get -> string!
+Kun.Gateway.Endpoints.JwkDto.N.get -> string?
+Kun.Gateway.Endpoints.JwkDto.Use.get -> string?
+Kun.Gateway.Endpoints.JwksEndpoint
+Kun.Gateway.Endpoints.JwksResponse
+Kun.Gateway.Endpoints.JwksResponse.JwksResponse() -> void
+Kun.Gateway.Endpoints.JwksResponse.Keys.get -> System.Collections.Generic.IReadOnlyList<Kun.Gateway.Endpoints.JwkDto!>!
+Kun.Gateway.Endpoints.JwksResponse.Keys.init -> void
+Kun.Gateway.RateLimiting.IRateLimitPartitionResolver
+Kun.Gateway.RateLimiting.IRateLimitPartitionResolver.ResolvePartitionKey(Microsoft.AspNetCore.Http.HttpContext! context) -> string!
+Kun.Gateway.RateLimiting.KunRateLimiterExtensions
+Kun.Gateway.RateLimiting.Resolvers.IpRateLimitPartitionResolver
+Kun.Gateway.RateLimiting.Resolvers.IpRateLimitPartitionResolver.IpRateLimitPartitionResolver() -> void
+Kun.Gateway.RateLimiting.Resolvers.IpRateLimitPartitionResolver.ResolvePartitionKey(Microsoft.AspNetCore.Http.HttpContext! context) -> string!
+Kun.Gateway.RateLimiting.Resolvers.TenantRateLimitPartitionResolver
+Kun.Gateway.RateLimiting.Resolvers.TenantRateLimitPartitionResolver.ResolvePartitionKey(Microsoft.AspNetCore.Http.HttpContext! context) -> string!
+Kun.Gateway.RateLimiting.Resolvers.TenantRateLimitPartitionResolver.TenantRateLimitPartitionResolver() -> void
+Kun.Gateway.S2sTokenIssuer
+Kun.Gateway.S2sTokenIssuer.IssueFor(System.Security.Claims.ClaimsPrincipal! externalPrincipal) -> string!
+Kun.Gateway.S2sTokenIssuer.S2sTokenIssuer(Microsoft.Extensions.Options.IOptions<Kun.Gateway.Configuration.KunGatewayOptions!>! options) -> void
+Program
+Program.Program() -> void
+static Kun.Gateway.DependencyInjection.KunGatewayServiceCollectionExtensions.AddKunGateway(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.Gateway.Configuration.KunGatewayOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Kun.Gateway.Endpoints.JwksEndpoint.MapKunJwks(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Builder.IEndpointConventionBuilder!
+static Kun.Gateway.RateLimiting.KunRateLimiterExtensions.AddKunRateLimiter(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Microsoft.AspNetCore.RateLimiting.RateLimiterOptions!>? configure = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
