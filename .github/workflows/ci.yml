@@ -77,7 +77,7 @@ jobs:
       - name: Publish AOT-candidate services (zero warnings)
         run: |
           # AOT candidates: any project with <IsAotCandidate>true</IsAotCandidate>
-          for proj in src/Kun.Gateway src/Kun.Mediator src/Kun.Core src/Kun.AspNetCore src/Kun.Grpc; do
+          for proj in src/Kun.Gateway src/Kun.Mediator src/Kun.Core src/Kun.AspNetCore src/Kun.Grpc src/Kun.Validation; do
             echo "::group::Publishing AOT: $proj"
             dotnet publish "$proj" -c Release -p:PublishAot=true /warnaserror
             echo "::endgroup::"

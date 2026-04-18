@@ -109,14 +109,14 @@
 
 ### 1.4 阶段一验收
 
-- [ ] `dotnet build -c Release` 对 `Kun.Core` / `Kun.Mediator` / `Kun.Validation` 全绿
-- [ ] `dotnet test tests/Kun.Core.Tests tests/Kun.Mediator.Tests tests/Kun.Validation.Tests` 全绿
-- [ ] `dotnet publish src/Kun.Mediator -c Release -p:PublishAot=true /warnaserror` 零警告
-- [ ] `dotnet publish src/Kun.Validation -c Release -p:PublishAot=true /warnaserror` 零警告
-- [ ] 生成 `samples/Kun.Sample.Minimal/` —— 单文件控制台程序，演示 Command/Query 调度，可 AOT 发布
-- [ ] 实测 `Kun.Sample.Minimal` 的 AOT 启动时间（基线数据，记录到 `docs/benchmarks/aot-startup.md`）
-- [ ] 发布首个预览版 NuGet：`0.1.0-alpha.1`（可以只推到私有 feed 或 GitHub Packages 做演练）
-- [ ] 更新 `CHANGELOG.md` 记录阶段一交付
+- [x] `dotnet build -c Release` 对 `Kun.Core` / `Kun.Mediator` / `Kun.Validation` 全绿（整个解决方案也 0 错误）
+- [x] `dotnet test tests/Kun.Core.Tests tests/Kun.Mediator.Tests tests/Kun.Validation.Tests` 全绿（52/52：32+8+12）
+- [ ] ⚠️ 本地延后：`dotnet publish src/Kun.Mediator -c Release -p:PublishAot=true /warnaserror` 零警告 —— 本地 Windows 缺 C++ linker；托 CI ubuntu 的 AOT job（已在 ci.yml 中）
+- [ ] ⚠️ 本地延后：`dotnet publish src/Kun.Validation -c Release -p:PublishAot=true /warnaserror` 零警告 —— 同上；Kun.Validation 已加入 ci.yml 的 AOT 发布矩阵
+- [x] 生成 `samples/Kun.Sample.Minimal/` —— 控制台 AOT 候选程序，演示 Command/Query/Notification 经 KunMediator 调度 + 三个 Behavior；`dotnet run` 本地验证通过
+- [ ] ⚠️ 延后：实测 `Kun.Sample.Minimal` AOT 启动时间 → `docs/benchmarks/aot-startup.md`（同样需要工作的 native linker；可由 CI Linux 环境跑出基线后回填）
+- [ ] ⚠️ 延后：发布首个预览版 NuGet `0.1.0-alpha.1`（发布仪式，待用户决定推到哪个 feed）
+- [x] 更新 `CHANGELOG.md` 记录阶段一交付
 
 ---
 
