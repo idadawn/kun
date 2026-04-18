@@ -1,0 +1,33 @@
+#nullable enable
+Kun.Infrastructure.Abstractions.IProcessedMessageStore
+Kun.Infrastructure.Abstractions.IProcessedMessageStore.MarkAsCompletedAsync(System.Guid messageId, string! consumerName, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Infrastructure.Abstractions.IProcessedMessageStore.TryMarkAsProcessingAsync(System.Guid messageId, string! consumerName, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
+Kun.Infrastructure.Abstractions.IRepository<T>
+Kun.Infrastructure.Abstractions.IRepository<T>.AddAsync(T! entity, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Infrastructure.Abstractions.IRepository<T>.CountAsync(Kun.Infrastructure.Abstractions.ISpecification<T!>! specification, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<int>!
+Kun.Infrastructure.Abstractions.IRepository<T>.GetByIdAsync(object! id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<T?>!
+Kun.Infrastructure.Abstractions.IRepository<T>.ListAsync(Kun.Infrastructure.Abstractions.ISpecification<T!>! specification, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<T!>!>!
+Kun.Infrastructure.Abstractions.IRepository<T>.Remove(T! entity) -> void
+Kun.Infrastructure.Abstractions.IRepository<T>.Update(T! entity) -> void
+Kun.Infrastructure.Abstractions.ISpecification<T>
+Kun.Infrastructure.Abstractions.ISpecification<T>.Criteria.get -> System.Linq.Expressions.Expression<System.Func<T, bool>!>?
+Kun.Infrastructure.Abstractions.ISpecification<T>.IncludeStrings.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Kun.Infrastructure.Abstractions.ISpecification<T>.OrderBy.get -> System.Linq.Expressions.Expression<System.Func<T, object!>!>?
+Kun.Infrastructure.Abstractions.ISpecification<T>.OrderByDescending.get -> System.Linq.Expressions.Expression<System.Func<T, object!>!>?
+Kun.Infrastructure.Abstractions.ISpecification<T>.Skip.get -> int
+Kun.Infrastructure.Abstractions.ISpecification<T>.Take.get -> int
+Kun.Infrastructure.Abstractions.IUnitOfWork
+Kun.Infrastructure.Abstractions.IUnitOfWork.SaveChangesAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<int>!
+Kun.Infrastructure.Abstractions.Specification<T>
+Kun.Infrastructure.Abstractions.Specification<T>.AddCriteria(System.Linq.Expressions.Expression<System.Func<T, bool>!>! criteria) -> void
+Kun.Infrastructure.Abstractions.Specification<T>.AddInclude(string! includeString) -> void
+Kun.Infrastructure.Abstractions.Specification<T>.ApplyOrderBy(System.Linq.Expressions.Expression<System.Func<T, object!>!>! orderBy) -> void
+Kun.Infrastructure.Abstractions.Specification<T>.ApplyOrderByDescending(System.Linq.Expressions.Expression<System.Func<T, object!>!>! orderByDesc) -> void
+Kun.Infrastructure.Abstractions.Specification<T>.ApplyPaging(int skip, int take) -> void
+Kun.Infrastructure.Abstractions.Specification<T>.Criteria.get -> System.Linq.Expressions.Expression<System.Func<T, bool>!>?
+Kun.Infrastructure.Abstractions.Specification<T>.IncludeStrings.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Kun.Infrastructure.Abstractions.Specification<T>.OrderBy.get -> System.Linq.Expressions.Expression<System.Func<T, object!>!>?
+Kun.Infrastructure.Abstractions.Specification<T>.OrderByDescending.get -> System.Linq.Expressions.Expression<System.Func<T, object!>!>?
+Kun.Infrastructure.Abstractions.Specification<T>.Skip.get -> int
+Kun.Infrastructure.Abstractions.Specification<T>.Specification() -> void
+Kun.Infrastructure.Abstractions.Specification<T>.Take.get -> int

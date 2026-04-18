@@ -3,6 +3,7 @@
   <PropertyGroup>
     <IsAotCandidate>true</IsAotCandidate>
     <IsPackable>true</IsPackable>
+    <HasPublicApi>true</HasPublicApi>
     <Description>Integration event abstractions, Outbox publisher, stable event ID registry, consumer idempotency.</Description>
   </PropertyGroup>
 

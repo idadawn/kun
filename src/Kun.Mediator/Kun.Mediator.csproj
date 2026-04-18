@@ -3,6 +3,7 @@
   <PropertyGroup>
     <IsAotCandidate>true</IsAotCandidate>
     <IsPackable>true</IsPackable>
+    <HasPublicApi>true</HasPublicApi>
     <Description>High-performance, reflection-free CQRS dispatcher for Kun Framework. AOT-native alternative to MediatR.</Description>
   </PropertyGroup>
 

@@ -3,6 +3,7 @@
   <PropertyGroup>
     <IsAotCandidate>true</IsAotCandidate>
     <IsPackable>true</IsPackable>
+    <HasPublicApi>true</HasPublicApi>
     <Description>Repository, Unit of Work, Specification, and IProcessedMessageStore abstractions.</Description>
   </PropertyGroup>
 
