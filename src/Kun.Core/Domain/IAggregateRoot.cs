@@ -16,5 +16,6 @@ public interface IAggregateRoot
 public interface IAggregateRoot<out TKey> : IAggregateRoot
     where TKey : notnull
 {
+    /// <summary>Aggregate root primary key.</summary>
     TKey Id { get; }
 }

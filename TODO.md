@@ -61,18 +61,18 @@
 
 ### 1.1 完善 Kun.Core
 
-- [ ] 新增 `src/Kun.Core/Domain/DomainException.cs`：带 `Code` 字段的领域异常基类
-- [ ] 新增 `src/Kun.Core/Domain/IDomainEventDispatcher.cs`：同进程内领域事件分发接口
-- [ ] 新增 `src/Kun.Core/MultiTenancy/NullTenantContext.cs`：非多租户场景下的默认实现（`TenantId = null`、`IsMultiTenant = false`）
-- [ ] 新增 `src/Kun.Core/Security/AnonymousCurrentUser.cs`：未认证场景下的默认实现
-- [ ] 新增 `src/Kun.Core/Time/ISystemClock.cs`：可注入的时钟抽象（便于测试）
-- [ ] 新增 `src/Kun.Core/Time/SystemClock.cs`：默认实现使用 `TimeProvider.System`
-- [ ] 为 `Kun.Core` 所有公开类型补齐 XML 文档注释
-- [ ] 创建 `tests/Kun.Core.Tests/Domain/AggregateRootTests.cs`：验证领域事件添加/清空行为
-- [ ] 创建 `tests/Kun.Core.Tests/Domain/EntityTests.cs`：验证按 Id 相等性、瞬时实体不相等
-- [ ] 创建 `tests/Kun.Core.Tests/Domain/ValueObjectTests.cs`：验证结构相等性、HashCode、运算符
-- [ ] 创建 `tests/Kun.Core.Tests/Results/ResultTests.cs`：验证 `Result<T>`、`Error` 类型映射、隐式转换
-- [ ] 运行 `dotnet test tests/Kun.Core.Tests` 全绿
+- [x] 新增 `src/Kun.Core/Domain/DomainException.cs`：带 `Code` 字段的领域异常基类
+- [x] 新增 `src/Kun.Core/Domain/IDomainEventDispatcher.cs`：同进程内领域事件分发接口
+- [x] 新增 `src/Kun.Core/MultiTenancy/NullTenantContext.cs`：非多租户场景下的默认实现（`TenantId = null`、`IsMultiTenant = false`）
+- [x] 新增 `src/Kun.Core/Security/AnonymousCurrentUser.cs`：未认证场景下的默认实现
+- [x] 新增 `src/Kun.Core/Time/ISystemClock.cs`：可注入的时钟抽象（便于测试）
+- [x] 新增 `src/Kun.Core/Time/SystemClock.cs`：默认实现使用 `TimeProvider.System`
+- [x] 为 `Kun.Core` 所有公开类型补齐 XML 文档注释
+- [x] 创建 `tests/Kun.Core.Tests/Domain/AggregateRootTests.cs`：验证领域事件添加/清空行为
+- [x] 创建 `tests/Kun.Core.Tests/Domain/EntityTests.cs`：验证按 Id 相等性、瞬时实体不相等
+- [x] 创建 `tests/Kun.Core.Tests/Domain/ValueObjectTests.cs`：验证结构相等性、HashCode、运算符
+- [x] 创建 `tests/Kun.Core.Tests/Results/ResultTests.cs`：验证 `Result<T>`、`Error` 类型映射、隐式转换
+- [x] 运行 `dotnet test tests/Kun.Core.Tests` 全绿（32/32 绿）
 
 ### 1.2 实现 Kun.Mediator（AOT 友好调度器）
 

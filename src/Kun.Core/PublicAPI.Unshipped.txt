@@ -116,3 +116,23 @@ static Kun.Core.Results.Result<T>.implicit operator Kun.Core.Results.Result<T>(T
 static Kun.Core.Results.Result<T>.Ok(T value) -> Kun.Core.Results.Result<T>
 static readonly Kun.Core.Results.Error.None -> Kun.Core.Results.Error!
 virtual Kun.Core.Domain.AggregateRoot<TKey, TUserKey>.Delete() -> void
+Kun.Core.Domain.DomainException
+Kun.Core.Domain.DomainException.Code.get -> string!
+Kun.Core.Domain.DomainException.DomainException(string! code, string! message) -> void
+Kun.Core.Domain.DomainException.DomainException(string! code, string! message, System.Exception! innerException) -> void
+Kun.Core.Domain.IDomainEventDispatcher
+Kun.Core.Domain.IDomainEventDispatcher.DispatchAsync(System.Collections.Generic.IReadOnlyCollection<Kun.Core.Domain.IDomainEvent!>! domainEvents, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Kun.Core.MultiTenancy.NullTenantContext
+Kun.Core.MultiTenancy.NullTenantContext.IsMultiTenant.get -> bool
+Kun.Core.MultiTenancy.NullTenantContext.TenantId.get -> string?
+static Kun.Core.MultiTenancy.NullTenantContext.Instance.get -> Kun.Core.MultiTenancy.NullTenantContext!
+Kun.Core.Security.AnonymousCurrentUser
+Kun.Core.Security.AnonymousCurrentUser.IsAuthenticated.get -> bool
+Kun.Core.Security.AnonymousCurrentUser.Roles.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Kun.Core.Security.AnonymousCurrentUser.UserId.get -> string?
+static Kun.Core.Security.AnonymousCurrentUser.Instance.get -> Kun.Core.Security.AnonymousCurrentUser!
+Kun.Core.Time.ISystemClock
+Kun.Core.Time.ISystemClock.UtcNow.get -> System.DateTimeOffset
+Kun.Core.Time.SystemClock
+Kun.Core.Time.SystemClock.UtcNow.get -> System.DateTimeOffset
+static Kun.Core.Time.SystemClock.Instance.get -> Kun.Core.Time.SystemClock!

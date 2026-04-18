@@ -7,8 +7,10 @@ namespace Kun.Core.Domain;
 public abstract class Entity<TKey> : IEquatable<Entity<TKey>>
     where TKey : notnull
 {
+    /// <summary>Entity primary key.</summary>
     public TKey Id { get; protected set; } = default!;
 
+    /// <summary>Returns <see langword="true"/> if this entity has the same type and id as <paramref name="other"/>.</summary>
     public bool Equals(Entity<TKey>? other)
     {
         if (other is null) return false;
@@ -22,13 +24,17 @@ public abstract class Entity<TKey> : IEquatable<Entity<TKey>>
         return EqualityComparer<TKey>.Default.Equals(Id, other.Id);
     }
 
+    /// <inheritdoc />
     public override bool Equals(object? obj) => obj is Entity<TKey> e && Equals(e);
 
+    /// <summary>Returns a hash code based on <see cref="Id"/>.</summary>
     public override int GetHashCode() => Id?.GetHashCode() ?? 0;
 
+    /// <summary>Equality operator delegating to <see cref="Equals(Entity{TKey}?)"/>.</summary>
     public static bool operator ==(Entity<TKey>? left, Entity<TKey>? right)
         => left is null ? right is null : left.Equals(right);
 
+    /// <summary>Inequality operator delegating to <see cref="operator ==(Entity{TKey}?, Entity{TKey}?)"/>.</summary>
     public static bool operator !=(Entity<TKey>? left, Entity<TKey>? right)
         => !(left == right);
 }
