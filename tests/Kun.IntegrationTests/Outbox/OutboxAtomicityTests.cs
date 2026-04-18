@@ -58,17 +58,26 @@ file sealed class TestDbContext : KunDbContext
 
 public sealed class OutboxAtomicityTests : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder()
-        .WithImage("postgres:16")
-        .WithDatabase("kun_test")
-        .WithUsername("kun")
-        .WithPassword("kun_secret")
-        .Build();
-
+    private PostgreSqlContainer _postgres = null!;
     private IServiceProvider _services = null!;
 
     public async ValueTask InitializeAsync()
     {
+        try
+        {
+            _postgres = new PostgreSqlBuilder()
+                .WithImage("postgres:16")
+                .WithDatabase("kun_test")
+                .WithUsername("kun")
+                .WithPassword("kun_secret")
+                .Build();
+        }
+        catch (ArgumentException ex) when (ex.Message.Contains("Docker", StringComparison.OrdinalIgnoreCase))
+        {
+            Assert.Skip("Docker is not available on this host — integration test requires Docker (runs in CI).");
+            return;
+        }
+
         await _postgres.StartAsync(TestContext.Current.CancellationToken);
 
         var services = new ServiceCollection();
@@ -92,7 +101,7 @@ public sealed class OutboxAtomicityTests : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         if (_services is IAsyncDisposable ad) await ad.DisposeAsync();
-        await _postgres.DisposeAsync();
+        if (_postgres is not null) await _postgres.DisposeAsync();
     }
 
     /// <summary>
