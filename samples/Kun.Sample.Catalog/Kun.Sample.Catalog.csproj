@@ -6,6 +6,7 @@
     <Description>Kun Framework sample: Catalog service demonstrating DDD + CQRS + Outbox over EF Core + PostgreSQL.</Description>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Kun.Sample.Shared\Kun.Sample.Shared.csproj" />
     <ProjectReference Include="..\..\src\Kun.Core\Kun.Core.csproj" />
     <ProjectReference Include="..\..\src\Kun.Mediator\Kun.Mediator.csproj" />
     <ProjectReference Include="..\..\src\Kun.Validation\Kun.Validation.csproj" />

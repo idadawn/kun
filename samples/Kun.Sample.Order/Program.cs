@@ -16,9 +16,13 @@ using Kun.Sample.Order.Application.Sagas;
 using Kun.Sample.Order.Application.Sagas.Steps;
 using Kun.Sample.Order.Infrastructure;
 using Kun.Sample.Order.Infrastructure.Outbox;
+using Kun.Sample.Shared;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// ── OpenTelemetry (traces + metrics via OTLP) ─────────────────────────────────
+builder.Services.AddKunObservability("order");
 
 // ── Logging ──────────────────────────────────────────────────────────────────
 builder.Logging.AddConsole();

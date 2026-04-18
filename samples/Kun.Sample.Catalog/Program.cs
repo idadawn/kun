@@ -15,9 +15,13 @@ using Kun.Sample.Catalog.Contracts;
 using Kun.Sample.Catalog.Infrastructure;
 using Kun.Validation.DependencyInjection;
 using Kun.Sample.Catalog;
+using Kun.Sample.Shared;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// ── OpenTelemetry (traces + metrics via OTLP) ─────────────────────────────────
+builder.Services.AddKunObservability("catalog");
 
 // ── Connection strings ────────────────────────────────────────────────────────
 var writeCs = builder.Configuration.GetConnectionString("CatalogDb")
