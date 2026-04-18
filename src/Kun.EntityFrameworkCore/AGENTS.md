@@ -5,44 +5,45 @@
 
 ## Purpose
 
-Write-side persistence: EF Core 10 implementation of `IRepository<T>` and `IUnitOfWork`, `KunDbContext` with automatic multi-tenant query filters and soft-delete filters, Outbox message table + atomic `SaveChanges`-time enqueuing of domain events as Outbox rows, `SpecificationEvaluator` that translates `ISpecification<T>` into `IQueryable<T>` predicates.
+Write-side persistence for Kun Framework: `KunDbContext` base with automatic `IMultiTenant` tenant filters and `ISoftDelete` soft-delete filters, atomic Outbox integration, and a unit-of-work pipeline behavior that commits aggregate changes + integration events + domain events in a single transaction.
 
 ## Key Files
 
 | File | Description |
 |------|-------------|
-| `Kun.EntityFrameworkCore.csproj` | `IsAotCandidate=false` (trim-safe only until EF Core AOT matures) |
+| `KunDbContext.cs` | Base DbContext with `IMultiTenant` + `ISoftDelete` global query filters and Outbox DbSet |
+| `OutboxMessageConfiguration.cs` | EF mapping for `OutboxMessage` (no ORM attrs on the entity) |
+| `IUnitOfWork.cs` / `EfUnitOfWork.cs` | Atomic SaveChanges: aggregates + outbox + domain-event dispatch |
+| `IntegrationEventOutboxAccumulator.cs` | `IIntegrationEventBus` impl — serializes events, captures TraceParent, appends to buffer |
+| `Behaviors/UnitOfWorkPipelineBehavior.cs` | Mediator behavior: calls `SaveChangesAsync` after handler returns |
+| `NoOpDomainEventDispatcher.cs` | Default no-op dispatcher (users replace with their own implementation) |
+| `DependencyInjection/KunEntityFrameworkCoreServiceCollectionExtensions.cs` | `AddKunEntityFrameworkCore` DI entry point |
 
 ## For AI Agents
 
 ### Working In This Directory
-
-- **This module is not AOT-strict** — it's the one exception in the framework. Treat it as trim-safe: avoid obvious reflection hotspots, but EF Core's internal reflection usage is accepted until .NET ships full AOT providers.
-- **All persistence mapping lives here**, via `IEntityTypeConfiguration<T>`. Do not add `[Table]`/`[Column]`/`[Key]` attributes to domain types in `Kun.Core`.
-- **Outbox atomicity is the core invariant**: `UnitOfWork.SaveChangesAsync` must collect domain events from `ChangeTracker.Entries<IAggregateRoot>()`, convert to `OutboxMessage` with stable event IDs + trace context, and let `DbContext.SaveChangesAsync` commit them in the same transaction as aggregate changes. Never split these into separate transactions.
-- **Tenant filters** are attached in `KunDbContext.OnModelCreating` for any entity implementing `IMultiTenant`. Avoid `IgnoreQueryFilters()` except in clearly marked admin-only code paths.
-- Event payloads serialize via `KunJsonContext.Default.GetTypeInfo(type)!` — never `JsonSerializer.Serialize(obj)` without an explicit `JsonTypeInfo`.
+- **NOT AOT-candidate** (`<IsAotCandidate>false</IsAotCandidate>`) — EF Core uses runtime expression trees. Do not add AOT annotations.
+- All persistence mapping lives in `IEntityTypeConfiguration<T>` — never add `[Table]`/`[Column]`/`[Key]` attributes to domain types in `Kun.Core`.
+- `EfUnitOfWork.SaveChangesAsync` is the single transaction boundary. Domain event collection, outbox flush, and `DbContext.SaveChangesAsync` must stay in one call — do not split.
+- `UnitOfWorkPipelineBehavior` should be registered after validation behaviors, before logging behaviors.
+- `IMultiTenant` and `ISoftDelete` are both in the `Kun.Core.Domain` namespace (not `Kun.Core.MultiTenancy`).
+- Domain event dispatch (via `IDomainEventDispatcher`) happens AFTER `DbContext.SaveChangesAsync` — events are in-process and non-transactional.
+- `IntegrationEventOutboxAccumulator` uses `JsonSerializer.Serialize<TEvent>` (generic overload) — NOT the non-generic overload, to satisfy CA2263.
 
 ### Testing Requirements
-
-Cross-layer behavior (Outbox atomicity, tenant isolation, concurrency) is exercised in `tests/Kun.IntegrationTests` via Testcontainers PostgreSQL. Pure mapping bugs are not worth integration tests — catch them in reviewed EF migrations.
-
-### Common Patterns
-
-- `EfRepository<T>` delegates listing to `SpecificationEvaluator.Default.GetQuery(set, spec)`.
-- `KunDbContext` is abstract; business `DbContext`s derive from it and add `DbSet<T>` plus their own `IEntityTypeConfiguration<T>` registrations.
+Integration tests require Docker + Testcontainers and are tracked separately (M2 2.4).
 
 ## Dependencies
 
 ### Internal
-
-- `Kun.Core` — aggregates, tenant/audit markers, events.
-- `Kun.Infrastructure` — `IRepository<T>`, `IUnitOfWork`, `ISpecification<T>`.
-- `Kun.EventBus` — `OutboxMessage`, `IEventTypeRegistry`.
+- `Kun.Core` — `IAggregateRoot`, `IDomainEventDispatcher`, `ITenantContext`, `IMultiTenant`, `ISoftDelete`
+- `Kun.EventBus` — `OutboxMessage`, `IntegrationEventBuffer`, `IEventTypeRegistry`, `IIntegrationEventBus`
+- `Kun.Mediator` — `IPipelineBehavior`
 
 ### External
-
-- `Microsoft.EntityFrameworkCore`, `Microsoft.EntityFrameworkCore.Relational`
-- `Npgsql.EntityFrameworkCore.PostgreSQL` (default), `Pomelo.EntityFrameworkCore.MySql` (alt)
+- `Microsoft.EntityFrameworkCore`
+- `Microsoft.EntityFrameworkCore.Relational`
+- `Microsoft.Extensions.DependencyInjection.Abstractions`
+- `Microsoft.Extensions.Logging.Abstractions`
 
 <!-- MANUAL: -->

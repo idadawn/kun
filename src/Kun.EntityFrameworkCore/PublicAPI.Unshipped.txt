@@ -1,0 +1,24 @@
+#nullable enable
+Kun.EntityFrameworkCore.Behaviors.UnitOfWorkPipelineBehavior<TRequest, TResponse>
+Kun.EntityFrameworkCore.Behaviors.UnitOfWorkPipelineBehavior<TRequest, TResponse>.UnitOfWorkPipelineBehavior(Kun.EntityFrameworkCore.IUnitOfWork! unitOfWork) -> void
+Kun.EntityFrameworkCore.Behaviors.UnitOfWorkPipelineBehavior<TRequest, TResponse>.Handle(TRequest request, Kun.Mediator.RequestHandlerDelegate<TResponse>! next, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<TResponse>
+Kun.EntityFrameworkCore.DependencyInjection.KunEntityFrameworkCoreServiceCollectionExtensions
+static Kun.EntityFrameworkCore.DependencyInjection.KunEntityFrameworkCoreServiceCollectionExtensions.AddKunEntityFrameworkCore(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Kun.EntityFrameworkCore.EfUnitOfWork
+Kun.EntityFrameworkCore.EfUnitOfWork.EfUnitOfWork(Kun.EntityFrameworkCore.KunDbContext! dbContext, Kun.Core.Domain.IDomainEventDispatcher! domainEvents, Kun.EventBus.Outbox.IntegrationEventBuffer! integrationBuffer) -> void
+Kun.EntityFrameworkCore.EfUnitOfWork.SaveChangesAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<int>!
+Kun.EntityFrameworkCore.IntegrationEventOutboxAccumulator
+Kun.EntityFrameworkCore.IntegrationEventOutboxAccumulator.IntegrationEventOutboxAccumulator(Kun.EventBus.Outbox.IntegrationEventBuffer! buffer, Kun.EventBus.IEventTypeRegistry! registry, Kun.Core.MultiTenancy.ITenantContext! tenantContext) -> void
+Kun.EntityFrameworkCore.IntegrationEventOutboxAccumulator.Publish<TEvent>(TEvent! event) -> void
+Kun.EntityFrameworkCore.IUnitOfWork
+Kun.EntityFrameworkCore.IUnitOfWork.SaveChangesAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<int>!
+Kun.EntityFrameworkCore.KunDbContext
+Kun.EntityFrameworkCore.KunDbContext.KunDbContext(Microsoft.EntityFrameworkCore.DbContextOptions! options, Kun.Core.MultiTenancy.ITenantContext! tenantContext) -> void
+Kun.EntityFrameworkCore.KunDbContext.OutboxMessages.get -> Microsoft.EntityFrameworkCore.DbSet<Kun.EventBus.Outbox.OutboxMessage!>!
+override Kun.EntityFrameworkCore.KunDbContext.OnModelCreating(Microsoft.EntityFrameworkCore.ModelBuilder! modelBuilder) -> void
+Kun.EntityFrameworkCore.NoOpDomainEventDispatcher
+Kun.EntityFrameworkCore.NoOpDomainEventDispatcher.NoOpDomainEventDispatcher() -> void
+Kun.EntityFrameworkCore.NoOpDomainEventDispatcher.DispatchAsync(System.Collections.Generic.IReadOnlyCollection<Kun.Core.Domain.IDomainEvent!>! domainEvents, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Kun.EntityFrameworkCore.OutboxMessageConfiguration
+Kun.EntityFrameworkCore.OutboxMessageConfiguration.OutboxMessageConfiguration() -> void
+Kun.EntityFrameworkCore.OutboxMessageConfiguration.Configure(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Kun.EventBus.Outbox.OutboxMessage!>! builder) -> void

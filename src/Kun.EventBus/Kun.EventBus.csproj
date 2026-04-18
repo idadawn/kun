@@ -4,13 +4,18 @@
     <IsAotCandidate>true</IsAotCandidate>
     <IsPackable>true</IsPackable>
     <HasPublicApi>true</HasPublicApi>
-    <Description>Integration event abstractions, Outbox publisher, stable event ID registry, consumer idempotency.</Description>
+    <Description>Kun Framework — integration event bus contracts: Outbox schema, event-type registry, publisher abstractions.</Description>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Kun.Core\Kun.Core.csproj" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Kun.EventBus.Tests" />
   </ItemGroup>
 
 </Project>

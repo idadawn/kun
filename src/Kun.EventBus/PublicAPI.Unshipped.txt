@@ -1,1 +1,58 @@
 #nullable enable
+Kun.EventBus.DependencyInjection.KunEventBusBuilder
+Kun.EventBus.DependencyInjection.KunEventBusBuilder.AddHandler<TEvent, THandler>() -> Kun.EventBus.DependencyInjection.KunEventBusBuilder!
+Kun.EventBus.DependencyInjection.KunEventBusBuilder.Register<TEvent>(string! eventType) -> Kun.EventBus.IEventTypeRegistrar!
+Kun.EventBus.DependencyInjection.KunEventBusServiceCollectionExtensions
+static Kun.EventBus.DependencyInjection.KunEventBusServiceCollectionExtensions.AddKunEventBus(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.EventBus.DependencyInjection.KunEventBusBuilder!>? configure = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Kun.EventBus.EventTypeRegistry
+Kun.EventBus.EventTypeRegistry.GetEventType(System.Type! clrType) -> string?
+Kun.EventBus.EventTypeRegistry.Resolve(string! eventType) -> System.Type?
+Kun.EventBus.IEventTypeRegistrar
+Kun.EventBus.IEventTypeRegistrar.Register<TEvent>(string! eventType) -> Kun.EventBus.IEventTypeRegistrar!
+Kun.EventBus.IEventTypeRegistry
+Kun.EventBus.IEventTypeRegistry.GetEventType(System.Type! clrType) -> string?
+Kun.EventBus.IEventTypeRegistry.Resolve(string! eventType) -> System.Type?
+Kun.EventBus.IIntegrationEventBus
+Kun.EventBus.IIntegrationEventBus.Publish<TEvent>(TEvent! event) -> void
+Kun.EventBus.IIntegrationEventHandler<TEvent>
+Kun.EventBus.IIntegrationEventHandler<TEvent>.HandleAsync(TEvent! event, Kun.EventBus.MessageContext! context, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Kun.EventBus.IOutboxPublisher
+Kun.EventBus.IOutboxPublisher.PublishPendingAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Kun.EventBus.MessageContext
+Kun.EventBus.MessageContext.MessageContext() -> void
+Kun.EventBus.MessageContext.EventType.get -> string!
+Kun.EventBus.MessageContext.EventType.init -> void
+Kun.EventBus.MessageContext.MessageId.get -> System.Guid
+Kun.EventBus.MessageContext.MessageId.init -> void
+Kun.EventBus.MessageContext.OccurredOn.get -> System.DateTimeOffset
+Kun.EventBus.MessageContext.OccurredOn.init -> void
+Kun.EventBus.MessageContext.TraceParent.get -> string?
+Kun.EventBus.MessageContext.TraceParent.init -> void
+Kun.EventBus.Outbox.IIntegrationEventOutbox
+Kun.EventBus.Outbox.IIntegrationEventOutbox.Add(Kun.EventBus.Outbox.OutboxMessage! message) -> void
+Kun.EventBus.Outbox.IIntegrationEventOutbox.GetPendingMessages() -> System.Collections.Generic.IReadOnlyList<Kun.EventBus.Outbox.OutboxMessage!>!
+Kun.EventBus.Outbox.IntegrationEventBuffer
+Kun.EventBus.Outbox.IntegrationEventBuffer.IntegrationEventBuffer() -> void
+Kun.EventBus.Outbox.IntegrationEventBuffer.Add(Kun.EventBus.Outbox.OutboxMessage! message) -> void
+Kun.EventBus.Outbox.IntegrationEventBuffer.Clear() -> void
+Kun.EventBus.Outbox.IntegrationEventBuffer.GetPendingMessages() -> System.Collections.Generic.IReadOnlyList<Kun.EventBus.Outbox.OutboxMessage!>!
+Kun.EventBus.Outbox.OutboxMessage
+Kun.EventBus.Outbox.OutboxMessage.OutboxMessage(System.Guid id, string! eventTypeId, string! payload, string? tenantId, string? traceParent, string? traceState, System.DateTimeOffset occurredAt) -> void
+Kun.EventBus.Outbox.OutboxMessage.AttemptCount.get -> int
+Kun.EventBus.Outbox.OutboxMessage.EventTypeId.get -> string!
+Kun.EventBus.Outbox.OutboxMessage.Id.get -> System.Guid
+Kun.EventBus.Outbox.OutboxMessage.IncrementAttempt() -> void
+Kun.EventBus.Outbox.OutboxMessage.LastError.get -> string?
+Kun.EventBus.Outbox.OutboxMessage.MarkFailed(string! error) -> void
+Kun.EventBus.Outbox.OutboxMessage.MarkPublished(System.DateTimeOffset publishedAt) -> void
+Kun.EventBus.Outbox.OutboxMessage.OccurredAt.get -> System.DateTimeOffset
+Kun.EventBus.Outbox.OutboxMessage.Payload.get -> string!
+Kun.EventBus.Outbox.OutboxMessage.PublishedAt.get -> System.DateTimeOffset?
+Kun.EventBus.Outbox.OutboxMessage.Status.get -> Kun.EventBus.Outbox.OutboxStatus
+Kun.EventBus.Outbox.OutboxMessage.TenantId.get -> string?
+Kun.EventBus.Outbox.OutboxMessage.TraceParent.get -> string?
+Kun.EventBus.Outbox.OutboxMessage.TraceState.get -> string?
+Kun.EventBus.Outbox.OutboxStatus
+Kun.EventBus.Outbox.OutboxStatus.Failed = 2 -> Kun.EventBus.Outbox.OutboxStatus
+Kun.EventBus.Outbox.OutboxStatus.Pending = 0 -> Kun.EventBus.Outbox.OutboxStatus
+Kun.EventBus.Outbox.OutboxStatus.Published = 1 -> Kun.EventBus.Outbox.OutboxStatus

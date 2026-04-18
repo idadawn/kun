@@ -1,0 +1,28 @@
+#nullable enable
+Kun.Dapper.DependencyInjection.KunDapperServiceCollectionExtensions
+static Kun.Dapper.DependencyInjection.KunDapperServiceCollectionExtensions.AddKunDapper(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.Dapper.ReadDbOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Kun.Dapper.IReadDbConnectionFactory
+Kun.Dapper.IReadDbConnectionFactory.OpenAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Data.IDbConnection!>!
+Kun.Dapper.PagedResult<T>
+Kun.Dapper.PagedResult<T>.HasNextPage.get -> bool
+Kun.Dapper.PagedResult<T>.HasPreviousPage.get -> bool
+Kun.Dapper.PagedResult<T>.Items.get -> System.Collections.Generic.IReadOnlyList<T>!
+Kun.Dapper.PagedResult<T>.Items.init -> void
+Kun.Dapper.PagedResult<T>.PagedResult() -> void
+Kun.Dapper.PagedResult<T>.Request.get -> Kun.Dapper.PageRequest!
+Kun.Dapper.PagedResult<T>.Request.init -> void
+Kun.Dapper.PagedResult<T>.TotalCount.get -> int
+Kun.Dapper.PagedResult<T>.TotalCount.init -> void
+Kun.Dapper.PagedResult<T>.TotalPages.get -> int
+static Kun.Dapper.PagedResult<T>.Empty(Kun.Dapper.PageRequest! request) -> Kun.Dapper.PagedResult<T>!
+Kun.Dapper.PageRequest
+Kun.Dapper.PageRequest.Offset.get -> int
+Kun.Dapper.PageRequest.Page.get -> int
+Kun.Dapper.PageRequest.Page.init -> void
+Kun.Dapper.PageRequest.PageSize.get -> int
+Kun.Dapper.PageRequest.PageSize.init -> void
+Kun.Dapper.PageRequest.PageRequest(int Page = 1, int PageSize = 20) -> void
+Kun.Dapper.ReadDbOptions
+Kun.Dapper.ReadDbOptions.ConnectionString.get -> string!
+Kun.Dapper.ReadDbOptions.ConnectionString.init -> void
+Kun.Dapper.ReadDbOptions.ReadDbOptions() -> void

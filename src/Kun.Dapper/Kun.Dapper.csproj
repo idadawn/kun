@@ -1,15 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
-    <IsAotCandidate>true</IsAotCandidate>
-    <IsPackable>true</IsPackable>
-    <Description>Dapper AOT read-side query layer for Kun Framework. Fully AOT-native.</Description>
+    <HasPublicApi>true</HasPublicApi>
+    <Description>Kun Framework — Dapper read-side abstractions: connection factory, pagination, and DI extensions.</Description>
   </PropertyGroup>
-
   <ItemGroup>
-    <ProjectReference Include="..\Kun.Infrastructure\Kun.Infrastructure.csproj" />
-    <PackageReference Include="Dapper.AOT" />
+    <ProjectReference Include="..\Kun.Core\Kun.Core.csproj" />
+    <PackageReference Include="Dapper" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
   </ItemGroup>
-
 </Project>
