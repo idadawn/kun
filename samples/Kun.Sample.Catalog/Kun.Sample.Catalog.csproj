@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsAotCandidate>false</IsAotCandidate>
+    <IsPackable>false</IsPackable>
+    <Description>Kun Framework sample: Catalog service demonstrating DDD + CQRS + Outbox over EF Core + PostgreSQL.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Kun.Core\Kun.Core.csproj" />
+    <ProjectReference Include="..\..\src\Kun.Mediator\Kun.Mediator.csproj" />
+    <ProjectReference Include="..\..\src\Kun.Validation\Kun.Validation.csproj" />
+    <ProjectReference Include="..\..\src\Kun.EventBus\Kun.EventBus.csproj" />
+    <ProjectReference Include="..\..\src\Kun.EntityFrameworkCore\Kun.EntityFrameworkCore.csproj" />
+    <ProjectReference Include="..\..\src\Kun.Dapper\Kun.Dapper.csproj" />
+    <ProjectReference Include="..\..\src\Kun.AspNetCore\Kun.AspNetCore.csproj" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Npgsql" />
+  </ItemGroup>
+</Project>
