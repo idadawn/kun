@@ -12,6 +12,18 @@
 
 ---
 
+> **📊 实施进度（2026-04-19 审计）**
+> - M1 奠基：✅ 已完成（SourceGenerator 与 NuGet 发布按 ADR 延后）
+> - M2 持久化双引擎：🟡 核心完成，缺 EfRepository/SpecificationEvaluator/InProcessDomainEventDispatcher、Dapper AOT 扩展、集成测试
+> - M3 消息总线：🟡 RabbitMQ + Outbox 发布器 + 幂等全实现，缺分布式锁 + 集成测试
+> - M4 Saga：🟡 编排器+超时+补偿核心完成，缺 5 条集成测试路径
+> - M5 宿主/RPC/网关：🟡 四个模块全实现，缺 gRPC-Web 透传 + 契约测试 + 安全文档
+> - M6 示例：🟡 Catalog+Order+Aspire+OTel+文档全齐，缺 gRPC 互调 + EF 迁移 + 集成测试
+>
+> 所有延后项详见各阶段内保留 `[ ]` 的条目。Docker-dependent 集成测试与 NuGet 发布需在配置好 Docker Desktop + C++ Linker + CI 环境后完成。
+
+---
+
 ## 🏁 前置准备
 
 - [ ] 在本地克隆仓库：`git clone https://github.com/idadawn/kun.git`
@@ -130,42 +142,42 @@
 
 ### 2.1 实现 Kun.EventBus（抽象层，不含具体传输）
 
-- [ ] 新增 `src/Kun.EventBus/IIntegrationEventOutbox.cs`：面向 Command Handler 的 `Enqueue` 接口
-- [ ] 新增 `src/Kun.EventBus/IEventTypeRegistry.cs` + `EventTypeRegistry.cs`：稳定事件 ID ↔ 类型映射
-- [ ] 新增 `src/Kun.EventBus/IEventTypeRegistrar.cs`：业务方注册事件类型的抽象
-- [ ] 新增 `src/Kun.EventBus/OutboxMessage.cs`：Outbox 消息实体（`Id`、`EventTypeId`、`Payload`、`TraceParent`、`TraceState`、`OccurredAt`、`Status`、`PublishedAt`、`LastError`）
-- [ ] 新增 `src/Kun.EventBus/OutboxStatus.cs`：枚举 `Pending`/`Published`/`Failed`
-- [ ] 新增 `src/Kun.EventBus/IIntegrationEventHandler.cs` + `MessageContext.cs`
-- [ ] 新增 `src/Kun.EventBus/IOutboxPublisher.cs`：后台发布器抽象
-- [ ] 新增 `src/Kun.EventBus/KunJsonSerializerOptions.cs`：聚合所有 `JsonSerializerContext`，提供 `GetTypeInfo` 查询
-- [ ] 新增 `src/Kun.EventBus/DependencyInjection/KunEventBusBuilder.cs` + `KunEventBusServiceCollectionExtensions.cs`
-- [ ] 创建 `tests/Kun.EventBus.Tests/EventTypeRegistryTests.cs`：验证重复注册抛错、未注册查询抛错
+- [x] 新增 `src/Kun.EventBus/IIntegrationEventOutbox.cs`：面向 Command Handler 的 `Enqueue` 接口
+- [x] 新增 `src/Kun.EventBus/IEventTypeRegistry.cs` + `EventTypeRegistry.cs`：稳定事件 ID ↔ 类型映射
+- [x] 新增 `src/Kun.EventBus/IEventTypeRegistrar.cs`：业务方注册事件类型的抽象
+- [x] 新增 `src/Kun.EventBus/OutboxMessage.cs`：Outbox 消息实体（`Id`、`EventTypeId`、`Payload`、`TraceParent`、`TraceState`、`OccurredAt`、`Status`、`PublishedAt`、`LastError`）
+- [x] 新增 `src/Kun.EventBus/OutboxStatus.cs`：枚举 `Pending`/`Published`/`Failed`
+- [x] 新增 `src/Kun.EventBus/IIntegrationEventHandler.cs` + `MessageContext.cs`
+- [x] 新增 `src/Kun.EventBus/IOutboxPublisher.cs`：后台发布器抽象
+- [x] 新增 `src/Kun.EventBus/KunJsonSerializerOptions.cs`：聚合所有 `JsonSerializerContext`，提供 `GetTypeInfo` 查询
+- [x] 新增 `src/Kun.EventBus/DependencyInjection/KunEventBusBuilder.cs` + `KunEventBusServiceCollectionExtensions.cs`
+- [x] 创建 `tests/Kun.EventBus.Tests/EventTypeRegistryTests.cs`：验证重复注册抛错、未注册查询抛错
 
 ### 2.2 实现 Kun.EntityFrameworkCore（写侧）
 
-- [ ] 新增 `src/Kun.EntityFrameworkCore/KunDbContext.cs`：抽象基类，构造器注入 `ITenantContext`
-- [ ] `KunDbContext.OnModelCreating`：遍历所有 `IMultiTenant` 实体，自动附加 `TenantId` 全局过滤器
+- [x] 新增 `src/Kun.EntityFrameworkCore/KunDbContext.cs`：抽象基类，构造器注入 `ITenantContext`
+- [x] `KunDbContext.OnModelCreating`：遍历所有 `IMultiTenant` 实体，自动附加 `TenantId` 全局过滤器
 - [ ] `KunDbContext.OnModelCreating`：遍历所有 `ISoftDelete` 实体，自动附加 `IsDeleted == false` 过滤器
-- [ ] 新增 `src/Kun.EntityFrameworkCore/Persistence/OutboxMessageConfiguration.cs`：`OutboxMessage` 的 EF 映射（主键、索引 `(Status, OccurredAt)` 支持发布器扫描）
-- [ ] 新增 `src/Kun.EntityFrameworkCore/UnitOfWork/EfUnitOfWork.cs`：实现 `IUnitOfWork`
-- [ ] `EfUnitOfWork.SaveChangesAsync`：收集聚合根领域事件 → 触发 `IDomainEventDispatcher`（同步） → 把由 Dispatcher 产生的集成事件序列化为 `OutboxMessage` → 与业务变更同事务 `SaveChanges`
-- [ ] `EfUnitOfWork`：把 `Activity.Current` 的 `TraceParent`/`TraceState` 写入 `OutboxMessage`
-- [ ] `EfUnitOfWork`：序列化走 `KunJsonSerializerOptions.GetTypeInfo(...)`，AOT 安全
+- [x] 新增 `src/Kun.EntityFrameworkCore/Persistence/OutboxMessageConfiguration.cs`：`OutboxMessage` 的 EF 映射（主键、索引 `(Status, OccurredAt)` 支持发布器扫描）
+- [x] 新增 `src/Kun.EntityFrameworkCore/UnitOfWork/EfUnitOfWork.cs`：实现 `IUnitOfWork`
+- [x] `EfUnitOfWork.SaveChangesAsync`：收集聚合根领域事件 → 触发 `IDomainEventDispatcher`（同步） → 把由 Dispatcher 产生的集成事件序列化为 `OutboxMessage` → 与业务变更同事务 `SaveChanges`
+- [x] `EfUnitOfWork`：把 `Activity.Current` 的 `TraceParent`/`TraceState` 写入 `OutboxMessage`
+- [x] `EfUnitOfWork`：序列化走 `KunJsonSerializerOptions.GetTypeInfo(...)`，AOT 安全
 - [ ] 新增 `src/Kun.EntityFrameworkCore/Repositories/EfRepository.cs`：`IRepository<T>` 的 EF 实现
 - [ ] 新增 `src/Kun.EntityFrameworkCore/Specifications/SpecificationEvaluator.cs`：把 `ISpecification<T>` 应用到 `IQueryable<T>`
 - [ ] 新增 `src/Kun.EntityFrameworkCore/DomainEvents/InProcessDomainEventDispatcher.cs`：同步分发领域事件到 `IDomainEventHandler<>`
-- [ ] 新增 `src/Kun.EntityFrameworkCore/IntegrationEventOutboxAccumulator.cs`：Scoped 服务，在当前请求内缓冲待落库的集成事件，`SaveChanges` 时被 `EfUnitOfWork` 读取
-- [ ] 新增 `src/Kun.EntityFrameworkCore/DependencyInjection/KunEntityFrameworkCoreServiceCollectionExtensions.cs`
-- [ ] 新增 `src/Kun.EntityFrameworkCore/UnitOfWorkPipelineBehavior.cs`：Mediator Behavior，Command Handler 成功返回后自动调用 `SaveChangesAsync`
-- [ ] Npgsql 支持：通过 `Npgsql.EntityFrameworkCore.PostgreSQL` 包，PostgreSQL 16 成为默认 Provider
+- [x] 新增 `src/Kun.EntityFrameworkCore/IntegrationEventOutboxAccumulator.cs`：Scoped 服务，在当前请求内缓冲待落库的集成事件，`SaveChanges` 时被 `EfUnitOfWork` 读取
+- [x] 新增 `src/Kun.EntityFrameworkCore/DependencyInjection/KunEntityFrameworkCoreServiceCollectionExtensions.cs`
+- [x] 新增 `src/Kun.EntityFrameworkCore/UnitOfWorkPipelineBehavior.cs`：Mediator Behavior，Command Handler 成功返回后自动调用 `SaveChangesAsync`
+- [x] Npgsql 支持：通过 `Npgsql.EntityFrameworkCore.PostgreSQL` 包，PostgreSQL 16 成为默认 Provider
 
 ### 2.3 实现 Kun.Dapper（读侧）
 
-- [ ] 新增 `src/Kun.Dapper/IReadDbConnectionFactory.cs`：只读连接工厂抽象
+- [x] 新增 `src/Kun.Dapper/IReadDbConnectionFactory.cs`：只读连接工厂抽象
 - [ ] 新增 `src/Kun.Dapper/NpgsqlReadDbConnectionFactory.cs`：基于 Npgsql 的默认实现
-- [ ] 新增 `src/Kun.Dapper/Pagination/PagedResult.cs`：统一分页结果类型
+- [x] 新增 `src/Kun.Dapper/Pagination/PagedResult.cs`：统一分页结果类型
 - [ ] 新增 `src/Kun.Dapper/Extensions/DapperAotExtensions.cs`：分页、计数的常用扩展（全部 `[DapperAot]` 标注）
-- [ ] 新增 `src/Kun.Dapper/DependencyInjection/KunDapperServiceCollectionExtensions.cs`
+- [x] 新增 `src/Kun.Dapper/DependencyInjection/KunDapperServiceCollectionExtensions.cs`
 - [ ] 撰写 `docs/guides/read-side-patterns.md`：读侧 DTO 规范、租户过滤、标准分页签名、聚合查询模式（配合 `kun-cqrs-mediator` 技能引用）
 
 ### 2.4 集成测试（Testcontainers + 真实 PostgreSQL）
@@ -200,30 +212,30 @@
 
 ### 3.1 实现 Kun.EventBus.RabbitMQ
 
-- [ ] 新增 `src/Kun.EventBus.RabbitMQ/Options/RabbitMqOptions.cs`（`ConnectionString`、`ExchangeName`、`ConsumerName`、`PrefetchCount` 等）
-- [ ] 新增 `src/Kun.EventBus.RabbitMQ/RabbitMqConnectionProvider.cs`：连接管理、断线重连
-- [ ] 新增 `src/Kun.EventBus.RabbitMQ/Publishing/RabbitMqIntegrationEventPublisher.cs`：把 `OutboxMessage` 转发到 Exchange
-- [ ] 发布时把 `TraceParent`/`TraceState` 写入 RabbitMQ Message Headers
-- [ ] 新增 `src/Kun.EventBus.RabbitMQ/Consuming/RabbitMqIntegrationEventSubscriber.cs`：订阅队列、反序列化、调度到 Handler
-- [ ] 消费时恢复 `Activity.Current`（从 Headers 读取 `TraceParent`）
-- [ ] 新增 `src/Kun.EventBus.RabbitMQ/Consuming/IdempotentConsumerDecorator.cs`：基于 `IProcessedMessageStore` 的幂等包装
-- [ ] 新增 `src/Kun.EventBus.RabbitMQ/Consuming/DeadLetterHandler.cs`：N 次消费失败进死信队列
-- [ ] 新增 `src/Kun.EventBus.RabbitMQ/DependencyInjection/KunRabbitMqBuilder.cs`：`.AddRabbitMQ(...)` 链式 API
-- [ ] 新增 `src/Kun.EventBus.RabbitMQ/DependencyInjection/KunRabbitMqBuilder.cs`：`.Subscribe<TEvent, THandler>()` 注册订阅
+- [x] 新增 `src/Kun.EventBus.RabbitMQ/Options/RabbitMqOptions.cs`（`ConnectionString`、`ExchangeName`、`ConsumerName`、`PrefetchCount` 等）
+- [x] 新增 `src/Kun.EventBus.RabbitMQ/RabbitMqConnectionProvider.cs`：连接管理、断线重连
+- [x] 新增 `src/Kun.EventBus.RabbitMQ/Publishing/RabbitMqIntegrationEventPublisher.cs`：把 `OutboxMessage` 转发到 Exchange
+- [x] 发布时把 `TraceParent`/`TraceState` 写入 RabbitMQ Message Headers
+- [x] 新增 `src/Kun.EventBus.RabbitMQ/Consuming/RabbitMqIntegrationEventSubscriber.cs`：订阅队列、反序列化、调度到 Handler
+- [x] 消费时恢复 `Activity.Current`（从 Headers 读取 `TraceParent`）
+- [x] 新增 `src/Kun.EventBus.RabbitMQ/Consuming/IdempotentConsumerDecorator.cs`：基于 `IProcessedMessageStore` 的幂等包装
+- [x] 新增 `src/Kun.EventBus.RabbitMQ/Consuming/DeadLetterHandler.cs`：N 次消费失败进死信队列
+- [x] 新增 `src/Kun.EventBus.RabbitMQ/DependencyInjection/KunRabbitMqBuilder.cs`：`.AddRabbitMQ(...)` 链式 API
+- [x] 新增 `src/Kun.EventBus.RabbitMQ/DependencyInjection/KunRabbitMqBuilder.cs`：`.Subscribe<TEvent, THandler>()` 注册订阅
 
 ### 3.2 实现 Outbox 发布后台服务
 
-- [ ] 新增 `src/Kun.EventBus/Background/OutboxPublisherBackgroundService.cs`：`BackgroundService`，扫描 `Pending` 状态消息、批量发布、更新状态
-- [ ] 支持批次大小、扫描间隔、重试策略（指数退避）配置
-- [ ] 发布失败时记录 `LastError`，超过最大重试次数转 `Failed`
+- [x] 新增 `src/Kun.EventBus/Background/OutboxPublisherBackgroundService.cs`：`BackgroundService`，扫描 `Pending` 状态消息、批量发布、更新状态
+- [x] 支持批次大小、扫描间隔、重试策略（指数退避）配置
+- [x] 发布失败时记录 `LastError`，超过最大重试次数转 `Failed`
 - [ ] 支持单实例锁（基于 `SELECT ... FOR UPDATE SKIP LOCKED` 或 Redis 分布式锁）防止多 Pod 同时扫描同一批消息
-- [ ] 发布 `outbox.publish` OpenTelemetry Span，父 Span 来自 `OutboxMessage.TraceParent`
+- [x] 发布 `outbox.publish` OpenTelemetry Span，父 Span 来自 `OutboxMessage.TraceParent`
 
 ### 3.3 实现基于 Redis 的 IProcessedMessageStore
 
-- [ ] 新增 `src/Kun.EventBus/Idempotency/RedisProcessedMessageStore.cs`：基于 `StackExchange.Redis`，`SETNX + EX` 实现
-- [ ] 新增 `src/Kun.EventBus/Idempotency/InMemoryProcessedMessageStore.cs`：测试用内存实现
-- [ ] 幂等键格式：`idemp:{consumerName}:{messageId}`，默认 TTL 30 分钟（可配）
+- [x] 新增 `src/Kun.EventBus/Idempotency/RedisProcessedMessageStore.cs`：基于 `StackExchange.Redis`，`SETNX + EX` 实现
+- [x] 新增 `src/Kun.EventBus/Idempotency/InMemoryProcessedMessageStore.cs`：测试用内存实现
+- [x] 幂等键格式：`idemp:{consumerName}:{messageId}`，默认 TTL 30 分钟（可配）
 
 ### 3.4 集成测试
 
@@ -255,40 +267,40 @@
 
 ### 4.1 核心抽象
 
-- [ ] 新增 `src/Kun.Saga/Abstractions/ISagaContext.cs`（`SagaId`、`TenantId`）
-- [ ] 新增 `src/Kun.Saga/Abstractions/ISaga.cs` 与 `ISaga<TContext>.cs`：`Name`、`Steps`、`DefaultStepTimeout`
-- [ ] 新增 `src/Kun.Saga/Abstractions/ISagaStep.cs`：`Name`、`ExecuteAsync`、`CompensateAsync`、`Timeout`
-- [ ] 新增 `src/Kun.Saga/Abstractions/ISagaOrchestrator.cs`
-- [ ] 新增 `src/Kun.Saga/Exceptions/SagaStepFailedException.cs`（携带 `StepName`、`Error`）
-- [ ] 新增 `src/Kun.Saga/Exceptions/SagaNotFoundException.cs`
+- [x] 新增 `src/Kun.Saga/Abstractions/ISagaContext.cs`（`SagaId`、`TenantId`）
+- [x] 新增 `src/Kun.Saga/Abstractions/ISaga.cs` 与 `ISaga<TContext>.cs`：`Name`、`Steps`、`DefaultStepTimeout`
+- [x] 新增 `src/Kun.Saga/Abstractions/ISagaStep.cs`：`Name`、`ExecuteAsync`、`CompensateAsync`、`Timeout`
+- [x] 新增 `src/Kun.Saga/Abstractions/ISagaOrchestrator.cs`
+- [x] 新增 `src/Kun.Saga/Exceptions/SagaStepFailedException.cs`（携带 `StepName`、`Error`）
+- [x] 新增 `src/Kun.Saga/Exceptions/SagaNotFoundException.cs`
 
 ### 4.2 状态持久化
 
-- [ ] 新增 `src/Kun.Saga/Persistence/SagaInstance.cs`：`Id`、`SagaName`、`TenantId`、`ContextPayload`、`CurrentStepIndex`、`State`、`StartedAt`、`UpdatedAt`、`TimeoutAt`、`CompletedAt`、`FailureReason`、`TraceId`
-- [ ] 新增 `src/Kun.Saga/Persistence/SagaState.cs`：枚举 `Running`/`Compensating`/`Completed`/`Compensated`/`Failed`
-- [ ] 新增 `src/Kun.Saga/Persistence/SagaStepQueueEntry.cs`：步骤入队表（`SagaId`、`StepIndex`、`Direction`(Execute/Compensate)、`EnqueuedAt`、`ProcessedAt`）
-- [ ] 新增 `src/Kun.Saga/Persistence/ISagaInstanceStore.cs` + EF 实现 `EfSagaInstanceStore.cs`
-- [ ] 新增 `SagaInstance` 与 `SagaStepQueueEntry` 的 `IEntityTypeConfiguration` 实现
+- [x] 新增 `src/Kun.Saga/Persistence/SagaInstance.cs`：`Id`、`SagaName`、`TenantId`、`ContextPayload`、`CurrentStepIndex`、`State`、`StartedAt`、`UpdatedAt`、`TimeoutAt`、`CompletedAt`、`FailureReason`、`TraceId`
+- [x] 新增 `src/Kun.Saga/Persistence/SagaState.cs`：枚举 `Running`/`Compensating`/`Completed`/`Compensated`/`Failed`
+- [x] 新增 `src/Kun.Saga/Persistence/SagaStepQueueEntry.cs`：步骤入队表（`SagaId`、`StepIndex`、`Direction`(Execute/Compensate)、`EnqueuedAt`、`ProcessedAt`）
+- [x] 新增 `src/Kun.Saga/Persistence/ISagaInstanceStore.cs` + EF 实现 `EfSagaInstanceStore.cs`
+- [x] 新增 `SagaInstance` 与 `SagaStepQueueEntry` 的 `IEntityTypeConfiguration` 实现
 - [ ] 索引设计：`saga_instances(state, timeout_at)` 支持超时扫描；`saga_step_queue(processed_at, enqueued_at)` 支持执行器拉取
 
 ### 4.3 编排器实现
 
-- [ ] 新增 `src/Kun.Saga/Orchestration/SagaOrchestrator.cs`：`StartAsync<TSaga, TContext>`
-- [ ] `StartAsync` 在当前 UoW 中持久化 `SagaInstance` 并入队首步（与业务 Command 同事务）
-- [ ] 新增 `src/Kun.Saga/Orchestration/SagaStepExecutor.cs`：`BackgroundService`，从 `SagaStepQueueEntry` 拉取未处理记录
-- [ ] `SagaStepExecutor`：执行 `ExecuteAsync`，成功则入队下一步或标记完成，失败则切换到 `Compensating` 并反向入队
-- [ ] `SagaStepExecutor`：补偿从失败步骤开始，`i-- CompensateAsync`，每步都要幂等（通过 `SagaStepQueueEntry.ProcessedAt`）
-- [ ] 新增 `src/Kun.Saga/Orchestration/SagaTimeoutDetector.cs`：`BackgroundService`，每 5 秒扫描 `TimeoutAt < UtcNow AND State = Running` 的实例、触发补偿
-- [ ] 所有 Saga 执行/补偿创建 OpenTelemetry Span：`saga.step.execute` / `saga.step.compensate`
+- [x] 新增 `src/Kun.Saga/Orchestration/SagaOrchestrator.cs`：`StartAsync<TSaga, TContext>`
+- [x] `StartAsync` 在当前 UoW 中持久化 `SagaInstance` 并入队首步（与业务 Command 同事务）
+- [x] 新增 `src/Kun.Saga/Orchestration/SagaStepExecutor.cs`：`BackgroundService`，从 `SagaStepQueueEntry` 拉取未处理记录
+- [x] `SagaStepExecutor`：执行 `ExecuteAsync`，成功则入队下一步或标记完成，失败则切换到 `Compensating` 并反向入队
+- [x] `SagaStepExecutor`：补偿从失败步骤开始，`i-- CompensateAsync`，每步都要幂等（通过 `SagaStepQueueEntry.ProcessedAt`）
+- [x] 新增 `src/Kun.Saga/Orchestration/SagaTimeoutDetector.cs`：`BackgroundService`，每 5 秒扫描 `TimeoutAt < UtcNow AND State = Running` 的实例、触发补偿
+- [x] 所有 Saga 执行/补偿创建 OpenTelemetry Span：`saga.step.execute` / `saga.step.compensate`
 
 ### 4.4 依赖注入
 
-- [ ] 新增 `src/Kun.Saga/DependencyInjection/KunSagaBuilder.cs`：`.AddSaga<TSaga, TContext>()` 链式注册
+- [x] 新增 `src/Kun.Saga/DependencyInjection/KunSagaBuilder.cs`：`.AddSaga<TSaga, TContext>()` 链式注册
 - [ ] SourceGenerator：扫描 `ISagaStep<>` 实现并注册到 DI（Scoped 生命周期）
 
 ### 4.5 集成测试（三条关键路径全覆盖）
 
-- [ ] `tests/Kun.Saga.Tests/SagaOrchestratorUnitTests.cs`：纯单元测试，mock Store 与 Step
+- [x] `tests/Kun.Saga.Tests/SagaOrchestratorUnitTests.cs`：纯单元测试，mock Store 与 Step
 - [ ] `tests/Kun.IntegrationTests/Saga/SagaHappyPathTests.cs`：**路径 1** — 所有步骤成功 → `State = Completed`
 - [ ] `tests/Kun.IntegrationTests/Saga/SagaFailureCompensationTests.cs`：**路径 2** — `step[2]` 失败 → 补偿 `step[1]`、`step[0]` → `State = Compensated`
 - [ ] `tests/Kun.IntegrationTests/Saga/SagaTimeoutTests.cs`：**路径 3** — 步骤耗时超过 `Timeout` → 自动补偿
@@ -315,45 +327,45 @@
 
 ### 5.1 实现 Kun.Security（内部安全体系）
 
-- [ ] 新增 `src/Kun.Security/S2sTokenOptions.cs`：签发者/受众/TTL/签名算法配置
-- [ ] 新增 `src/Kun.Security/Jwks/IKunJwksProvider.cs`：公钥集合提供者（网关用）
-- [ ] 新增 `src/Kun.Security/Jwks/FileKunJwksProvider.cs`：从文件/Key Vault 加载密钥
-- [ ] 新增 `src/Kun.Security/Authentication/KunServiceAuthenticationOptions.cs`
-- [ ] 新增 `src/Kun.Security/Authentication/KunServiceAuthenticationExtensions.cs`：`AddKunServiceAuthentication()`，基于 JwtBearer 扩展，自动对接 JWKS 端点
-- [ ] 新增 `src/Kun.Security/MultiTenancy/JwtTenantContext.cs`：从当前 `ClaimsPrincipal` 的 `tenant_id` claim 解析
-- [ ] 新增 `src/Kun.Security/Security/JwtCurrentUser.cs`：从 `sub`/`roles` claim 解析
-- [ ] 新增 `src/Kun.Security/Http/PropagateS2sTokenHandler.cs`：HttpClient 消息处理器，自动把当前请求的 Authorization 头复制到出站
-- [ ] 新增 `src/Kun.Security/Extensions/HttpClientBuilderExtensions.cs`：`.AddKunServiceAuth()`
-- [ ] 编写 `tests/Kun.Security.Tests/S2sTokenValidationTests.cs`：签名校验、受众校验、过期校验、密钥轮换
+- [x] 新增 `src/Kun.Security/S2sTokenOptions.cs`：签发者/受众/TTL/签名算法配置
+- [x] 新增 `src/Kun.Security/Jwks/IKunJwksProvider.cs`：公钥集合提供者（网关用）
+- [x] 新增 `src/Kun.Security/Jwks/FileKunJwksProvider.cs`：从文件/Key Vault 加载密钥
+- [x] 新增 `src/Kun.Security/Authentication/KunServiceAuthenticationOptions.cs`
+- [x] 新增 `src/Kun.Security/Authentication/KunServiceAuthenticationExtensions.cs`：`AddKunServiceAuthentication()`，基于 JwtBearer 扩展，自动对接 JWKS 端点
+- [x] 新增 `src/Kun.Security/MultiTenancy/JwtTenantContext.cs`：从当前 `ClaimsPrincipal` 的 `tenant_id` claim 解析
+- [x] 新增 `src/Kun.Security/Security/JwtCurrentUser.cs`：从 `sub`/`roles` claim 解析
+- [x] 新增 `src/Kun.Security/Http/PropagateS2sTokenHandler.cs`：HttpClient 消息处理器，自动把当前请求的 Authorization 头复制到出站
+- [x] 新增 `src/Kun.Security/Extensions/HttpClientBuilderExtensions.cs`：`.AddKunServiceAuth()`
+- [x] 编写 `tests/Kun.Security.Tests/S2sTokenValidationTests.cs`：签名校验、受众校验、过期校验、密钥轮换
 
 ### 5.2 实现 Kun.AspNetCore（HTTP 宿主）
 
-- [ ] 新增 `src/Kun.AspNetCore/Endpoints/MinimalApiExtensions.cs`：`MapCommand<TCommand, TResponse>()`、`MapQuery<TQuery, TResponse>()` 快捷方法
-- [ ] 新增 `src/Kun.AspNetCore/ProblemDetails/ErrorToProblemDetailsExtensions.cs`：`Error.ToProblemDetails()` 映射
-- [ ] 新增 `src/Kun.AspNetCore/ExceptionHandling/KunExceptionHandler.cs`：实现 `IExceptionHandler`，捕获 `ResultFailureException` 与 `DomainException`
-- [ ] 新增 `src/Kun.AspNetCore/HealthChecks/KunHealthChecksExtensions.cs`：`AddKunHealthChecks()`，覆盖 DB / RabbitMQ / Redis
-- [ ] 新增 `src/Kun.AspNetCore/DependencyInjection/KunAspNetCoreServiceCollectionExtensions.cs`
+- [x] 新增 `src/Kun.AspNetCore/Endpoints/MinimalApiExtensions.cs`：`MapCommand<TCommand, TResponse>()`、`MapQuery<TQuery, TResponse>()` 快捷方法
+- [x] 新增 `src/Kun.AspNetCore/ProblemDetails/ErrorToProblemDetailsExtensions.cs`：`Error.ToProblemDetails()` 映射
+- [x] 新增 `src/Kun.AspNetCore/ExceptionHandling/KunExceptionHandler.cs`：实现 `IExceptionHandler`，捕获 `ResultFailureException` 与 `DomainException`
+- [x] 新增 `src/Kun.AspNetCore/HealthChecks/KunHealthChecksExtensions.cs`：`AddKunHealthChecks()`，覆盖 DB / RabbitMQ / Redis
+- [x] 新增 `src/Kun.AspNetCore/DependencyInjection/KunAspNetCoreServiceCollectionExtensions.cs`
 
 ### 5.3 实现 Kun.Grpc（RPC 宿主）
 
-- [ ] 新增 `src/Kun.Grpc/Interceptors/KunResultToRpcInterceptor.cs`：`Result.Error` → `RpcException` 状态码映射
-- [ ] 新增 `src/Kun.Grpc/Interceptors/KunServerAuthInterceptor.cs`：从 gRPC 请求上下文注入 `ITenantContext` 与 `ICurrentUser`
-- [ ] 新增 `src/Kun.Grpc/Interceptors/KunTracingInterceptor.cs`：gRPC 服务端/客户端 Activity 增强
-- [ ] 新增 `src/Kun.Grpc/DependencyInjection/KunGrpcServiceCollectionExtensions.cs`：`AddKunGrpc()` 一键注册所有拦截器
-- [ ] 编写 `tests/Kun.Grpc.Tests/ResultMappingTests.cs`（需创建测试项目）
+- [x] 新增 `src/Kun.Grpc/Interceptors/KunResultToRpcInterceptor.cs`：`Result.Error` → `RpcException` 状态码映射
+- [x] 新增 `src/Kun.Grpc/Interceptors/KunServerAuthInterceptor.cs`：从 gRPC 请求上下文注入 `ITenantContext` 与 `ICurrentUser`
+- [x] 新增 `src/Kun.Grpc/Interceptors/KunTracingInterceptor.cs`：gRPC 服务端/客户端 Activity 增强
+- [x] 新增 `src/Kun.Grpc/DependencyInjection/KunGrpcServiceCollectionExtensions.cs`：`AddKunGrpc()` 一键注册所有拦截器
+- [x] 编写 `tests/Kun.Grpc.Tests/ResultMappingTests.cs`（需创建测试项目）
 
 ### 5.4 实现 Kun.Gateway（智能网关）
 
-- [ ] 新增 `src/Kun.Gateway/S2sTokenIssuer.cs`：外部 JWT → 内部 S2S JWT 签发
-- [ ] 新增 `src/Kun.Gateway/Transforms/S2sAuthTransform.cs`：YARP RequestTransform，替换 Authorization Header
-- [ ] 新增 `src/Kun.Gateway/Configuration/KunGatewayOptions.cs`
-- [ ] 新增 `src/Kun.Gateway/Endpoints/JwksEndpoint.cs`：内部 `/.well-known/jwks.json` 端点暴露公钥
-- [ ] 新增 `src/Kun.Gateway/RateLimiting/IRateLimitPartitionResolver.cs`：**可插拔**的限流维度抽象
-- [ ] 新增 `src/Kun.Gateway/RateLimiting/Resolvers/IpRateLimitPartitionResolver.cs`（默认实现之一）
-- [ ] 新增 `src/Kun.Gateway/RateLimiting/Resolvers/TenantRateLimitPartitionResolver.cs`（默认实现之二）
-- [ ] 新增 `src/Kun.Gateway/RateLimiting/KunRateLimiterExtensions.cs`：`.AddKunRateLimiter()` 扩展
+- [x] 新增 `src/Kun.Gateway/S2sTokenIssuer.cs`：外部 JWT → 内部 S2S JWT 签发
+- [x] 新增 `src/Kun.Gateway/Transforms/S2sAuthTransform.cs`：YARP RequestTransform，替换 Authorization Header
+- [x] 新增 `src/Kun.Gateway/Configuration/KunGatewayOptions.cs`
+- [x] 新增 `src/Kun.Gateway/Endpoints/JwksEndpoint.cs`：内部 `/.well-known/jwks.json` 端点暴露公钥
+- [x] 新增 `src/Kun.Gateway/RateLimiting/IRateLimitPartitionResolver.cs`：**可插拔**的限流维度抽象
+- [x] 新增 `src/Kun.Gateway/RateLimiting/Resolvers/IpRateLimitPartitionResolver.cs`（默认实现之一）
+- [x] 新增 `src/Kun.Gateway/RateLimiting/Resolvers/TenantRateLimitPartitionResolver.cs`（默认实现之二）
+- [x] 新增 `src/Kun.Gateway/RateLimiting/KunRateLimiterExtensions.cs`：`.AddKunRateLimiter()` 扩展
 - [ ] 集成 gRPC-Web 透传（`Grpc.AspNetCore.Web` 包）
-- [ ] 新增 `src/Kun.Gateway/DependencyInjection/KunGatewayServiceCollectionExtensions.cs`
+- [x] 新增 `src/Kun.Gateway/DependencyInjection/KunGatewayServiceCollectionExtensions.cs`
 
 ### 5.5 契约测试
 
@@ -381,38 +393,38 @@
 
 ### 6.1 实现 Kun.Sample.Catalog（商品服务）
 
-- [ ] 新增 `samples/Kun.Sample.Catalog/Catalog.Domain/`：`Product`、`Category` 聚合根 + 领域事件
-- [ ] 新增 `samples/Kun.Sample.Catalog/Catalog.Application/`：`CreateProductCommand`、`GetProductByIdQuery`、相应 Handler
-- [ ] 新增 `samples/Kun.Sample.Catalog/Catalog.Contracts/`：`ProductPublishedIntegrationEvent`、`InventoryChangedIntegrationEvent`
-- [ ] 注册稳定事件 ID：`product.published.v1`、`inventory.changed.v1`
-- [ ] 新增 `samples/Kun.Sample.Catalog/Catalog.Infrastructure/`：`CatalogDbContext`、`IEntityTypeConfiguration<>`、`ProductReadService`
+- [x] 新增 `samples/Kun.Sample.Catalog/Catalog.Domain/`：`Product`、`Category` 聚合根 + 领域事件
+- [x] 新增 `samples/Kun.Sample.Catalog/Catalog.Application/`：`CreateProductCommand`、`GetProductByIdQuery`、相应 Handler
+- [x] 新增 `samples/Kun.Sample.Catalog/Catalog.Contracts/`：`ProductPublishedIntegrationEvent`、`InventoryChangedIntegrationEvent`
+- [x] 注册稳定事件 ID：`product.published.v1`、`inventory.changed.v1`
+- [x] 新增 `samples/Kun.Sample.Catalog/Catalog.Infrastructure/`：`CatalogDbContext`、`IEntityTypeConfiguration<>`、`ProductReadService`
 - [ ] 新增 `samples/Kun.Sample.Catalog/Catalog.Api/`：HTTP + gRPC 双端点，gRPC Proto 文件 `catalog.proto`
 - [ ] 创建 EF Core Migrations（初始表 + Outbox 表）
 
 ### 6.2 实现 Kun.Sample.Order（订单服务，含 Saga）
 
-- [ ] 新增 `samples/Kun.Sample.Order/Order.Domain/`：`Order` 聚合根
-- [ ] 新增 `samples/Kun.Sample.Order/Order.Application/Sagas/OrderCreationSaga.cs`：4 步 Saga（预扣库存 → 支付 → 发货 → 通知）
-- [ ] 实现 4 个 Step，每个都有 `ExecuteAsync` + `CompensateAsync`
+- [x] 新增 `samples/Kun.Sample.Order/Order.Domain/`：`Order` 聚合根
+- [x] 新增 `samples/Kun.Sample.Order/Order.Application/Sagas/OrderCreationSaga.cs`：4 步 Saga（预扣库存 → 支付 → 发货 → 通知）
+- [x] 实现 4 个 Step，每个都有 `ExecuteAsync` + `CompensateAsync`
 - [ ] Step 1 `ReserveInventoryStep`：通过 gRPC 调用 Catalog 服务
-- [ ] **故意设计的失败点**：`ProcessPaymentStep` 支持通过请求头 `X-Simulate-Failure: payment` 触发失败，用于演示补偿
-- [ ] 新增 `samples/Kun.Sample.Order/Order.Api/Endpoints/DemoEndpoints.cs`：
-  - [ ] `POST /demo/happy-path`：正常下单
-  - [ ] `POST /demo/trigger-payment-failure`：触发补偿路径
-  - [ ] `POST /demo/trigger-timeout`：触发超时路径
-  - [ ] `GET /demo/sagas/{id}`：查询 Saga 当前状态
+- [x] **故意设计的失败点**：`ProcessPaymentStep` 支持通过请求头 `X-Simulate-Failure: payment` 触发失败，用于演示补偿
+- [x] 新增 `samples/Kun.Sample.Order/Order.Api/Endpoints/DemoEndpoints.cs`：
+  - [x] `POST /demo/happy-path`：正常下单
+  - [x] `POST /demo/trigger-payment-failure`：触发补偿路径
+  - [x] `POST /demo/trigger-timeout`：触发超时路径
+  - [x] `GET /demo/sagas/{id}`：查询 Saga 当前状态
 - [ ] 创建 EF Core Migrations
 
 ### 6.3 .NET Aspire 编排
 
-- [ ] 新增 `samples/Kun.Sample.AppHost/Program.cs`：编排 PostgreSQL、RabbitMQ、Redis、Catalog API、Order API、Gateway
-- [ ] 配置 Aspire Dashboard 自动打开
+- [x] 新增 `samples/Kun.Sample.AppHost/Program.cs`：编排 PostgreSQL、RabbitMQ、Redis、Catalog API、Order API、Gateway
+- [x] 配置 Aspire Dashboard 自动打开
 - [ ] `appsettings.json` 按服务拆分，共享配置走 Aspire 的服务发现
 
 ### 6.4 OpenTelemetry 链路串联验证
 
-- [ ] 所有服务启用 `OpenTelemetry.Instrumentation.AspNetCore` + `GrpcNetClient` + `Http` + `EntityFrameworkCore`
-- [ ] 统一通过 OTLP Exporter 发送到 Aspire Dashboard
+- [x] 所有服务启用 `OpenTelemetry.Instrumentation.AspNetCore` + `GrpcNetClient` + `Http` + `EntityFrameworkCore`
+- [x] 统一通过 OTLP Exporter 发送到 Aspire Dashboard
 - [ ] 验证链路：HTTP 入站 → CQRS Handler → EF SQL → Outbox 发布 → RabbitMQ → 消费端 → 下游 Saga 步骤 全部同一 TraceId
 - [ ] 验证 Saga 补偿路径的链路：正向 Trace 与补偿 Trace 通过 `saga_id` 可关联
 - [ ] 编写 `docs/observability/tracing-tour.md`：配截图，带读者走一遍链路
@@ -425,10 +437,10 @@
 
 ### 6.6 文档与发布
 
-- [ ] 撰写 `docs/getting-started.md`：从零到一的 10 分钟上手教程
-- [ ] 撰写 `docs/architecture/why-cqrs.md`、`docs/architecture/why-outbox.md`、`docs/architecture/why-saga.md`（每篇 500 字左右）
-- [ ] 为 `samples/` 下每个项目写独立 README
-- [ ] 更新根 README，把 "快速开始" 章节指向 `Kun.Sample.AppHost` 的实际可运行命令
+- [x] 撰写 `docs/getting-started.md`：从零到一的 10 分钟上手教程
+- [x] 撰写 `docs/architecture/why-cqrs.md`、`docs/architecture/why-outbox.md`、`docs/architecture/why-saga.md`（每篇 500 字左右）
+- [x] 为 `samples/` 下每个项目写独立 README
+- [x] 更新根 README，把 "快速开始" 章节指向 `Kun.Sample.AppHost` 的实际可运行命令
 - [ ] 录制一个 3 分钟的演示视频（可选）：启动 Aspire、触发下单、触发失败、观察补偿
 
 ### 6.7 阶段六验收（即 v1.0 发布条件）
