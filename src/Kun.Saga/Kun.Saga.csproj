@@ -3,12 +3,19 @@
   <PropertyGroup>
     <IsAotCandidate>true</IsAotCandidate>
     <IsPackable>true</IsPackable>
+    <HasPublicApi>true</HasPublicApi>
     <Description>Saga Orchestration engine for Kun Framework: steps, compensation, timeouts, state persistence.</Description>
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Kun.Core\Kun.Core.csproj" />
     <ProjectReference Include="..\Kun.EventBus\Kun.EventBus.csproj" />
     <ProjectReference Include="..\Kun.Mediator\Kun.Mediator.csproj" />
+    <ProjectReference Include="..\Kun.EntityFrameworkCore\Kun.EntityFrameworkCore.csproj" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
   </ItemGroup>
 
 </Project>

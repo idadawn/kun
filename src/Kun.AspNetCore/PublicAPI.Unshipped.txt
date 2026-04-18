@@ -1,0 +1,13 @@
+#nullable enable
+Kun.AspNetCore.DependencyInjection.KunAspNetCoreServiceCollectionExtensions
+Kun.AspNetCore.Endpoints.KunEndpointRouteBuilderExtensions
+Kun.AspNetCore.ExceptionHandling.KunExceptionHandler
+Kun.AspNetCore.ExceptionHandling.KunExceptionHandler.KunExceptionHandler(Microsoft.Extensions.Logging.ILogger<Kun.AspNetCore.ExceptionHandling.KunExceptionHandler!>! logger) -> void
+Kun.AspNetCore.ExceptionHandling.KunExceptionHandler.TryHandleAsync(Microsoft.AspNetCore.Http.HttpContext! httpContext, System.Exception! exception, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<bool>
+Kun.AspNetCore.HealthChecks.KunHealthChecksExtensions
+Kun.AspNetCore.Mapping.ErrorToProblemDetailsExtensions
+static Kun.AspNetCore.DependencyInjection.KunAspNetCoreServiceCollectionExtensions.AddKunAspNetCore(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Kun.AspNetCore.Endpoints.KunEndpointRouteBuilderExtensions.MapCommand<TCommand, TResponse>(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, string! pattern, System.Text.Json.Serialization.Metadata.JsonTypeInfo<TCommand>! commandTypeInfo, System.Text.Json.Serialization.Metadata.JsonTypeInfo<TResponse>! responseTypeInfo) -> Microsoft.AspNetCore.Builder.RouteHandlerBuilder!
+static Kun.AspNetCore.Endpoints.KunEndpointRouteBuilderExtensions.MapQuery<TQuery, TResponse>(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, string! pattern, System.Text.Json.Serialization.Metadata.JsonTypeInfo<TResponse>! responseTypeInfo) -> Microsoft.AspNetCore.Builder.RouteHandlerBuilder!
+static Kun.AspNetCore.HealthChecks.KunHealthChecksExtensions.AddKunHealthChecks(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder!
+static Kun.AspNetCore.Mapping.ErrorToProblemDetailsExtensions.ToProblemDetails(this Kun.Core.Results.Error error) -> Microsoft.AspNetCore.Mvc.ProblemDetails

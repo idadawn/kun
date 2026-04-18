@@ -1,0 +1,48 @@
+#nullable enable
+Kun.Security.Authentication.KunServiceAuthenticationExtensions
+Kun.Security.Authentication.KunServiceAuthenticationOptions
+Kun.Security.Authentication.KunServiceAuthenticationOptions.AdditionalValidIssuers.get -> System.Collections.Generic.IReadOnlyList<string!>?
+Kun.Security.Authentication.KunServiceAuthenticationOptions.AdditionalValidIssuers.set -> void
+Kun.Security.Authentication.KunServiceAuthenticationOptions.Audience.get -> string!
+Kun.Security.Authentication.KunServiceAuthenticationOptions.Audience.set -> void
+Kun.Security.Authentication.KunServiceAuthenticationOptions.Issuer.get -> string!
+Kun.Security.Authentication.KunServiceAuthenticationOptions.Issuer.set -> void
+Kun.Security.Authentication.KunServiceAuthenticationOptions.JwksUri.get -> string?
+Kun.Security.Authentication.KunServiceAuthenticationOptions.JwksUri.set -> void
+Kun.Security.Authentication.KunServiceAuthenticationOptions.KunServiceAuthenticationOptions() -> void
+Kun.Security.Authentication.KunServiceAuthenticationOptions.StaticKeySet.get -> Microsoft.IdentityModel.Tokens.JsonWebKeySet?
+Kun.Security.Authentication.KunServiceAuthenticationOptions.StaticKeySet.set -> void
+Kun.Security.DependencyInjection.KunSecurityServiceCollectionExtensions
+Kun.Security.Extensions.HttpClientBuilderExtensions
+Kun.Security.Http.PropagateS2sTokenHandler
+Kun.Security.Http.PropagateS2sTokenHandler.PropagateS2sTokenHandler(Microsoft.AspNetCore.Http.IHttpContextAccessor! httpContextAccessor) -> void
+Kun.Security.Jwks.FileKunJwksProvider
+Kun.Security.Jwks.FileKunJwksProvider.FileKunJwksProvider(string! filePath, Microsoft.Extensions.Logging.ILogger<Kun.Security.Jwks.FileKunJwksProvider!>! logger) -> void
+Kun.Security.Jwks.FileKunJwksProvider.GetAsync(System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Microsoft.IdentityModel.Tokens.JsonWebKeySet!>!
+Kun.Security.Jwks.IKunJwksProvider
+Kun.Security.Jwks.IKunJwksProvider.GetAsync(System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Microsoft.IdentityModel.Tokens.JsonWebKeySet!>!
+Kun.Security.MultiTenancy.JwtTenantContext
+Kun.Security.MultiTenancy.JwtTenantContext.IsMultiTenant.get -> bool
+Kun.Security.MultiTenancy.JwtTenantContext.JwtTenantContext(Microsoft.AspNetCore.Http.IHttpContextAccessor! httpContextAccessor) -> void
+Kun.Security.MultiTenancy.JwtTenantContext.TenantId.get -> string?
+Kun.Security.S2sTokenOptions
+Kun.Security.S2sTokenOptions.Audience.get -> string!
+Kun.Security.S2sTokenOptions.Audience.init -> void
+Kun.Security.S2sTokenOptions.Issuer.get -> string!
+Kun.Security.S2sTokenOptions.Issuer.init -> void
+Kun.Security.S2sTokenOptions.JwksUri.get -> string?
+Kun.Security.S2sTokenOptions.JwksUri.init -> void
+Kun.Security.S2sTokenOptions.Lifetime.get -> System.TimeSpan
+Kun.Security.S2sTokenOptions.Lifetime.init -> void
+Kun.Security.S2sTokenOptions.SigningAlgorithm.get -> string!
+Kun.Security.S2sTokenOptions.SigningAlgorithm.init -> void
+Kun.Security.S2sTokenOptions.ValidIssuers.get -> System.Collections.Generic.IReadOnlyList<string!>?
+Kun.Security.S2sTokenOptions.ValidIssuers.init -> void
+Kun.Security.Security.JwtCurrentUser
+Kun.Security.Security.JwtCurrentUser.IsAuthenticated.get -> bool
+Kun.Security.Security.JwtCurrentUser.JwtCurrentUser(Microsoft.AspNetCore.Http.IHttpContextAccessor! httpContextAccessor) -> void
+Kun.Security.Security.JwtCurrentUser.Roles.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Kun.Security.Security.JwtCurrentUser.UserId.get -> string?
+static Kun.Security.Authentication.KunServiceAuthenticationExtensions.AddKunServiceAuthentication(this Microsoft.AspNetCore.Authentication.AuthenticationBuilder! builder, System.Action<Kun.Security.Authentication.KunServiceAuthenticationOptions!>! configure) -> Microsoft.AspNetCore.Authentication.AuthenticationBuilder!
+static Kun.Security.DependencyInjection.KunSecurityServiceCollectionExtensions.AddKunSecurity(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Kun.Security.Extensions.HttpClientBuilderExtensions.AddKunServiceAuth(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
