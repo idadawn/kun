@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsAotCandidate>true</IsAotCandidate>
+    <IsPackable>true</IsPackable>
+    <Description>Saga Orchestration engine for Kun Framework: steps, compensation, timeouts, state persistence.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Kun.EventBus\Kun.EventBus.csproj" />
+    <ProjectReference Include="..\Kun.Mediator\Kun.Mediator.csproj" />
+  </ItemGroup>
+
+</Project>

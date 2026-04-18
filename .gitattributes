@@ -1,0 +1,27 @@
+# Auto-detect text files and normalize line endings
+* text=auto eol=lf
+
+# Source code
+*.cs text eol=lf
+*.csproj text eol=lf
+*.props text eol=lf
+*.targets text eol=lf
+*.sln text eol=crlf
+
+# Configs
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.md text eol=lf
+
+# Shell / scripts
+*.sh text eol=lf
+*.ps1 text eol=crlf
+
+# Binaries
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.snk binary
+*.pfx binary
