@@ -5,41 +5,80 @@
 
 ## Purpose
 
-RabbitMQ transport implementation of `IIntegrationEventBus`. Publishes Outbox-drained messages to RabbitMQ exchanges, attaches W3C Trace Context headers so consumers resume the distributed trace, and provides a consumer host that dispatches incoming messages through the `IdempotentConsumerDecorator` to user handlers.
+RabbitMQ broker adapter implementing `IIntegrationEventPublisher`. Publishes Outbox-drained messages to a topic exchange, attaches W3C Trace Context headers, and provides a consumer background service (`RabbitMqIntegrationEventSubscriber`) that dispatches incoming messages through `IdempotentConsumerDecorator` to `IIntegrationEventHandler<TEvent>` implementations.
 
 ## Key Files
 
 | File | Description |
 |------|-------------|
-| `Kun.EventBus.RabbitMQ.csproj` | `IsAotCandidate=true` |
+| `Kun.EventBus.RabbitMQ.csproj` | `IsAotCandidate=true`; references `RabbitMQ.Client` 7.x, `Microsoft.Extensions.*` |
+| `RabbitMqConnectionProvider.cs` | Singleton lazy-open `IConnection` with `AutomaticRecoveryEnabled=true`; `IAsyncDisposable` |
+| `Options/RabbitMqOptions.cs` | `ConnectionString`, `ExchangeName`, `ConsumerName`, `PrefetchCount`, `MaxDeliveryAttempts`, `IdempotencyTtl` |
+| `Publishing/RabbitMqIntegrationEventPublisher.cs` | Implements `IIntegrationEventPublisher`; opens a channel per publish; declares exchange; writes trace/tenant headers |
+| `Consuming/RabbitMqIntegrationEventSubscriber.cs` | `BackgroundService`; declares queues, DLX/DLQ; registers `AsyncEventingBasicConsumer` per subscription |
+| `Consuming/IdempotentConsumerDecorator.cs` | Invokes handler then calls `IProcessedMessageStore.TryMarkProcessedAsync` |
+| `Consuming/DeadLetterHandler.cs` | Declares `{exchange}.dlx` fanout + `{consumer}.dead-letter` queue; provides `x-dead-letter-exchange` queue args |
+| `Consuming/ISubscriptionDispatcher.cs` | Internal per-event dispatch contract (avoids `MakeGenericType`) |
+| `Consuming/TypedSubscriptionDispatcher.cs` | AOT-safe generic dispatcher; uses `JsonTypeInfo<TEvent>` for deserialization |
+| `Consuming/SubscriptionRegistration.cs` | Value type recording `EventTypeId` → `EventClrType` for queue declaration |
+| `DependencyInjection/KunRabbitMqBuilder.cs` | Fluent `.Subscribe<TEvent, THandler>(eventTypeId, typeInfo)` — registers handler + dispatcher + registration |
+| `DependencyInjection/KunRabbitMqServiceCollectionExtensions.cs` | `AddRabbitMq(Action<RabbitMqOptions>, Action<KunRabbitMqBuilder>?)` — wires all singletons + hosted service |
+| `PublicAPI.Shipped.txt` / `PublicAPI.Unshipped.txt` | RS0016 public surface tracking |
 
 ## For AI Agents
 
 ### Working In This Directory
 
-- **Trace context headers are mandatory**: on publish, copy `TraceParent`/`TraceState` from the Outbox row into the RabbitMQ `BasicProperties.Headers`. On consume, restore them into `Activity.Current` via `ActivitySource.StartActivity(parentId: ...)` so the trace chain doesn't break at the queue boundary.
-- **Stable event IDs live on the wire**: the envelope's `EventTypeId` header carries the string ID; consumer lookup uses that, not CLR types or type names.
-- **Consumer idempotency is not optional** — the `IdempotentConsumerDecorator` from `Kun.EventBus` must wrap every consumer. Outbox delivery is at-least-once.
-- **Serialization**: `KunJsonContext.Default.GetTypeInfo(eventType)!` — do not introduce `JsonSerializer.Serialize(obj)` without explicit type info.
-- RabbitMQ.Client 7.x has async-native APIs; use them — do not call `.Result` / `.Wait()`.
+- **AOT-safe**: `IsAotCandidate=true`. No `Activator.CreateInstance`, no `MakeGenericType`, no `Type.GetMethod`. `TypedSubscriptionDispatcher<TEvent>` is registered at DI wire-up time (compile-time generic instantiation). `JsonTypeInfo<TEvent>` is passed by the caller from their `JsonSerializerContext`.
+- **Trace context headers are mandatory**: on publish, copy `TraceParent`/`TraceState` from the Outbox row into AMQP `BasicProperties.Headers` as `traceparent`/`tracestate`. On consume, restore via `ActivityContext.TryParse`.
+- **Stable event IDs on the wire**: routing key = `message.EventTypeId` (e.g. `order.placed.v1`). `IEventTypeRegistry.Resolve(routingKey)` converts back to CLR type.
+- **Idempotency pattern**: handler runs first, then `TryMarkProcessedAsync` is called. If the handler throws, no mark is recorded — message is nacked and requeued. If mark returns `false`, a duplicate warning is logged (handler must be idempotent).
+- **Dead-letter**: queue args set `x-dead-letter-exchange` to `{exchange}.dlx`. When `x-death` count ≥ `MaxDeliveryAttempts`, the message is nacked without requeue, routing it to the DLX/DLQ.
+- **RabbitMQ.Client 7.x async API**: `CreateChannelAsync`, `BasicPublishAsync`, `BasicQosAsync`, `ExchangeDeclareAsync`, `QueueDeclareAsync`, `QueueBindAsync`, `BasicConsumeAsync`, `BasicAckAsync`, `BasicNackAsync`. Never use `.Result`/`.Wait()`.
+- **LoggerMessage delegates** (`[LoggerMessage]` on nested `partial class Log`) are used throughout — do not regress to `LogInformation(..., args)`.
+- Payload is already a JSON string from the Outbox — no re-serialization needed on publish. On consume, `JsonSerializer.Deserialize(payload, typeInfo)` uses the caller-supplied `JsonTypeInfo`.
+- Channel per publish (not pooled) — acceptable for Outbox throughput; channel creation is cheap in 7.x.
 
 ### Testing Requirements
 
-Use `Testcontainers.RabbitMq` in `tests/Kun.IntegrationTests`. Validate trace-context round-tripping, at-least-once delivery, and idempotent consumer behavior under redelivery.
+Use `Testcontainers.RabbitMq` in `tests/Kun.IntegrationTests` (M3 3.4, Docker-deferred). Validate:
+- Trace-context round-tripping (publish → consume header restoration).
+- At-least-once delivery (nack + requeue → retry).
+- Idempotent consumer under redelivery (second delivery should log warning, not fail).
+- Dead-letter routing after `MaxDeliveryAttempts`.
 
 ### Common Patterns
 
-- Exchange type is `topic`; routing key = stable event ID (e.g. `order.placed.v1`).
-- Consumer queues are named `{service}.{event-type-id}` so multiple services can subscribe to the same event.
+```csharp
+// Wire-up (in Program.cs / Startup)
+services.AddKunEventBus(bus => bus
+    .Register<OrderPlacedIntegrationEvent>("order.placed.v1"));
+
+services.AddRabbitMq(
+    opts =>
+    {
+        opts.ConnectionString = "amqp://guest:guest@localhost:5672/";
+        opts.ConsumerName = "catalog-service";
+    },
+    rmq => rmq.Subscribe<OrderPlacedIntegrationEvent, OrderPlacedHandler>(
+        "order.placed.v1",
+        MyJsonContext.Default.OrderPlacedIntegrationEvent));
+```
+
+Exchange type is `topic`; routing key = stable event ID. Consumer queues are named `{ConsumerName}.{EventTypeId}`.
 
 ## Dependencies
 
 ### Internal
 
-- `Kun.EventBus` — transport contract, Outbox schema, `IdempotentConsumerDecorator`.
+- `Kun.EventBus` — `IIntegrationEventPublisher`, `OutboxMessage`, `IEventTypeRegistry`, `IProcessedMessageStore`, `IIntegrationEventHandler<T>`, `MessageContext`
 
 ### External
 
-- `RabbitMQ.Client` 7.x
+- `RabbitMQ.Client` 7.x (async-native, AOT-compatible)
+- `Microsoft.Extensions.DependencyInjection.Abstractions`
+- `Microsoft.Extensions.Hosting.Abstractions`
+- `Microsoft.Extensions.Logging.Abstractions`
+- `Microsoft.Extensions.Options`
 
-<!-- MANUAL: -->
+<!-- MANUAL: Integration tests deferred to Kun.IntegrationTests (M3 3.4 — requires Docker). -->

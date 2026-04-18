@@ -1,4 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Kun.EventBus.Idempotency;
+using StackExchange.Redis;
 
 namespace Kun.EventBus.DependencyInjection;
 
@@ -23,6 +26,24 @@ public sealed class KunEventBusBuilder : IEventTypeRegistrar
         where THandler : class, IIntegrationEventHandler<TEvent>
     {
         _services.AddScoped<IIntegrationEventHandler<TEvent>, THandler>();
+        return this;
+    }
+
+    /// <summary>Registers the in-memory idempotency store (testing only).</summary>
+    public KunEventBusBuilder UseInMemoryIdempotency()
+    {
+        _services.TryAddSingleton<IProcessedMessageStore, InMemoryProcessedMessageStore>();
+        return this;
+    }
+
+    /// <summary>
+    /// Registers the Redis idempotency store.
+    /// The caller must register <see cref="IConnectionMultiplexer"/> separately
+    /// (e.g. via <c>services.AddSingleton&lt;IConnectionMultiplexer&gt;(ConnectionMultiplexer.Connect(...))</c>).
+    /// </summary>
+    public KunEventBusBuilder UseRedisIdempotency()
+    {
+        _services.TryAddSingleton<IProcessedMessageStore, RedisProcessedMessageStore>();
         return this;
     }
 }

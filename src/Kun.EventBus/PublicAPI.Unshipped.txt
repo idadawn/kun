@@ -1,7 +1,34 @@
 #nullable enable
+Kun.EventBus.Background.IOutboxMessageStore
+Kun.EventBus.Background.IOutboxMessageStore.FetchPendingAsync(int batchSize, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Kun.EventBus.Outbox.OutboxMessage!>!>!
+Kun.EventBus.Background.IOutboxMessageStore.UpdateAsync(Kun.EventBus.Outbox.OutboxMessage! message, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.EventBus.Background.OutboxPublisherBackgroundService
+Kun.EventBus.Background.OutboxPublisherBackgroundService.OutboxPublisherBackgroundService(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory! scopeFactory, Kun.EventBus.IIntegrationEventPublisher! publisher, Microsoft.Extensions.Options.IOptions<Kun.EventBus.Background.OutboxPublisherOptions!>! options, Microsoft.Extensions.Logging.ILogger<Kun.EventBus.Background.OutboxPublisherBackgroundService!>! logger, System.TimeProvider! timeProvider) -> void
+Kun.EventBus.Background.OutboxPublisherOptions
+Kun.EventBus.Background.OutboxPublisherOptions.OutboxPublisherOptions() -> void
+Kun.EventBus.Background.OutboxPublisherOptions.BatchSize.get -> int
+Kun.EventBus.Background.OutboxPublisherOptions.BatchSize.init -> void
+Kun.EventBus.Background.OutboxPublisherOptions.PollInterval.get -> System.TimeSpan
+Kun.EventBus.Background.OutboxPublisherOptions.PollInterval.init -> void
+Kun.EventBus.Background.OutboxPublisherOptions.MaxAttempts.get -> int
+Kun.EventBus.Background.OutboxPublisherOptions.MaxAttempts.init -> void
+Kun.EventBus.Background.OutboxPublisherOptions.RetryBaseDelay.get -> System.TimeSpan
+Kun.EventBus.Background.OutboxPublisherOptions.RetryBaseDelay.init -> void
 Kun.EventBus.DependencyInjection.KunEventBusBuilder
 Kun.EventBus.DependencyInjection.KunEventBusBuilder.AddHandler<TEvent, THandler>() -> Kun.EventBus.DependencyInjection.KunEventBusBuilder!
+Kun.EventBus.DependencyInjection.KunOutboxPublisherExtensions
+static Kun.EventBus.DependencyInjection.KunOutboxPublisherExtensions.AddKunOutboxPublisher(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.EventBus.Background.OutboxPublisherOptions!>? configure = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 Kun.EventBus.DependencyInjection.KunEventBusBuilder.Register<TEvent>(string! eventType) -> Kun.EventBus.IEventTypeRegistrar!
+Kun.EventBus.DependencyInjection.KunEventBusBuilder.UseInMemoryIdempotency() -> Kun.EventBus.DependencyInjection.KunEventBusBuilder!
+Kun.EventBus.DependencyInjection.KunEventBusBuilder.UseRedisIdempotency() -> Kun.EventBus.DependencyInjection.KunEventBusBuilder!
+Kun.EventBus.Idempotency.InMemoryProcessedMessageStore
+Kun.EventBus.Idempotency.InMemoryProcessedMessageStore.InMemoryProcessedMessageStore() -> void
+Kun.EventBus.Idempotency.InMemoryProcessedMessageStore.InMemoryProcessedMessageStore(System.TimeProvider! timeProvider) -> void
+Kun.EventBus.Idempotency.InMemoryProcessedMessageStore.TryMarkProcessedAsync(string! consumerName, System.Guid messageId, System.TimeSpan ttl, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<bool>
+Kun.EventBus.Idempotency.RedisProcessedMessageStore
+Kun.EventBus.Idempotency.RedisProcessedMessageStore.RedisProcessedMessageStore(StackExchange.Redis.IDatabase! database) -> void
+Kun.EventBus.Idempotency.RedisProcessedMessageStore.RedisProcessedMessageStore(StackExchange.Redis.IConnectionMultiplexer! multiplexer) -> void
+Kun.EventBus.Idempotency.RedisProcessedMessageStore.TryMarkProcessedAsync(string! consumerName, System.Guid messageId, System.TimeSpan ttl, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<bool>
 Kun.EventBus.DependencyInjection.KunEventBusServiceCollectionExtensions
 static Kun.EventBus.DependencyInjection.KunEventBusServiceCollectionExtensions.AddKunEventBus(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.EventBus.DependencyInjection.KunEventBusBuilder!>? configure = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 Kun.EventBus.EventTypeRegistry
@@ -12,6 +39,10 @@ Kun.EventBus.IEventTypeRegistrar.Register<TEvent>(string! eventType) -> Kun.Even
 Kun.EventBus.IEventTypeRegistry
 Kun.EventBus.IEventTypeRegistry.GetEventType(System.Type! clrType) -> string?
 Kun.EventBus.IEventTypeRegistry.Resolve(string! eventType) -> System.Type?
+Kun.EventBus.Idempotency.IProcessedMessageStore
+Kun.EventBus.Idempotency.IProcessedMessageStore.TryMarkProcessedAsync(string! consumerName, System.Guid messageId, System.TimeSpan ttl, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<bool>
+Kun.EventBus.IIntegrationEventPublisher
+Kun.EventBus.IIntegrationEventPublisher.PublishAsync(Kun.EventBus.Outbox.OutboxMessage! message, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
 Kun.EventBus.IIntegrationEventBus
 Kun.EventBus.IIntegrationEventBus.Publish<TEvent>(TEvent! event) -> void
 Kun.EventBus.IIntegrationEventHandler<TEvent>

@@ -1,0 +1,27 @@
+#nullable enable
+Kun.EventBus.RabbitMQ.Options.RabbitMqOptions
+Kun.EventBus.RabbitMQ.Options.RabbitMqOptions.RabbitMqOptions() -> void
+Kun.EventBus.RabbitMQ.Options.RabbitMqOptions.ConnectionString.get -> string!
+Kun.EventBus.RabbitMQ.Options.RabbitMqOptions.ConnectionString.init -> void
+Kun.EventBus.RabbitMQ.Options.RabbitMqOptions.ConsumerName.get -> string!
+Kun.EventBus.RabbitMQ.Options.RabbitMqOptions.ConsumerName.init -> void
+Kun.EventBus.RabbitMQ.Options.RabbitMqOptions.ExchangeName.get -> string!
+Kun.EventBus.RabbitMQ.Options.RabbitMqOptions.ExchangeName.init -> void
+Kun.EventBus.RabbitMQ.Options.RabbitMqOptions.IdempotencyTtl.get -> System.TimeSpan
+Kun.EventBus.RabbitMQ.Options.RabbitMqOptions.IdempotencyTtl.init -> void
+Kun.EventBus.RabbitMQ.Options.RabbitMqOptions.MaxDeliveryAttempts.get -> int
+Kun.EventBus.RabbitMQ.Options.RabbitMqOptions.MaxDeliveryAttempts.init -> void
+Kun.EventBus.RabbitMQ.Options.RabbitMqOptions.PrefetchCount.get -> ushort
+Kun.EventBus.RabbitMQ.Options.RabbitMqOptions.PrefetchCount.init -> void
+Kun.EventBus.RabbitMQ.RabbitMqConnectionProvider
+Kun.EventBus.RabbitMQ.RabbitMqConnectionProvider.RabbitMqConnectionProvider(Microsoft.Extensions.Options.IOptions<Kun.EventBus.RabbitMQ.Options.RabbitMqOptions!>! options, Microsoft.Extensions.Logging.ILogger<Kun.EventBus.RabbitMQ.RabbitMqConnectionProvider!>! logger) -> void
+Kun.EventBus.RabbitMQ.RabbitMqConnectionProvider.GetConnectionAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<RabbitMQ.Client.IConnection!>
+Kun.EventBus.RabbitMQ.RabbitMqConnectionProvider.DisposeAsync() -> System.Threading.Tasks.ValueTask
+Kun.EventBus.RabbitMQ.Publishing.RabbitMqIntegrationEventPublisher
+Kun.EventBus.RabbitMQ.Publishing.RabbitMqIntegrationEventPublisher.RabbitMqIntegrationEventPublisher(Kun.EventBus.RabbitMQ.RabbitMqConnectionProvider! connectionProvider, Microsoft.Extensions.Options.IOptions<Kun.EventBus.RabbitMQ.Options.RabbitMqOptions!>! options, Microsoft.Extensions.Logging.ILogger<Kun.EventBus.RabbitMQ.Publishing.RabbitMqIntegrationEventPublisher!>! logger) -> void
+Kun.EventBus.RabbitMQ.Publishing.RabbitMqIntegrationEventPublisher.PublishAsync(Kun.EventBus.Outbox.OutboxMessage! message, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Kun.EventBus.RabbitMQ.Consuming.RabbitMqIntegrationEventSubscriber
+Kun.EventBus.RabbitMQ.DependencyInjection.KunRabbitMqBuilder
+Kun.EventBus.RabbitMQ.DependencyInjection.KunRabbitMqBuilder.Subscribe<TEvent, THandler>(string! eventTypeId, System.Text.Json.Serialization.Metadata.JsonTypeInfo<TEvent!>! typeInfo) -> Kun.EventBus.RabbitMQ.DependencyInjection.KunRabbitMqBuilder!
+Kun.EventBus.RabbitMQ.DependencyInjection.KunRabbitMqServiceCollectionExtensions
+static Kun.EventBus.RabbitMQ.DependencyInjection.KunRabbitMqServiceCollectionExtensions.AddRabbitMq(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.EventBus.RabbitMQ.Options.RabbitMqOptions!>! configureOptions, System.Action<Kun.EventBus.RabbitMQ.DependencyInjection.KunRabbitMqBuilder!>? configure = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
