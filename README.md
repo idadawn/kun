@@ -79,6 +79,44 @@ Kun Framework 的名字源自《庄子》。"鲲"寓意框架从轻量级单体�
 | `Kun.Grpc` | gRPC 拦截器、Result→RpcException 映射 | ✅ |
 | `Kun.Gateway` | YARP 扩展、S2S 签发、限流 | ✅ |
 
+## Quick start
+
+Start the full sample stack — PostgreSQL, RabbitMQ, Redis, Catalog API, Order API, and Gateway —
+with a single command:
+
+```bash
+git clone https://github.com/idadawn/kun.git
+cd kun
+dotnet workload install aspire   # once per machine
+dotnet restore
+dotnet run --project samples/Kun.Sample.AppHost
+```
+
+The Aspire Dashboard opens at **http://localhost:15888**. All service URLs and ports are visible
+in the Dashboard Resources panel. See [`samples/Kun.Sample.AppHost/README.md`](samples/Kun.Sample.AppHost/README.md)
+for details.
+
+## Docs
+
+- [Getting started](docs/getting-started.md) — 10-minute hands-on tutorial: run the samples, trigger all three saga paths, observe traces
+- [Why CQRS?](docs/architecture/why-cqrs.md) — write/read split, EF Core vs Dapper, pipeline behaviors
+- [Why Outbox?](docs/architecture/why-outbox.md) — dual-write problem, atomic enqueue, background publisher, consumer idempotency
+- [Why Saga Orchestration?](docs/architecture/why-saga.md) — orchestration vs choreography, three recovery paths, idempotency requirements
+- [Architecture whitepaper](docs/whitepaper.md) — full design philosophy, module details, code examples
+- [Module map](docs/architecture/module-map.md) — dependency graph and call paths
+- [Contributing](CONTRIBUTING.md)
+
+## Project status
+
+| Milestone | Version | Status |
+|---|---|---|
+| M1 — Core abstractions, Mediator, Validation | `0.1.0-alpha.1` | Done |
+| M2 — EF Core write side, Dapper read side, Outbox atomicity | `0.2.0-alpha.1` | Done |
+| M3 — RabbitMQ event bus, Outbox publisher, consumer idempotency | `0.3.0-alpha.1` | Done |
+| M4 — Saga orchestrator, step executor, timeout detector | `0.5.0-beta.1` | Done |
+| M5 — ASP.NET Core host, gRPC, Gateway, S2S JWT | `1.0.0-rc.1` | Done |
+| M6 — Sample apps, OpenTelemetry, documentation | `1.0.0` | In progress |
+
 ## 🚀 快速开始
 
 ### 前置要求
@@ -99,17 +137,18 @@ dotnet test
 
 ### 运行示例
 
-示例位于 `samples/Kun.Sample.Catalog`，使用 .NET Aspire 一键启动：
+所有示例通过 .NET Aspire 一键启动：
 
 ```bash
-cd samples/Kun.Sample.Catalog
-dotnet run --project Kun.Sample.Catalog.AppHost
+dotnet run --project samples/Kun.Sample.AppHost
 ```
 
 访问 Aspire Dashboard（默认 `http://localhost:15888`）查看所有服务状态与分布式追踪。
 
 ## 📚 文档
 
+- [Getting started](docs/getting-started.md) — 10 分钟上手教程
+- [Why CQRS?](docs/architecture/why-cqrs.md) · [Why Outbox?](docs/architecture/why-outbox.md) · [Why Saga?](docs/architecture/why-saga.md) — 架构决策说明
 - [📖 架构设计白皮书](docs/whitepaper.md) — 完整设计哲学、模块细节、代码示例
 - [🗺️ 模块地图](docs/architecture/module-map.md) — 依赖关系与调用路径
 - [🤝 贡献指南](CONTRIBUTING.md)
