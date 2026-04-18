@@ -96,16 +96,16 @@
 
 ### 1.3 实现 Kun.Validation（AOT 友好验证器）
 
-- [ ] 新增 `src/Kun.Validation/IValidator.cs`、`ValidationResult.cs`、`ValidationError.cs`
-- [ ] 新增 `src/Kun.Validation/Attributes/` 下的 `[Required]`、`[MaxLength]`、`[Range]`、`[RegexMatch]`、`[GuidNotEmpty]` 等轻量属性
-- [ ] 新增 `src/Kun.Validation.SourceGenerator/` 项目
-- [ ] SourceGenerator：扫描带有 `[Validate]` 标记或实现 `IValidatable` 的类型
-- [ ] SourceGenerator：为每个待验证类型生成 `IValidator<T>` 实现（编译期生成判断代码）
-- [ ] SourceGenerator：生成 `AddKunValidation(this IServiceCollection, Assembly)` 扩展，把所有验证器注册到 DI
-- [ ] 新增 `src/Kun.Validation/Behaviors/ValidationPipelineBehavior.cs`：作为 Mediator Pipeline Behavior，验证失败返回 `Result.Fail(Error.Validation(...))`
-- [ ] 新增 `src/Kun.Validation/DependencyInjection/KunValidationServiceCollectionExtensions.cs`
-- [ ] 编写 `tests/Kun.Validation.Tests/ValidatorTests.cs`（需要先创建该测试项目与 csproj）
-- [ ] 编写 `tests/Kun.Validation.Tests/ValidationPipelineBehaviorTests.cs`：验证与 Mediator 集成后的失败返回
+- [x] 新增 `src/Kun.Validation/IValidator.cs`、`ValidationResult.cs`、`ValidationError.cs`、`ValidationException.cs`
+- [ ] ⚠️ **延后（同 1.2 ralplan fallback）**：`src/Kun.Validation/Attributes/` 属性包 —— 无 SG 时属性无运行时意义，待 SG 回归时一并 ship
+- [ ] ⚠️ 延后：`src/Kun.Validation.SourceGenerator/` 项目
+- [ ] ⚠️ 延后：SG 扫描 `[Validate]` / `IValidatable`
+- [ ] ⚠️ 延后：SG 生成 `IValidator<T>` 实现
+- [ ] ⚠️ 延后：SG 生成 `AddKunValidation` 扩展
+- [x] 新增 `src/Kun.Validation/Behaviors/ValidationPipelineBehavior.cs`：Mediator Pipeline Behavior，抛 `ValidationException` 携带错误列表（上层可转 `Result.Fail(Error.Validation(...))`，该转换 behavior 作为 follow-up）
+- [x] 新增 `src/Kun.Validation/DependencyInjection/KunValidationServiceCollectionExtensions.cs`：`AddValidator<TRequest, TValidator>()` + `AddValidationBehavior<TRequest, TResponse>()`
+- [x] 编写 `tests/Kun.Validation.Tests/ValidatorTests.cs`（测试项目 csproj 已新建 + 注册到 Kun.sln）
+- [x] 编写 `tests/Kun.Validation.Tests/ValidationPipelineBehaviorTests.cs`：Mediator 集成，valid 路由到 handler，invalid 抛 ValidationException
 
 ### 1.4 阶段一验收
 
