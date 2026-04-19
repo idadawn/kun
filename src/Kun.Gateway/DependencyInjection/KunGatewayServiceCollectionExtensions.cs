@@ -21,10 +21,16 @@ public static class KunGatewayServiceCollectionExtensions
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="configure">Delegate to configure <see cref="KunGatewayOptions"/>.</param>
+    /// <param name="reverseProxyConfig">
+    /// Optional YARP configuration section (e.g. <c>Configuration.GetSection("ReverseProxy")</c>)
+    /// to bind Routes/Clusters. When null, callers must register their own
+    /// <see cref="Yarp.ReverseProxy.Configuration.IProxyConfigProvider"/>.
+    /// </param>
     /// <returns>The same <see cref="IServiceCollection"/> for chaining.</returns>
     public static IServiceCollection AddKunGateway(
         this IServiceCollection services,
-        Action<KunGatewayOptions> configure)
+        Action<KunGatewayOptions> configure,
+        Microsoft.Extensions.Configuration.IConfiguration? reverseProxyConfig = null)
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configure);
@@ -37,13 +43,21 @@ public static class KunGatewayServiceCollectionExtensions
         // Default partition resolver — tenant-based; can be overridden before calling AddKunGateway
         services.TryAddSingleton<RateLimiting.IRateLimitPartitionResolver, TenantRateLimitPartitionResolver>();
 
-        services
+        // AddReverseProxy() is NOT idempotent — calling it twice re-registers internal YARP
+        // services (IPassiveHealthCheckPolicy etc.) and MapReverseProxy throws. Do the whole
+        // proxy wiring (transforms + config source) in a single chain.
+        var proxyBuilder = services
             .AddReverseProxy()
             .AddTransforms(ctx =>
             {
                 var issuer = ctx.Services.GetRequiredService<S2sTokenIssuer>();
                 ctx.RequestTransforms.Add(new S2sAuthTransform(issuer));
             });
+
+        if (reverseProxyConfig is not null)
+        {
+            proxyBuilder.LoadFromConfig(reverseProxyConfig);
+        }
 
         return services;
     }

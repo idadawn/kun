@@ -45,6 +45,6 @@ Kun.Gateway.S2sTokenIssuer.IssueFor(System.Security.Claims.ClaimsPrincipal! exte
 Kun.Gateway.S2sTokenIssuer.S2sTokenIssuer(Microsoft.Extensions.Options.IOptions<Kun.Gateway.Configuration.KunGatewayOptions!>! options) -> void
 Program
 Program.Program() -> void
-static Kun.Gateway.DependencyInjection.KunGatewayServiceCollectionExtensions.AddKunGateway(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.Gateway.Configuration.KunGatewayOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Kun.Gateway.DependencyInjection.KunGatewayServiceCollectionExtensions.AddKunGateway(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.Gateway.Configuration.KunGatewayOptions!>! configure, Microsoft.Extensions.Configuration.IConfiguration? reverseProxyConfig = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Kun.Gateway.Endpoints.JwksEndpoint.MapKunJwks(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Builder.IEndpointConventionBuilder!
 static Kun.Gateway.RateLimiting.KunRateLimiterExtensions.AddKunRateLimiter(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Microsoft.AspNetCore.RateLimiting.RateLimiterOptions!>? configure = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
