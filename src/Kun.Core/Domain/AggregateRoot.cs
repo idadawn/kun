@@ -18,15 +18,22 @@ public abstract class AggregateRoot<TKey, TUserKey>
 {
     private readonly List<IDomainEvent> _domainEvents = new();
 
+    /// <summary>UTC timestamp when the aggregate was created.</summary>
     public DateTime CreatedAt { get; protected set; }
+    /// <summary>Identity of the user who created the aggregate.</summary>
     public TUserKey? CreatedBy { get; protected set; }
 
+    /// <summary>UTC timestamp of the last update; <see langword="null"/> if never updated.</summary>
     public DateTime? UpdatedAt { get; protected set; }
+    /// <summary>Identity of the user who last updated the aggregate.</summary>
     public TUserKey? UpdatedBy { get; protected set; }
 
+    /// <summary><see langword="true"/> when the aggregate has been soft-deleted.</summary>
     public bool IsDeleted { get; protected set; }
+    /// <summary>UTC timestamp when the aggregate was soft-deleted; <see langword="null"/> if not deleted.</summary>
     public DateTime? DeletedAt { get; protected set; }
 
+    /// <summary>Domain events raised by this aggregate since the last <see cref="ClearDomainEvents"/> call.</summary>
     public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 
     /// <summary>在聚合根内部产生的业务变更添加一个领域事件。</summary>

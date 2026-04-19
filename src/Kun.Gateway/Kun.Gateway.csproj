@@ -1,15 +1,21 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
+    <OutputType>Exe</OutputType>
     <IsAotCandidate>true</IsAotCandidate>
-    <IsPackable>true</IsPackable>
-    <Description>YARP-based API gateway with S2S JWT issuance, rate limiting, and gRPC-Web support.</Description>
+    <HasPublicApi>true</HasPublicApi>
+    <IsPackable>false</IsPackable>
+    <Description>Kun Framework — smart gateway: external JWT to internal S2S JWT translation, YARP reverse proxy, rate limiting, JWKS endpoint.</Description>
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Kun.Core\Kun.Core.csproj" />
     <ProjectReference Include="..\Kun.Security\Kun.Security.csproj" />
     <PackageReference Include="Yarp.ReverseProxy" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" />
+    <PackageReference Include="Microsoft.IdentityModel.Tokens" />
+    <PackageReference Include="Grpc.AspNetCore.Web" />
   </ItemGroup>
 
 </Project>

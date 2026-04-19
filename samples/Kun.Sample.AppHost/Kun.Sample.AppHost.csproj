@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Sdk Name="Aspire.AppHost.Sdk" Version="9.0.0" />
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsAspireHost>true</IsAspireHost>
+    <IsAotCandidate>false</IsAotCandidate>
+    <IsPackable>false</IsPackable>
+    <UserSecretsId>kun-sample-apphost</UserSecretsId>
+    <Description>Kun Framework — .NET Aspire AppHost orchestrating Catalog, Order, Gateway with PostgreSQL, RabbitMQ, Redis.</Description>
+    <!-- NU1902: transitive KubernetesClient vulnerability via Aspire.Hosting.AppHost — suppressed for dev-only host -->
+    <NoWarn>$(NoWarn);NU1902</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.AppHost" />
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" />
+    <PackageReference Include="Aspire.Hosting.RabbitMQ" />
+    <PackageReference Include="Aspire.Hosting.Redis" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Kun.Sample.Catalog\Kun.Sample.Catalog.csproj" IsAspireProjectResource="true" />
+    <ProjectReference Include="..\Kun.Sample.Order\Kun.Sample.Order.csproj" IsAspireProjectResource="true" />
+    <ProjectReference Include="..\..\src\Kun.Gateway\Kun.Gateway.csproj" IsAspireProjectResource="true" />
+  </ItemGroup>
+</Project>

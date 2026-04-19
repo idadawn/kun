@@ -5,8 +5,11 @@ namespace Kun.Core.Results;
 /// </summary>
 public readonly record struct Result
 {
+    /// <summary><see langword="true"/> when the operation succeeded.</summary>
     public bool IsSuccess { get; }
+    /// <summary><see langword="true"/> when the operation failed.</summary>
     public bool IsFailure => !IsSuccess;
+    /// <summary>The error carried by a failure result; <see cref="Error.None"/> on success.</summary>
     public Error Error { get; }
 
     private Result(bool success, Error error)
@@ -20,9 +23,12 @@ public readonly record struct Result
         Error = error;
     }
 
+    /// <summary>Creates a successful result.</summary>
     public static Result Ok() => new(true, Error.None);
+    /// <summary>Creates a failure result carrying <paramref name="error"/>.</summary>
     public static Result Fail(Error error) => new(false, error);
 
+    /// <summary>Implicit conversion from <see cref="Error"/> to a failure result.</summary>
     public static implicit operator Result(Error error) => Fail(error);
 }
 
@@ -33,8 +39,11 @@ public readonly record struct Result<T>
 {
     private readonly T? _value;
 
+    /// <summary><see langword="true"/> when the operation succeeded.</summary>
     public bool IsSuccess { get; }
+    /// <summary><see langword="true"/> when the operation failed.</summary>
     public bool IsFailure => !IsSuccess;
+    /// <summary>The error carried by a failure result; <see cref="Error.None"/> on success.</summary>
     public Error Error { get; }
 
     /// <summary>
@@ -52,10 +61,14 @@ public readonly record struct Result<T>
         Error = error;
     }
 
+    /// <summary>Creates a successful result carrying <paramref name="value"/>.</summary>
     public static Result<T> Ok(T value) => new(true, value, Error.None);
+    /// <summary>Creates a failure result carrying <paramref name="error"/>.</summary>
     public static Result<T> Fail(Error error) => new(false, default, error);
 
+    /// <summary>Implicit conversion from <typeparamref name="T"/> to a success result.</summary>
     public static implicit operator Result<T>(T value) => Ok(value);
+    /// <summary>Implicit conversion from <see cref="Error"/> to a failure result.</summary>
     public static implicit operator Result<T>(Error error) => Fail(error);
 
     /// <summary>
@@ -69,8 +82,10 @@ public readonly record struct Result<T>
 /// <summary>由 gRPC 拦截器识别并翻译为 <c>RpcException</c>。</summary>
 public sealed class ResultFailureException : Exception
 {
+    /// <summary>The error that caused the failure.</summary>
     public Error Error { get; }
 
+    /// <summary>Initializes a new instance from <paramref name="error"/>.</summary>
     public ResultFailureException(Error error) : base(error.Message)
     {
         Error = error;

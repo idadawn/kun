@@ -1,0 +1,29 @@
+name: Release Drafter
+
+# Runs only on push to main. The release-drafter action requires its config
+# (.github/release-drafter.yml) to live on the repo's default branch; until
+# develop is merged to main and the config lands there, any pull_request-
+# triggered run against main fails with "Invalid config file". Keeping this
+# to push-on-main means the workflow activates itself once the merge lands.
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  update-draft:
+    name: Update Release Draft
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: release-drafter/release-drafter@v6
+        with:
+          config-name: release-drafter.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

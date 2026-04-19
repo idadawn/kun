@@ -3,11 +3,16 @@
   <PropertyGroup>
     <IsAotCandidate>true</IsAotCandidate>
     <IsPackable>true</IsPackable>
-    <Description>RabbitMQ transport for Kun.EventBus with W3C Trace Context propagation and idempotency decorator.</Description>
+    <HasPublicApi>true</HasPublicApi>
+    <Description>RabbitMQ broker adapter for Kun Framework event bus.</Description>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Kun.EventBus\Kun.EventBus.csproj" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
     <PackageReference Include="RabbitMQ.Client" />
   </ItemGroup>
 

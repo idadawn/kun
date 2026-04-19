@@ -1,0 +1,122 @@
+#nullable enable
+Kun.Saga.Abstractions.ISaga<TContext>
+Kun.Saga.Abstractions.ISaga<TContext>.DefaultStepTimeout.get -> System.TimeSpan
+Kun.Saga.Abstractions.ISaga<TContext>.Name.get -> string!
+Kun.Saga.Abstractions.ISaga<TContext>.Steps.get -> System.Collections.Generic.IReadOnlyList<Kun.Saga.Abstractions.ISagaStep<TContext>!>!
+Kun.Saga.Abstractions.ISagaContext
+Kun.Saga.Abstractions.ISagaContext.SagaId.get -> System.Guid
+Kun.Saga.Abstractions.ISagaContext.TenantId.get -> string?
+Kun.Saga.Abstractions.ISagaOrchestrator
+Kun.Saga.Abstractions.ISagaOrchestrator.StartAsync<TSaga, TContext>(TContext context, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Guid>!
+Kun.Saga.Abstractions.ISagaStep<TContext>
+Kun.Saga.Abstractions.ISagaStep<TContext>.CompensateAsync(TContext context, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask
+Kun.Saga.Abstractions.ISagaStep<TContext>.ExecuteAsync(TContext context, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask
+Kun.Saga.Abstractions.ISagaStep<TContext>.Name.get -> string!
+Kun.Saga.Abstractions.ISagaStep<TContext>.Timeout.get -> System.TimeSpan?
+Kun.Saga.DependencyInjection.KunSagaBuilder
+Kun.Saga.DependencyInjection.KunSagaBuilder.AddSaga<TSaga, TContext>(System.Text.Json.Serialization.Metadata.JsonTypeInfo<TContext>! typeInfo) -> Kun.Saga.DependencyInjection.KunSagaBuilder!
+Kun.Saga.DependencyInjection.KunSagaServiceCollectionExtensions
+static Kun.Saga.DependencyInjection.KunSagaServiceCollectionExtensions.AddKunSaga(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.Saga.DependencyInjection.KunSagaBuilder!>! configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Kun.Saga.Exceptions.SagaNotFoundException
+Kun.Saga.Exceptions.SagaNotFoundException.SagaId.get -> System.Guid
+Kun.Saga.Exceptions.SagaNotFoundException.SagaNotFoundException(System.Guid sagaId) -> void
+Kun.Saga.Exceptions.SagaStepFailedException
+Kun.Saga.Exceptions.SagaStepFailedException.SagaStepFailedException(string! stepName, System.Exception! innerException) -> void
+Kun.Saga.Exceptions.SagaStepFailedException.StepName.get -> string!
+Kun.Saga.Orchestration.SagaOrchestrator
+Kun.Saga.Orchestration.SagaOrchestrator.SagaOrchestrator(Kun.Saga.Persistence.ISagaInstanceStore! store, Kun.Saga.SagaRegistry! registry, Kun.Core.Time.ISystemClock! clock, System.IServiceProvider! serviceProvider) -> void
+Kun.Saga.Orchestration.SagaOrchestrator.StartAsync<TSaga, TContext>(TContext context, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Guid>!
+Kun.Saga.Orchestration.SagaStepExecutor
+Kun.Saga.Orchestration.SagaStepExecutor.SagaStepExecutor(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory! scopeFactory, Microsoft.Extensions.Logging.ILogger<Kun.Saga.Orchestration.SagaStepExecutor!>! logger, Kun.Saga.Orchestration.SagaStepExecutorOptions! options) -> void
+Kun.Saga.Orchestration.SagaStepExecutorOptions
+Kun.Saga.Orchestration.SagaStepExecutorOptions.BatchSize.get -> int
+Kun.Saga.Orchestration.SagaStepExecutorOptions.BatchSize.set -> void
+Kun.Saga.Orchestration.SagaStepExecutorOptions.ErrorRetryDelay.get -> System.TimeSpan
+Kun.Saga.Orchestration.SagaStepExecutorOptions.ErrorRetryDelay.set -> void
+Kun.Saga.Orchestration.SagaStepExecutorOptions.PollInterval.get -> System.TimeSpan
+Kun.Saga.Orchestration.SagaStepExecutorOptions.PollInterval.set -> void
+Kun.Saga.Orchestration.SagaStepExecutorOptions.SagaStepExecutorOptions() -> void
+Kun.Saga.Orchestration.SagaTimeoutDetector
+Kun.Saga.Orchestration.SagaTimeoutDetector.SagaTimeoutDetector(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory! scopeFactory, Microsoft.Extensions.Logging.ILogger<Kun.Saga.Orchestration.SagaTimeoutDetector!>! logger, Kun.Saga.Orchestration.SagaTimeoutDetectorOptions! options) -> void
+Kun.Saga.Orchestration.SagaTimeoutDetectorOptions
+Kun.Saga.Orchestration.SagaTimeoutDetectorOptions.BatchSize.get -> int
+Kun.Saga.Orchestration.SagaTimeoutDetectorOptions.BatchSize.set -> void
+Kun.Saga.Orchestration.SagaTimeoutDetectorOptions.SagaTimeoutDetectorOptions() -> void
+Kun.Saga.Orchestration.SagaTimeoutDetectorOptions.ScanInterval.get -> System.TimeSpan
+Kun.Saga.Orchestration.SagaTimeoutDetectorOptions.ScanInterval.set -> void
+Kun.Saga.Persistence.Ef.EfSagaInstanceStore
+Kun.Saga.Persistence.Ef.EfSagaInstanceStore.AddAsync(Kun.Saga.Persistence.SagaInstance! instance, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Saga.Persistence.Ef.EfSagaInstanceStore.EfSagaInstanceStore(Kun.EntityFrameworkCore.KunDbContext! dbContext) -> void
+Kun.Saga.Persistence.Ef.EfSagaInstanceStore.EnqueueStepAsync(Kun.Saga.Persistence.SagaStepQueueEntry! entry, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Saga.Persistence.Ef.EfSagaInstanceStore.FetchPendingStepsAsync(int batchSize, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Kun.Saga.Persistence.SagaStepQueueEntry!>!>!
+Kun.Saga.Persistence.Ef.EfSagaInstanceStore.FindAsync(System.Guid sagaId, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Saga.Persistence.SagaInstance?>!
+Kun.Saga.Persistence.Ef.EfSagaInstanceStore.FindTimedOutAsync(System.DateTimeOffset now, int batchSize, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Kun.Saga.Persistence.SagaInstance!>!>!
+Kun.Saga.Persistence.Ef.EfSagaInstanceStore.UpdateAsync(Kun.Saga.Persistence.SagaInstance! instance, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Saga.Persistence.Ef.EfSagaInstanceStore.UpdateStepAsync(Kun.Saga.Persistence.SagaStepQueueEntry! entry, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Saga.Persistence.Ef.KunSagaDbContextExtensions
+static Kun.Saga.Persistence.Ef.KunSagaDbContextExtensions.ApplyKunSagaConfiguration(this Microsoft.EntityFrameworkCore.ModelBuilder! modelBuilder) -> Microsoft.EntityFrameworkCore.ModelBuilder!
+Kun.Saga.Persistence.Ef.SagaInstanceConfiguration
+Kun.Saga.Persistence.Ef.SagaInstanceConfiguration.Configure(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Kun.Saga.Persistence.SagaInstance!>! builder) -> void
+Kun.Saga.Persistence.Ef.SagaInstanceConfiguration.SagaInstanceConfiguration() -> void
+Kun.Saga.Persistence.Ef.SagaStepQueueEntryConfiguration
+Kun.Saga.Persistence.Ef.SagaStepQueueEntryConfiguration.Configure(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Kun.Saga.Persistence.SagaStepQueueEntry!>! builder) -> void
+Kun.Saga.Persistence.Ef.SagaStepQueueEntryConfiguration.SagaStepQueueEntryConfiguration() -> void
+Kun.Saga.Persistence.ISagaInstanceStore
+Kun.Saga.Persistence.ISagaInstanceStore.AddAsync(Kun.Saga.Persistence.SagaInstance! instance, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Saga.Persistence.ISagaInstanceStore.EnqueueStepAsync(Kun.Saga.Persistence.SagaStepQueueEntry! entry, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Saga.Persistence.ISagaInstanceStore.FetchPendingStepsAsync(int batchSize, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Kun.Saga.Persistence.SagaStepQueueEntry!>!>!
+Kun.Saga.Persistence.ISagaInstanceStore.FindAsync(System.Guid sagaId, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Saga.Persistence.SagaInstance?>!
+Kun.Saga.Persistence.ISagaInstanceStore.FindTimedOutAsync(System.DateTimeOffset now, int batchSize, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Kun.Saga.Persistence.SagaInstance!>!>!
+Kun.Saga.Persistence.ISagaInstanceStore.UpdateAsync(Kun.Saga.Persistence.SagaInstance! instance, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Saga.Persistence.ISagaInstanceStore.UpdateStepAsync(Kun.Saga.Persistence.SagaStepQueueEntry! entry, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Saga.Persistence.SagaInstance
+Kun.Saga.Persistence.SagaInstance.CompletedAt.get -> System.DateTimeOffset?
+Kun.Saga.Persistence.SagaInstance.ContextPayload.get -> string!
+Kun.Saga.Persistence.SagaInstance.CurrentStepIndex.get -> int
+Kun.Saga.Persistence.SagaInstance.Fail(string! reason, System.DateTimeOffset updatedAt) -> void
+Kun.Saga.Persistence.SagaInstance.FailureReason.get -> string?
+Kun.Saga.Persistence.SagaInstance.Id.get -> System.Guid
+Kun.Saga.Persistence.SagaInstance.MarkCompensated(System.DateTimeOffset compensatedAt) -> void
+Kun.Saga.Persistence.SagaInstance.MarkCompleted(System.DateTimeOffset completedAt) -> void
+Kun.Saga.Persistence.SagaInstance.MoveCompensationToStep(int nextCompensationIndex, System.DateTimeOffset updatedAt) -> void
+Kun.Saga.Persistence.SagaInstance.MoveToStep(int stepIndex, System.DateTimeOffset updatedAt, System.DateTimeOffset? newTimeoutAt, string! contextPayload) -> void
+Kun.Saga.Persistence.SagaInstance.SagaInstance(System.Guid id, string! sagaName, string? tenantId, string! contextPayload, System.DateTimeOffset startedAt, System.DateTimeOffset? timeoutAt, string? traceId) -> void
+Kun.Saga.Persistence.SagaInstance.SagaName.get -> string!
+Kun.Saga.Persistence.SagaInstance.StartCompensating(int failedStepIndex, string! failureReason, System.DateTimeOffset updatedAt) -> void
+Kun.Saga.Persistence.SagaInstance.StartedAt.get -> System.DateTimeOffset
+Kun.Saga.Persistence.SagaInstance.State.get -> Kun.Saga.Persistence.SagaState
+Kun.Saga.Persistence.SagaInstance.TenantId.get -> string?
+Kun.Saga.Persistence.SagaInstance.TimeoutAt.get -> System.DateTimeOffset?
+Kun.Saga.Persistence.SagaInstance.TraceId.get -> string?
+Kun.Saga.Persistence.SagaInstance.UpdatedAt.get -> System.DateTimeOffset
+Kun.Saga.Persistence.SagaState
+Kun.Saga.Persistence.SagaState.Compensated = 3 -> Kun.Saga.Persistence.SagaState
+Kun.Saga.Persistence.SagaState.Compensating = 1 -> Kun.Saga.Persistence.SagaState
+Kun.Saga.Persistence.SagaState.Completed = 2 -> Kun.Saga.Persistence.SagaState
+Kun.Saga.Persistence.SagaState.Failed = 4 -> Kun.Saga.Persistence.SagaState
+Kun.Saga.Persistence.SagaState.Running = 0 -> Kun.Saga.Persistence.SagaState
+Kun.Saga.Persistence.SagaStepQueueEntry
+Kun.Saga.Persistence.SagaStepQueueEntry.AttemptCount.get -> int
+Kun.Saga.Persistence.SagaStepQueueEntry.Direction.get -> Kun.Saga.Persistence.StepDirection
+Kun.Saga.Persistence.SagaStepQueueEntry.EnqueuedAt.get -> System.DateTimeOffset
+Kun.Saga.Persistence.SagaStepQueueEntry.Id.get -> System.Guid
+Kun.Saga.Persistence.SagaStepQueueEntry.IncrementAttempt() -> void
+Kun.Saga.Persistence.SagaStepQueueEntry.MarkProcessed(System.DateTimeOffset processedAt) -> void
+Kun.Saga.Persistence.SagaStepQueueEntry.ProcessedAt.get -> System.DateTimeOffset?
+Kun.Saga.Persistence.SagaStepQueueEntry.SagaId.get -> System.Guid
+Kun.Saga.Persistence.SagaStepQueueEntry.SagaStepQueueEntry(System.Guid id, System.Guid sagaId, int stepIndex, Kun.Saga.Persistence.StepDirection direction, System.DateTimeOffset enqueuedAt) -> void
+Kun.Saga.Persistence.SagaStepQueueEntry.StepIndex.get -> int
+Kun.Saga.Persistence.StepDirection
+Kun.Saga.Persistence.StepDirection.Compensate = 1 -> Kun.Saga.Persistence.StepDirection
+Kun.Saga.Persistence.StepDirection.Execute = 0 -> Kun.Saga.Persistence.StepDirection
+Kun.Saga.SagaRegistration
+Kun.Saga.SagaRegistration.ExecuteStepAsync.get -> System.Func<int, Kun.Saga.Persistence.StepDirection, string!, System.IServiceProvider!, System.Threading.CancellationToken, System.Threading.Tasks.Task!>!
+Kun.Saga.SagaRegistration.SagaName.get -> string!
+Kun.Saga.SagaRegistration.GetStepTimeout.get -> System.Func<int, System.IServiceProvider!, System.TimeSpan?>!
+Kun.Saga.SagaRegistration.SagaRegistration(string! sagaName, System.Func<object!, Kun.Saga.Persistence.ISagaInstanceStore!, Kun.Core.Time.ISystemClock!, System.IServiceProvider!, System.Threading.CancellationToken, System.Threading.Tasks.Task<System.Guid>!>! startAsync, System.Func<int, Kun.Saga.Persistence.StepDirection, string!, System.IServiceProvider!, System.Threading.CancellationToken, System.Threading.Tasks.Task!>! executeStepAsync, System.Func<int, System.IServiceProvider!, System.TimeSpan?>? getStepTimeout = null, int stepCount = 0) -> void
+Kun.Saga.SagaRegistration.StartAsync.get -> System.Func<object!, Kun.Saga.Persistence.ISagaInstanceStore!, Kun.Core.Time.ISystemClock!, System.IServiceProvider!, System.Threading.CancellationToken, System.Threading.Tasks.Task<System.Guid>!>!
+Kun.Saga.SagaRegistration.StepCount.get -> int
+Kun.Saga.SagaRegistry
+Kun.Saga.SagaRegistry.Find(string! sagaName) -> Kun.Saga.SagaRegistration?
+Kun.Saga.SagaRegistry.RegisteredNames.get -> System.Collections.Generic.IEnumerable<string!>!
+Kun.Saga.SagaRegistry.SagaRegistry(System.Collections.Generic.IEnumerable<Kun.Saga.SagaRegistration!>! registrations) -> void

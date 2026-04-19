@@ -1,0 +1,14 @@
+<Project>
+
+  <Import Project="$(MSBuildThisFileDirectory)..\Directory.Build.props" />
+
+  <PropertyGroup Label="Test Project Overrides">
+    <!-- Test methods do not need XML docs; suppress CS1591 under tests/.
+         Keep GenerateDocumentationFile=true (inherited) so IDE0005 still works. -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <!-- Tests are never packaged or published. -->
+    <IsPackable>false</IsPackable>
+    <IsPublishable>false</IsPublishable>
+  </PropertyGroup>
+
+</Project>

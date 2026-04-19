@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+option csharp_namespace = "Kun.Sample.Catalog.Grpc";
+
+package catalog;
+
+service CatalogService {
+  rpc GetProduct (GetProductRequest) returns (GetProductReply);
+  rpc ReserveStock (ReserveStockRequest) returns (ReserveStockReply);
+}
+
+message GetProductRequest {
+  string product_id = 1;
+}
+
+message GetProductReply {
+  string product_id = 1;
+  string name = 2;
+  double price = 3;
+  int32 stock = 4;
+}
+
+message ReserveStockRequest {
+  string product_id = 1;
+  int32 quantity = 2;
+}
+
+message ReserveStockReply {
+  bool success = 1;
+  string failure_reason = 2;
+}

@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <!--
+      Both sample services expose a top-level Program class (global namespace).
+      We alias each assembly so that test files can use:
+        extern alias CatalogApp;
+        extern alias OrderApp;
+      to unambiguously reference each Program type with WebApplicationFactory<T>.
+    -->
+    <ProjectReference Include="..\Kun.Sample.Catalog\Kun.Sample.Catalog.csproj" Aliases="CatalogApp" />
+    <ProjectReference Include="..\Kun.Sample.Order\Kun.Sample.Order.csproj" Aliases="OrderApp" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+  </ItemGroup>
+</Project>

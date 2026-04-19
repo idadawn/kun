@@ -6,8 +6,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Kun.EntityFrameworkCore\Kun.EntityFrameworkCore.csproj" />
+    <ProjectReference Include="..\..\src\Kun.Dapper\Kun.Dapper.csproj" />
     <ProjectReference Include="..\..\src\Kun.EventBus.RabbitMQ\Kun.EventBus.RabbitMQ.csproj" />
     <ProjectReference Include="..\..\src\Kun.Saga\Kun.Saga.csproj" />
+    <ProjectReference Include="..\..\src\Kun.Security\Kun.Security.csproj" />
+    <ProjectReference Include="..\..\src\Kun.Gateway\Kun.Gateway.csproj" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="xunit.runner.visualstudio" />

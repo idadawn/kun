@@ -10,13 +10,20 @@ public abstract class Specification<T> : ISpecification<T>
 {
     private readonly List<string> _includeStrings = new();
 
+    /// <inheritdoc/>
     public Expression<Func<T, bool>>? Criteria { get; private set; }
+    /// <inheritdoc/>
     public Expression<Func<T, object>>? OrderBy { get; private set; }
+    /// <inheritdoc/>
     public Expression<Func<T, object>>? OrderByDescending { get; private set; }
+    /// <inheritdoc/>
     public int Skip { get; private set; }
+    /// <inheritdoc/>
     public int Take { get; private set; }
+    /// <inheritdoc/>
     public IReadOnlyList<string> IncludeStrings => _includeStrings;
 
+    /// <inheritdoc/>
     protected void AddCriteria(Expression<Func<T, bool>> criteria)
     {
         // 多次调用时以 AndAlso 合并
@@ -32,14 +39,18 @@ public abstract class Specification<T> : ISpecification<T>
         Criteria = Expression.Lambda<Func<T, bool>>(body, param);
     }
 
-    protected void ApplyOrderBy(Expression<Func<T, object>> orderBy)        => OrderBy = orderBy;
+    /// <inheritdoc/>
+    protected void ApplyOrderBy(Expression<Func<T, object>> orderBy) => OrderBy = orderBy;
+    /// <inheritdoc/>
     protected void ApplyOrderByDescending(Expression<Func<T, object>> orderByDesc) => OrderByDescending = orderByDesc;
 
+    /// <inheritdoc/>
     protected void ApplyPaging(int skip, int take)
     {
         Skip = skip;
         Take = take;
     }
 
+    /// <inheritdoc/>
     protected void AddInclude(string includeString) => _includeStrings.Add(includeString);
 }

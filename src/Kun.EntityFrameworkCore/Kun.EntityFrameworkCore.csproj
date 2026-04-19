@@ -1,16 +1,21 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <IsAotCandidate>false</IsAotCandidate>
     <IsPackable>true</IsPackable>
-    <Description>EF Core 10 write-side persistence for Kun Framework: KunDbContext, Outbox integration, tenant filters.</Description>
+    <HasPublicApi>true</HasPublicApi>
+    <Description>EF Core 10 write-side persistence for Kun Framework: KunDbContext, atomic Outbox integration, tenant filters.</Description>
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Kun.Core\Kun.Core.csproj" />
     <ProjectReference Include="..\Kun.Infrastructure\Kun.Infrastructure.csproj" />
     <ProjectReference Include="..\Kun.EventBus\Kun.EventBus.csproj" />
+    <ProjectReference Include="..\Kun.Mediator\Kun.Mediator.csproj" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
   </ItemGroup>
 
 </Project>

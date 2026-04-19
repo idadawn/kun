@@ -1,0 +1,3 @@
+#nullable enable
+Kun.Grpc.DependencyInjection.KunGrpcServiceCollectionExtensions
+static Kun.Grpc.DependencyInjection.KunGrpcServiceCollectionExtensions.AddKunGrpc(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Grpc.AspNetCore.Server.GrpcServiceOptions!>? configure = null) -> Grpc.AspNetCore.Server.IGrpcServerBuilder!

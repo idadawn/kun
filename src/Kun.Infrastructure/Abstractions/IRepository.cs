@@ -7,16 +7,22 @@ namespace Kun.Infrastructure.Abstractions;
 /// </summary>
 public interface IRepository<T> where T : class, IAggregateRoot
 {
+    /// <inheritdoc/>
     Task<T?> GetByIdAsync(object id, CancellationToken cancellationToken = default);
 
+    /// <inheritdoc/>
     Task<IReadOnlyList<T>> ListAsync(ISpecification<T> specification, CancellationToken cancellationToken = default);
 
+    /// <inheritdoc/>
     Task<int> CountAsync(ISpecification<T> specification, CancellationToken cancellationToken = default);
 
+    /// <inheritdoc/>
     Task AddAsync(T entity, CancellationToken cancellationToken = default);
 
+    /// <inheritdoc/>
     void Update(T entity);
 
+    /// <inheritdoc/>
     void Remove(T entity);
 }
 

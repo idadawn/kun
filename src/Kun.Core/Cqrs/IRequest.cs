@@ -18,5 +18,6 @@ public interface IQuery<TResponse> : IRequest<TResponse> { }
 public interface IRequestHandler<in TRequest, TResponse>
     where TRequest : IRequest<TResponse>
 {
+    /// <summary>Handle the request and return the response.</summary>
     ValueTask<TResponse> Handle(TRequest request, CancellationToken cancellationToken);
 }

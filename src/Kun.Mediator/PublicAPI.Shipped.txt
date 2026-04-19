@@ -1,1 +1,33 @@
 #nullable enable
+Kun.Mediator.Behaviors.LoggingBehavior<TRequest, TResponse>
+Kun.Mediator.Behaviors.LoggingBehavior<TRequest, TResponse>.Handle(TRequest request, Kun.Mediator.RequestHandlerDelegate<TResponse>! next, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<TResponse>
+Kun.Mediator.Behaviors.LoggingBehavior<TRequest, TResponse>.LoggingBehavior(Microsoft.Extensions.Logging.ILogger<Kun.Mediator.Behaviors.LoggingBehavior<TRequest, TResponse>!>! logger) -> void
+Kun.Mediator.Behaviors.PerformanceBehavior<TRequest, TResponse>
+Kun.Mediator.Behaviors.PerformanceBehavior<TRequest, TResponse>.Handle(TRequest request, Kun.Mediator.RequestHandlerDelegate<TResponse>! next, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<TResponse>
+Kun.Mediator.Behaviors.PerformanceBehavior<TRequest, TResponse>.PerformanceBehavior(Microsoft.Extensions.Logging.ILogger<Kun.Mediator.Behaviors.PerformanceBehavior<TRequest, TResponse>!>! logger) -> void
+Kun.Mediator.Behaviors.TracingBehavior<TRequest, TResponse>
+Kun.Mediator.Behaviors.TracingBehavior<TRequest, TResponse>.Handle(TRequest request, Kun.Mediator.RequestHandlerDelegate<TResponse>! next, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<TResponse>
+Kun.Mediator.Behaviors.TracingBehavior<TRequest, TResponse>.TracingBehavior() -> void
+Kun.Mediator.DependencyInjection.KunMediatorServiceCollectionExtensions
+Kun.Mediator.INotification
+Kun.Mediator.INotificationHandler<TNotification>
+Kun.Mediator.INotificationHandler<TNotification>.Handle(TNotification notification, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask
+Kun.Mediator.IPipelineBehavior<TRequest, TResponse>
+Kun.Mediator.IPipelineBehavior<TRequest, TResponse>.Handle(TRequest request, Kun.Mediator.RequestHandlerDelegate<TResponse>! next, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<TResponse>
+Kun.Mediator.IPublisher
+Kun.Mediator.IPublisher.Publish<TNotification>(TNotification notification, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Kun.Mediator.ISender
+Kun.Mediator.ISender.Send<TResponse>(Kun.Core.Cqrs.IRequest<TResponse>! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<TResponse>
+Kun.Mediator.KunMediator
+Kun.Mediator.KunMediator.Publish<TNotification>(TNotification notification, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Kun.Mediator.KunMediator.Send<TResponse>(Kun.Core.Cqrs.IRequest<TResponse>! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<TResponse>
+Kun.Mediator.KunMediatorBuilder
+Kun.Mediator.KunMediatorBuilder.AddNotificationHandler<TNotification, THandler>() -> Kun.Mediator.KunMediatorBuilder!
+Kun.Mediator.KunMediatorBuilder.AddPipelineBehavior<TRequest, TResponse, TBehavior>() -> Kun.Mediator.KunMediatorBuilder!
+Kun.Mediator.KunMediatorBuilder.AddRequestHandler<TRequest, TResponse, THandler>() -> Kun.Mediator.KunMediatorBuilder!
+Kun.Mediator.KunMediatorBuilder.KunMediatorBuilder(Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> void
+Kun.Mediator.KunMediatorBuilder.Services.get -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Kun.Mediator.RequestHandlerDelegate<TResponse>
+const Kun.Mediator.Behaviors.PerformanceBehavior<TRequest, TResponse>.DefaultThresholdMs = 500 -> long
+const Kun.Mediator.Behaviors.TracingBehavior<TRequest, TResponse>.ActivitySourceName = "Kun.Mediator" -> string!
+static Kun.Mediator.DependencyInjection.KunMediatorServiceCollectionExtensions.AddKunMediator(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.Mediator.KunMediatorBuilder!>! configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!

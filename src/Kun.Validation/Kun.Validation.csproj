@@ -3,11 +3,14 @@
   <PropertyGroup>
     <IsAotCandidate>true</IsAotCandidate>
     <IsPackable>true</IsPackable>
-    <Description>SourceGen-based validators for Kun Framework. Compile-time validation, zero reflection.</Description>
+    <HasPublicApi>true</HasPublicApi>
+    <Description>Kun Framework validation: IValidator&lt;T&gt;, ValidationResult, Mediator pipeline behavior. AOT-safe, source-generator-based validators are a follow-up.</Description>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Kun.Core\Kun.Core.csproj" />
+    <ProjectReference Include="..\Kun.Mediator\Kun.Mediator.csproj" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
   </ItemGroup>
 
 </Project>

@@ -1,14 +1,26 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <IsAotCandidate>true</IsAotCandidate>
+    <!--
+      IsAotCandidate=false: ASP.NET Core minimal API helpers MapCommand<TCommand,TResponse>
+      and MapQuery<TQuery,TResponse> use generic endpoint mapping (RDG011) and
+      Delegate-based MapGet (IL2026/IL3050). HttpResponse.WriteAsJsonAsync<T> in the
+      global exception handler also needs JsonTypeInfo for AOT. Making the public API
+      AOT-safe would require breaking changes (JsonTypeInfo<T> parameters on every
+      helper). Until that work is scheduled, this module is trim-safe only.
+    -->
+    <IsAotCandidate>false</IsAotCandidate>
+    <HasPublicApi>true</HasPublicApi>
     <IsPackable>true</IsPackable>
-    <Description>ASP.NET Core integration: Minimal API extensions, global exception handling, pipeline behaviors.</Description>
+    <Description>Kun Framework — ASP.NET Core integration: Minimal API extensions, ProblemDetails, global exception handler.</Description>
+    <!-- RS0036: ProblemDetails in ASP.NET Core is not nullable-annotated; suppress missing annotation warning -->
+    <NoWarn>$(NoWarn);RS0036</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Kun.Core\Kun.Core.csproj" />
     <ProjectReference Include="..\Kun.Mediator\Kun.Mediator.csproj" />
-    <ProjectReference Include="..\Kun.Security\Kun.Security.csproj" />
+    <ProjectReference Include="..\Kun.Validation\Kun.Validation.csproj" />
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
