@@ -5,6 +5,8 @@ using FluentAssertions;
 using Kun.Gateway;
 using Kun.Gateway.Configuration;
 using Kun.Security.Authentication;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Xunit;
@@ -44,7 +46,8 @@ public sealed class S2sTokenRoundTripTests : IDisposable
             PublicKeyPath = _publicKeyPath,
         });
 
-        _issuer = new S2sTokenIssuer(options);
+        var env = new FakeHostEnvironment { EnvironmentName = Environments.Development };
+        _issuer = new S2sTokenIssuer(options, env);
 
         var rsaValidation = RSA.Create();
         rsaValidation.ImportFromPem(File.ReadAllText(_publicKeyPath));
@@ -143,4 +146,12 @@ public sealed class S2sTokenRoundTripTests : IDisposable
         var act = () => handler.ValidateToken(token, tvp, out _);
         act.Should().Throw<SecurityTokenSignatureKeyNotFoundException>();
     }
+}
+
+internal sealed class FakeHostEnvironment : IHostEnvironment
+{
+    public string EnvironmentName { get; set; } = Environments.Development;
+    public string ApplicationName { get; set; } = "test";
+    public string ContentRootPath { get; set; } = AppContext.BaseDirectory;
+    public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
 }

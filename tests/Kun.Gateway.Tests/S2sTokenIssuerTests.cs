@@ -3,8 +3,10 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using FluentAssertions;
 using Kun.Gateway.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using NSubstitute;
 using Xunit;
 
 namespace Kun.Gateway.Tests;
@@ -44,7 +46,7 @@ public sealed class S2sTokenIssuerTests : IDisposable
             PublicKeyPath = _publicKeyPath,
         });
 
-        _issuer = new S2sTokenIssuer(options);
+        _issuer = new S2sTokenIssuer(options, CreateDevEnv());
 
         // Build validation params using the public key
         var rsaForValidation = RSA.Create();
@@ -179,6 +181,88 @@ public sealed class S2sTokenIssuerTests : IDisposable
         var jwt = handler.ReadJwtToken(token);
         jwt.ValidTo.Should().BeAfter(before.AddSeconds(55));
         jwt.ValidTo.Should().BeBefore(after.AddSeconds(65));
+    }
+
+    // ── Production safety guard tests ─────────────────────────────────────────
+
+    [Fact]
+    public void S2sTokenIssuer_WithMissingPem_InProduction_ThrowsInvalidOperation()
+    {
+        // Arrange
+        var missingPath = Path.Combine(Path.GetTempPath(), $"missing-{Guid.NewGuid()}.pem");
+        var options = Options.Create(new KunGatewayOptions
+        {
+            ExternalIssuer = "https://login.example.com",
+            ExternalAudience = "my-api",
+            ExternalJwksUri = "https://login.example.com/.well-known/openid-configuration",
+            SigningKeyPath = missingPath,
+            PublicKeyPath = missingPath,
+        });
+        var prodEnv = CreateProdEnv();
+
+        // Act
+        var act = () => new S2sTokenIssuer(options, prodEnv);
+
+        // Assert
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*signing key not found*")
+            .WithMessage("*pre-provision*");
+    }
+
+    [Fact]
+    public void S2sTokenIssuer_WithMissingPem_InDevelopment_GeneratesKeyPair()
+    {
+        // Arrange — point to a path that does NOT exist yet
+        var tempDir = Path.Combine(Path.GetTempPath(), $"kun-test-{Guid.NewGuid()}");
+        var privatePath = Path.Combine(tempDir, "gateway-private.pem");
+        var publicPath = Path.Combine(tempDir, "gateway-public.pem");
+        var options = Options.Create(new KunGatewayOptions
+        {
+            ExternalIssuer = "https://login.example.com",
+            ExternalAudience = "my-api",
+            ExternalJwksUri = "https://login.example.com/.well-known/openid-configuration",
+            SigningKeyPath = privatePath,
+            PublicKeyPath = publicPath,
+        });
+
+        try
+        {
+            // Act — should succeed and auto-generate the key pair
+            var issuer = new S2sTokenIssuer(options, CreateDevEnv());
+
+            // Assert — key files created and IssueFor produces a valid JWT
+            File.Exists(privatePath).Should().BeTrue("private key should be generated");
+            File.Exists(publicPath).Should().BeTrue("public key should be generated");
+
+            var principal = BuildPrincipal("user-dev", "tenant-dev");
+            var token = issuer.IssueFor(principal);
+            token.Should().NotBeNullOrEmpty();
+
+            var handler = new JwtSecurityTokenHandler();
+            var jwt = handler.ReadJwtToken(token);
+            jwt.Issuer.Should().Be(InternalIssuer);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+                Directory.Delete(tempDir, recursive: true);
+        }
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private static IHostEnvironment CreateDevEnv()
+    {
+        var env = Substitute.For<IHostEnvironment>();
+        env.EnvironmentName.Returns(Environments.Development);
+        return env;
+    }
+
+    private static IHostEnvironment CreateProdEnv()
+    {
+        var env = Substitute.For<IHostEnvironment>();
+        env.EnvironmentName.Returns(Environments.Production);
+        return env;
     }
 
     private static string ExportPrivatePem(RSA rsa)

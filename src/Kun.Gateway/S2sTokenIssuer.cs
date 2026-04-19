@@ -20,14 +20,17 @@ public sealed class S2sTokenIssuer
 
     /// <summary>
     /// Initializes the issuer by loading the RSA private key from <see cref="KunGatewayOptions.SigningKeyPath"/>.
-    /// If the configured signing-key file does not exist, a dev-mode 2048-bit RSA key pair is
-    /// generated and persisted to both <c>SigningKeyPath</c> and <c>PublicKeyPath</c> so local
-    /// runs work out of the box. Production deployments MUST pre-provision real key files.
+    /// In Development, if the signing-key file does not exist, a 2048-bit RSA key pair is generated
+    /// and persisted to <c>SigningKeyPath</c> and <c>PublicKeyPath</c> so local runs work out of the box.
+    /// In non-Development environments a missing key file throws <see cref="InvalidOperationException"/>
+    /// to prevent silent self-signing with ephemeral keys in production.
     /// </summary>
     /// <param name="options">Gateway configuration options.</param>
-    public S2sTokenIssuer(IOptions<KunGatewayOptions> options)
+    /// <param name="env">Host environment used to differentiate Development from Production.</param>
+    public S2sTokenIssuer(IOptions<KunGatewayOptions> options, IHostEnvironment env)
     {
         ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(env);
         _options = options.Value;
 
         var rsa = RSA.Create();
@@ -35,13 +38,20 @@ public sealed class S2sTokenIssuer
         {
             rsa.ImportFromPem(File.ReadAllText(_options.SigningKeyPath));
         }
-        else
+        else if (env.IsDevelopment())
         {
             rsa.KeySize = 2048;
             EnsureDirectory(_options.SigningKeyPath);
             File.WriteAllText(_options.SigningKeyPath, rsa.ExportRSAPrivateKeyPem());
             EnsureDirectory(_options.PublicKeyPath);
             File.WriteAllText(_options.PublicKeyPath, rsa.ExportRSAPublicKeyPem());
+        }
+        else
+        {
+            throw new InvalidOperationException(
+                $"S2sTokenIssuer: signing key not found at '{_options.SigningKeyPath}'. " +
+                "Production deployments must pre-provision the RSA key pair. " +
+                "For development, set ASPNETCORE_ENVIRONMENT=Development.");
         }
 
         _signingKey = new RsaSecurityKey(rsa);

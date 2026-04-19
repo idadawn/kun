@@ -99,11 +99,11 @@ var app = builder.Build();
 
 app.UseExceptionHandler();
 
-// ── Database initialisation (EnsureCreated — no migrations in this sample) ───
+// ── Database initialisation (apply EF migrations on startup) ─────────────────
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
-    await db.Database.EnsureCreatedAsync();
+    await db.Database.MigrateAsync();
 }
 
 // ── Endpoints ─────────────────────────────────────────────────────────────────

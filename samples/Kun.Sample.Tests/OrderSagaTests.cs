@@ -183,6 +183,82 @@ public sealed class OrderWebFactory : IAsyncLifetime
 }
 
 /// <summary>
+/// Shared fixture: Order WebApplicationFactory wired with a fake Catalog gRPC client
+/// that always returns <c>Success=false</c> so the ReserveInventoryStep fails immediately.
+/// </summary>
+public sealed class OrderWebFactoryWithInventoryFailure : IAsyncLifetime
+{
+    private readonly PostgresFixture _postgres = new();
+    private WebApplicationFactory<OrderApp::Program>? _factory;
+
+    /// <summary>Gets the configured HttpClient for the Order service.</summary>
+    public HttpClient Client { get; private set; } = null!;
+
+    /// <inheritdoc/>
+    public async ValueTask InitializeAsync()
+    {
+        await _postgres.InitializeAsync();
+
+        Environment.SetEnvironmentVariable("ConnectionStrings__OrderDb", _postgres.ConnectionString);
+        Environment.SetEnvironmentVariable("OTEL_SDK_DISABLED", "true");
+        Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", "");
+
+        var cs = _postgres.ConnectionString;
+
+        _factory = new WebApplicationFactory<OrderApp::Program>()
+            .WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureAppConfiguration((_, cfg) =>
+                {
+                    cfg.AddInMemoryCollection(new Dictionary<string, string?>
+                    {
+                        ["ConnectionStrings:OrderDb"] = cs,
+                        ["OTEL_SDK_DISABLED"] = "true",
+                    });
+                });
+                builder.UseSetting("ConnectionStrings:OrderDb", cs);
+
+                builder.ConfigureTestServices(services =>
+                {
+                    var toRemove = services
+                        .Where(d => d.ServiceType == typeof(CatalogService.CatalogServiceClient))
+                        .ToList();
+                    foreach (var d in toRemove)
+                        services.Remove(d);
+
+                    // Return Success=false → ReserveInventoryStep throws SagaStepFailedException.
+                    services.AddSingleton<CatalogService.CatalogServiceClient>(
+                        new FakeCatalogServiceClient(reserveSuccess: false, failureReason: "out of stock"));
+
+                    ReRegisterAsTransient<OrderApp::Kun.Sample.Order.Application.Sagas.OrderCreationSaga>(services);
+                    ReRegisterAsTransient<OrderApp::Kun.Sample.Order.Application.Sagas.Steps.ReserveInventoryStep>(services);
+                    ReRegisterAsTransient<OrderApp::Kun.Sample.Order.Application.Sagas.Steps.ProcessPaymentStep>(services);
+                    ReRegisterAsTransient<OrderApp::Kun.Sample.Order.Application.Sagas.Steps.ShipOrderStep>(services);
+                    ReRegisterAsTransient<OrderApp::Kun.Sample.Order.Application.Sagas.Steps.NotifyCustomerStep>(services);
+
+                    static void ReRegisterAsTransient<T>(IServiceCollection svc) where T : class
+                    {
+                        var existing = svc.Where(d => d.ServiceType == typeof(T)).ToList();
+                        foreach (var d in existing) svc.Remove(d);
+                        svc.AddTransient<T>();
+                    }
+                });
+            });
+
+        Client = _factory.CreateClient();
+    }
+
+    /// <inheritdoc/>
+    public async ValueTask DisposeAsync()
+    {
+        Client.Dispose();
+        if (_factory is not null) await _factory.DisposeAsync();
+        await _postgres.DisposeAsync();
+        Environment.SetEnvironmentVariable("ConnectionStrings__OrderDb", null);
+    }
+}
+
+/// <summary>
 /// End-to-end saga tests for the Order sample service.
 /// Uses a shared WebApplicationFactory with a fake gRPC CatalogServiceClient.
 /// </summary>
@@ -258,7 +334,7 @@ public sealed class OrderSagaTests : IClassFixture<OrderWebFactory>
             because: "ShipOrderStep sleeps past its 10s timeout; SagaTimeoutDetector compensates");
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    // ── Helpers ──────────────────────────────────────────────────────────────
 
     private async Task<string?> PollSagaStateAsync(
         Guid sagaId,
@@ -293,5 +369,65 @@ public sealed class OrderSagaTests : IClassFixture<OrderWebFactory>
         }
 
         return lastState;
+    }
+}
+
+/// <summary>
+/// Tests that exercise the ReserveInventoryStep specifically:
+/// when Catalog gRPC returns Success=false, ExecuteAsync throws SagaStepFailedException
+/// and the saga reaches Compensated state (no subsequent steps ran so nothing to undo
+/// beyond the order status update in CompensateAsync).
+/// </summary>
+public sealed class ReserveInventoryStepFailureTests : IClassFixture<OrderWebFactoryWithInventoryFailure>
+{
+    private readonly HttpClient _client;
+
+    /// <summary>Injects the shared factory fixture.</summary>
+    public ReserveInventoryStepFailureTests(OrderWebFactoryWithInventoryFailure factory)
+    {
+        _client = factory.Client;
+    }
+
+    /// <summary>
+    /// When ReserveStockAsync returns Success=false, ReserveInventoryStep throws
+    /// SagaStepFailedException, the saga orchestrator compensates immediately
+    /// (no subsequent steps have run), and the saga state reaches Compensated.
+    /// </summary>
+    [Fact]
+    public async Task InventoryReservationFailure_SagaCompensates()
+    {
+        var ct = TestContext.Current.CancellationToken;
+
+        // Use the happy-path endpoint — the fake client is wired to return Success=false,
+        // so ReserveInventoryStep will fail regardless of which endpoint is called.
+        var postResponse = await _client.PostAsJsonAsync("/demo/happy-path", new { }, ct);
+        postResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = await postResponse.Content.ReadAsStringAsync(ct);
+        var doc = JsonDocument.Parse(body);
+        var sagaId = doc.RootElement.GetProperty("orderId").GetGuid();
+        sagaId.Should().NotBeEmpty();
+
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(30);
+        string? lastState = null;
+
+        while (DateTimeOffset.UtcNow < deadline && !ct.IsCancellationRequested)
+        {
+            var response = await _client.GetAsync($"/demo/sagas/{sagaId}", ct);
+            if (response.StatusCode == HttpStatusCode.OK)
+            {
+                var json = await response.Content.ReadAsStringAsync(ct);
+                var stateDoc = JsonDocument.Parse(json);
+                lastState = stateDoc.RootElement.GetProperty("state").GetString();
+                if (lastState is "Compensated" or "Failed")
+                    break;
+            }
+
+            await Task.Delay(100, ct);
+        }
+
+        lastState.Should().Be("Compensated",
+            because: "ReserveInventoryStep throws SagaStepFailedException when Catalog returns Success=false, " +
+                     "triggering immediate saga compensation");
     }
 }

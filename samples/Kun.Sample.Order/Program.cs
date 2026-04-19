@@ -97,11 +97,11 @@ builder.Services.AddEndpointsApiExplorer();
 
 var app = builder.Build();
 
-// ── Database bootstrap (EnsureCreated — no migrations for sample) ─────────────
+// ── Database bootstrap (apply EF migrations on startup) ──────────────────────
 await using (var scope = app.Services.CreateAsyncScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<OrderDbContext>();
-    await db.Database.EnsureCreatedAsync();
+    await db.Database.MigrateAsync();
 }
 
 // ── Middleware ────────────────────────────────────────────────────────────────

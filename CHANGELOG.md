@@ -8,6 +8,10 @@
 
 ### Fixed
 
+- **Kun.Gateway**: `S2sTokenIssuer` now injects `IHostEnvironment` and throws `InvalidOperationException` when the signing key file is missing in non-Development environments, preventing silent ephemeral-key self-signing in production.
+- **Kun.Gateway**: `AddKunGateway` without a `reverseProxyConfig` section now registers a startup-time `IHostedService` that fails fast with a user-friendly message if no `IProxyConfigProvider` is registered, instead of deferring the error to the first proxied request.
+- **Kun.Gateway.Tests**: regression tests added for production key-file safety guard, startup config validation, and double-registration behavior.
+
 - **Kun.Saga**: registered `ISystemClock` in `AddKunSaga` (required by
   `SagaOrchestrator`); `SagaStepExecutor` now persists state via
   `DbContext.SaveChangesAsync` after each entry; forward execution advances
