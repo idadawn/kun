@@ -1,7 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <IsAotCandidate>true</IsAotCandidate>
+    <!--
+      IsAotCandidate=false: ASP.NET Core minimal API helpers MapCommand<TCommand,TResponse>
+      and MapQuery<TQuery,TResponse> use generic endpoint mapping (RDG011) and
+      Delegate-based MapGet (IL2026/IL3050). HttpResponse.WriteAsJsonAsync<T> in the
+      global exception handler also needs JsonTypeInfo for AOT. Making the public API
+      AOT-safe would require breaking changes (JsonTypeInfo<T> parameters on every
+      helper). Until that work is scheduled, this module is trim-safe only.
+    -->
+    <IsAotCandidate>false</IsAotCandidate>
     <HasPublicApi>true</HasPublicApi>
     <IsPackable>true</IsPackable>
     <Description>Kun Framework — ASP.NET Core integration: Minimal API extensions, ProblemDetails, global exception handler.</Description>

@@ -78,7 +78,11 @@ jobs:
         run: |
           # AOT candidates: any project with <IsAotCandidate>true</IsAotCandidate>
           # -r linux-x64 is required: native AOT compilation must know the target RID.
-          for proj in src/Kun.Gateway src/Kun.Mediator src/Kun.Core src/Kun.AspNetCore src/Kun.Grpc src/Kun.Validation; do
+          # Kun.AspNetCore intentionally excluded: minimal-API generic helpers
+          # (MapCommand<T,R> / MapQuery<T,R>) and WriteAsJsonAsync<T> in the
+          # global exception handler are not AOT-compatible. Module is
+          # trim-safe only (IsAotCandidate=false).
+          for proj in src/Kun.Gateway src/Kun.Mediator src/Kun.Core src/Kun.Grpc src/Kun.Validation; do
             echo "::group::Publishing AOT: $proj"
             dotnet publish "$proj" -c Release -r linux-x64 -p:PublishAot=true -p:TreatWarningsAsErrors=true
             echo "::endgroup::"
