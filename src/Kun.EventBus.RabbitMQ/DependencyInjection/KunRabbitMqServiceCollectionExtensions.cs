@@ -1,10 +1,10 @@
+using Kun.EventBus.RabbitMQ.Consuming;
+using Kun.EventBus.RabbitMQ.Options;
+using Kun.EventBus.RabbitMQ.Publishing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-using Kun.EventBus.RabbitMQ.Consuming;
-using Kun.EventBus.RabbitMQ.Options;
-using Kun.EventBus.RabbitMQ.Publishing;
 
 namespace Kun.EventBus.RabbitMQ.DependencyInjection;
 

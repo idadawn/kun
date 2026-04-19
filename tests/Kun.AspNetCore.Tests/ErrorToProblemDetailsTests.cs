@@ -12,13 +12,13 @@ namespace Kun.AspNetCore.Tests;
 public sealed class ErrorToProblemDetailsTests
 {
     [Theory]
-    [InlineData(ErrorType.Validation,   400)]
-    [InlineData(ErrorType.NotFound,     404)]
-    [InlineData(ErrorType.Conflict,     409)]
+    [InlineData(ErrorType.Validation, 400)]
+    [InlineData(ErrorType.NotFound, 404)]
+    [InlineData(ErrorType.Conflict, 409)]
     [InlineData(ErrorType.Unauthorized, 401)]
-    [InlineData(ErrorType.Forbidden,    403)]
-    [InlineData(ErrorType.Unavailable,  503)]
-    [InlineData(ErrorType.Failure,      500)]
+    [InlineData(ErrorType.Forbidden, 403)]
+    [InlineData(ErrorType.Unavailable, 503)]
+    [InlineData(ErrorType.Failure, 500)]
     public void ToProblemDetails_MapsErrorTypeToCorrectStatus(ErrorType type, int expectedStatus)
     {
         // Arrange

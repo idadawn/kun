@@ -75,7 +75,8 @@ public sealed class KunMediatorBuilder
             return new RequestHandlerWrapper<TRequest, TResponse>(
                 sp => sp.GetRequiredService<THandler>(),
                 typedFactories);
-        }));
+        }
+        ));
 
         return this;
     }

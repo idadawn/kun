@@ -1,10 +1,10 @@
+using System.Text.Json.Serialization.Metadata;
 using Kun.Core.Cqrs;
 using Kun.Mediator;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
-using System.Text.Json.Serialization.Metadata;
 
 namespace Kun.AspNetCore.Endpoints;
 

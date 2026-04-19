@@ -14,13 +14,13 @@ namespace Kun.Grpc.Tests;
 public sealed class ResultMappingTests
 {
     [Theory]
-    [InlineData(ErrorType.Validation,   StatusCode.InvalidArgument)]
-    [InlineData(ErrorType.NotFound,     StatusCode.NotFound)]
-    [InlineData(ErrorType.Conflict,     StatusCode.FailedPrecondition)]
+    [InlineData(ErrorType.Validation, StatusCode.InvalidArgument)]
+    [InlineData(ErrorType.NotFound, StatusCode.NotFound)]
+    [InlineData(ErrorType.Conflict, StatusCode.FailedPrecondition)]
     [InlineData(ErrorType.Unauthorized, StatusCode.Unauthenticated)]
-    [InlineData(ErrorType.Forbidden,    StatusCode.PermissionDenied)]
-    [InlineData(ErrorType.Unavailable,  StatusCode.Unavailable)]
-    [InlineData(ErrorType.Failure,      StatusCode.Internal)]
+    [InlineData(ErrorType.Forbidden, StatusCode.PermissionDenied)]
+    [InlineData(ErrorType.Unavailable, StatusCode.Unavailable)]
+    [InlineData(ErrorType.Failure, StatusCode.Internal)]
     public void MapErrorType_MapsErrorTypeToCorrectStatusCode(ErrorType errorType, StatusCode expectedCode)
     {
         // Act

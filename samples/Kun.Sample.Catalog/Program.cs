@@ -1,7 +1,5 @@
 using Kun.AspNetCore.DependencyInjection;
 using Kun.AspNetCore.Endpoints;
-using Kun.Grpc.DependencyInjection;
-using Kun.Sample.Catalog.Grpc;
 using Kun.Core.Domain;
 using Kun.Core.MultiTenancy;
 using Kun.Dapper;
@@ -9,15 +7,17 @@ using Kun.EntityFrameworkCore;
 using Kun.EntityFrameworkCore.Behaviors;
 using Kun.EntityFrameworkCore.DependencyInjection;
 using Kun.EventBus.DependencyInjection;
+using Kun.Grpc.DependencyInjection;
 using Kun.Mediator.DependencyInjection;
+using Kun.Sample.Catalog;
 using Kun.Sample.Catalog.Application.Commands;
 using Kun.Sample.Catalog.Application.DomainEventHandlers;
 using Kun.Sample.Catalog.Application.Queries;
 using Kun.Sample.Catalog.Contracts;
+using Kun.Sample.Catalog.Grpc;
 using Kun.Sample.Catalog.Infrastructure;
-using Kun.Validation.DependencyInjection;
-using Kun.Sample.Catalog;
 using Kun.Sample.Shared;
+using Kun.Validation.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);

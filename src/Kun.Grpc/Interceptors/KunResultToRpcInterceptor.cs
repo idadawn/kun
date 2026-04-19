@@ -51,12 +51,12 @@ internal sealed class KunResultToRpcInterceptor : Interceptor
     /// <returns>The gRPC status code.</returns>
     public static StatusCode MapErrorType(ErrorType errorType) => errorType switch
     {
-        ErrorType.Validation   => StatusCode.InvalidArgument,
-        ErrorType.NotFound     => StatusCode.NotFound,
-        ErrorType.Conflict     => StatusCode.FailedPrecondition,
+        ErrorType.Validation => StatusCode.InvalidArgument,
+        ErrorType.NotFound => StatusCode.NotFound,
+        ErrorType.Conflict => StatusCode.FailedPrecondition,
         ErrorType.Unauthorized => StatusCode.Unauthenticated,
-        ErrorType.Forbidden    => StatusCode.PermissionDenied,
-        ErrorType.Unavailable  => StatusCode.Unavailable,
-        _                      => StatusCode.Internal
+        ErrorType.Forbidden => StatusCode.PermissionDenied,
+        ErrorType.Unavailable => StatusCode.Unavailable,
+        _ => StatusCode.Internal
     };
 }

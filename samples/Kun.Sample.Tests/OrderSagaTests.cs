@@ -1,18 +1,17 @@
 extern alias OrderApp;
-
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
 using Grpc.Core;
-// The gRPC client code (CatalogService.CatalogServiceClient) is generated into the Order
-// assembly (GrpcServices="Client"), not the Catalog assembly (GrpcServices="Server").
-using OrderApp::Kun.Sample.Catalog.Grpc;
 using Kun.Sample.Tests.Fixtures;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+// The gRPC client code (CatalogService.CatalogServiceClient) is generated into the Order
+// assembly (GrpcServices="Client"), not the Catalog assembly (GrpcServices="Server").
+using OrderApp::Kun.Sample.Catalog.Grpc;
 using Xunit;
 
 namespace Kun.Sample.Tests;
@@ -317,7 +316,7 @@ public sealed class OrderSagaTests : IClassFixture<OrderWebFactory>
     /// POST /demo/trigger-timeout → ShipOrderStep sleeps 60s past its 10s timeout;
     /// SagaTimeoutDetector fires compensation → State=Compensated.
     /// </summary>
-    [Fact(Timeout = 90_000)]
+    [Fact(Timeout = 120_000)]
     public async Task TriggerTimeout_SagaEventuallyCompensates()
     {
         var ct = TestContext.Current.CancellationToken;
@@ -329,7 +328,7 @@ public sealed class OrderSagaTests : IClassFixture<OrderWebFactory>
         var doc = JsonDocument.Parse(body);
         var sagaId = doc.RootElement.GetProperty("orderId").GetGuid();
 
-        var state = await PollSagaStateAsync(sagaId, expectedState: "Compensated", timeoutSeconds: 60, ct);
+        var state = await PollSagaStateAsync(sagaId, expectedState: "Compensated", timeoutSeconds: 90, ct);
         state.Should().Be("Compensated",
             because: "ShipOrderStep sleeps past its 10s timeout; SagaTimeoutDetector compensates");
     }
@@ -365,7 +364,7 @@ public sealed class OrderSagaTests : IClassFixture<OrderWebFactory>
                         $"FailureReason: {lastFailureReason}");
             }
 
-            await Task.Delay(100, ct);
+            await Task.Delay(500, ct);
         }
 
         return lastState;

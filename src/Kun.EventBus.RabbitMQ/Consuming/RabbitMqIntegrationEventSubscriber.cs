@@ -1,13 +1,13 @@
 using System.Diagnostics;
 using System.Text;
+using Kun.EventBus.Idempotency;
+using Kun.EventBus.RabbitMQ.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using Kun.EventBus.Idempotency;
-using Kun.EventBus.RabbitMQ.Options;
 
 namespace Kun.EventBus.RabbitMQ.Consuming;
 

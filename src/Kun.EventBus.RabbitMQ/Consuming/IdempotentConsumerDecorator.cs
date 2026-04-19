@@ -1,5 +1,5 @@
-using Microsoft.Extensions.Logging;
 using Kun.EventBus.Idempotency;
+using Microsoft.Extensions.Logging;
 
 namespace Kun.EventBus.RabbitMQ.Consuming;
 

@@ -16,13 +16,13 @@ public static class ErrorToProblemDetailsExtensions
     {
         var (status, title) = error.Type switch
         {
-            ErrorType.Validation   => (400, "Bad Request"),
-            ErrorType.NotFound     => (404, "Not Found"),
-            ErrorType.Conflict     => (409, "Conflict"),
+            ErrorType.Validation => (400, "Bad Request"),
+            ErrorType.NotFound => (404, "Not Found"),
+            ErrorType.Conflict => (409, "Conflict"),
             ErrorType.Unauthorized => (401, "Unauthorized"),
-            ErrorType.Forbidden    => (403, "Forbidden"),
-            ErrorType.Unavailable  => (503, "Service Unavailable"),
-            _                      => (500, "Internal Server Error"),
+            ErrorType.Forbidden => (403, "Forbidden"),
+            ErrorType.Unavailable => (503, "Service Unavailable"),
+            _ => (500, "Internal Server Error"),
         };
 
         return new ProblemDetails

@@ -1,7 +1,7 @@
+using Kun.EventBus.RabbitMQ.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
-using Kun.EventBus.RabbitMQ.Options;
 
 namespace Kun.EventBus.RabbitMQ;
 

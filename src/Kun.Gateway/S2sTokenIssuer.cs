@@ -1,4 +1,4 @@
-using System.IdentityModel.Tokens.Jwt;
+using Microsoft.IdentityModel.JsonWebTokens;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using Kun.Gateway.Configuration;
@@ -109,7 +109,7 @@ public sealed class S2sTokenIssuer
             SigningCredentials = _credentials,
         };
 
-        var handler = new JwtSecurityTokenHandler();
-        return handler.CreateEncodedJwt(descriptor);
+        var handler = new JsonWebTokenHandler();
+        return handler.CreateToken(descriptor);
     }
 }

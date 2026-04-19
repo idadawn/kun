@@ -1,5 +1,5 @@
-using RabbitMQ.Client;
 using Kun.EventBus.RabbitMQ.Options;
+using RabbitMQ.Client;
 
 namespace Kun.EventBus.RabbitMQ.Consuming;
 

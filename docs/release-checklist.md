@@ -23,8 +23,11 @@ auto-provided `GITHUB_TOKEN` — no extra secret needed.
 ## 1 — Pre-release Verification
 
 - [ ] All CI checks green on the target branch (`main` or `develop`)
+      - CI runs **unit tests + Testcontainers integration tests** (`Kun.IntegrationTests`) automatically
+      - **Sample end-to-end tests** (`Kun.Sample.Tests`) require Aspire service-discovery env vars and must be verified locally before release; they do not run in CI
 - [ ] `dotnet build -c Release /warnaserror` passes locally
-- [ ] `dotnet test -c Release` is fully green (unit + integration)
+- [ ] `dotnet test -c Release --filter "FullyQualifiedName!~Kun.Sample.Tests"` is fully green (unit + Testcontainers integration)
+- [ ] `dotnet test samples/Kun.Sample.Tests -c Release` is fully green **locally** (sample end-to-end tests)
 - [ ] AOT candidates verified locally for any module touched in this release:
   ```bash
   dotnet publish src/Kun.Core -c Release -p:PublishAot=true /warnaserror

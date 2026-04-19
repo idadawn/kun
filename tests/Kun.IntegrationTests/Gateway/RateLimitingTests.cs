@@ -1,4 +1,5 @@
 #pragma warning disable ASPDEPR004, ASPDEPR008, IDE0005 // Tests deliberately use the simpler WebHostBuilder+TestServer pattern.
+using System.Threading.RateLimiting;
 using FluentAssertions;
 using Kun.Gateway.RateLimiting;
 using Kun.Gateway.RateLimiting.Resolvers;
@@ -7,7 +8,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
-using System.Threading.RateLimiting;
 using Xunit;
 
 namespace Kun.IntegrationTests.Gateway;

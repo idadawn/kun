@@ -138,7 +138,7 @@ public sealed class DapperAotQueryTests : IAsyncLifetime
         await using var connection = (System.Data.Common.DbConnection)await factory.OpenAsync(ct);
 
         const string countSql = "SELECT COUNT(*) FROM dapper_test_orders WHERE \"IsDeleted\" = false";
-        const string pageSql  = """
+        const string pageSql = """
             SELECT "Id", "Name", "Amount"
             FROM dapper_test_orders
             WHERE "IsDeleted" = false
@@ -175,7 +175,7 @@ public sealed class DapperAotQueryTests : IAsyncLifetime
         await using var connection = (System.Data.Common.DbConnection)await factory.OpenAsync(ct);
 
         const string countSql = """SELECT COUNT(*) FROM dapper_test_orders WHERE "IsDeleted" = false AND "Name" LIKE 'Page2-%'""";
-        const string pageSql  = """
+        const string pageSql = """
             SELECT "Id", "Name", "Amount"
             FROM dapper_test_orders
             WHERE "IsDeleted" = false AND "Name" LIKE 'Page2-%'

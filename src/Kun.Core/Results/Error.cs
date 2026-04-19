@@ -32,17 +32,17 @@ public sealed record Error(string Code, string Message, ErrorType Type)
     public static readonly Error None = new(string.Empty, string.Empty, ErrorType.Failure);
 
     /// <summary>Creates a generic <see cref="ErrorType.Failure"/> error.</summary>
-    public static Error Failure(string code, string message)     => new(code, message, ErrorType.Failure);
+    public static Error Failure(string code, string message) => new(code, message, ErrorType.Failure);
     /// <summary>Creates an <see cref="ErrorType.Validation"/> error.</summary>
-    public static Error Validation(string code, string message)  => new(code, message, ErrorType.Validation);
+    public static Error Validation(string code, string message) => new(code, message, ErrorType.Validation);
     /// <summary>Creates a <see cref="ErrorType.NotFound"/> error.</summary>
-    public static Error NotFound(string code, string message)    => new(code, message, ErrorType.NotFound);
+    public static Error NotFound(string code, string message) => new(code, message, ErrorType.NotFound);
     /// <summary>Creates a <see cref="ErrorType.Conflict"/> error.</summary>
-    public static Error Conflict(string code, string message)    => new(code, message, ErrorType.Conflict);
+    public static Error Conflict(string code, string message) => new(code, message, ErrorType.Conflict);
     /// <summary>Creates an <see cref="ErrorType.Unauthorized"/> error.</summary>
     public static Error Unauthorized(string code, string message) => new(code, message, ErrorType.Unauthorized);
     /// <summary>Creates a <see cref="ErrorType.Forbidden"/> error.</summary>
-    public static Error Forbidden(string code, string message)   => new(code, message, ErrorType.Forbidden);
+    public static Error Forbidden(string code, string message) => new(code, message, ErrorType.Forbidden);
     /// <summary>Creates an <see cref="ErrorType.Unavailable"/> error.</summary>
     public static Error Unavailable(string code, string message) => new(code, message, ErrorType.Unavailable);
 }

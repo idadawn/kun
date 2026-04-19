@@ -1,6 +1,6 @@
+using Kun.EventBus.Outbox;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Kun.EventBus.Outbox;
 
 namespace Kun.EventBus.DependencyInjection;
 

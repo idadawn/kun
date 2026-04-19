@@ -1,6 +1,6 @@
+using Kun.EventBus.Idempotency;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Kun.EventBus.Idempotency;
 using StackExchange.Redis;
 
 namespace Kun.EventBus.DependencyInjection;

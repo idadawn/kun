@@ -56,10 +56,10 @@ public sealed class KunExceptionHandler : IExceptionHandler
     {
         Microsoft.AspNetCore.Mvc.ProblemDetails? pd = exception switch
         {
-            ValidationException ve    => BuildValidationProblemDetails(ve),
+            ValidationException ve => BuildValidationProblemDetails(ve),
             ResultFailureException rfe => HandleResultFailure(rfe),
-            DomainException de         => HandleDomainException(de),
-            _                          => null,
+            DomainException de => HandleDomainException(de),
+            _ => null,
         };
 
         if (pd is null)

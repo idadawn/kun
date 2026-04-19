@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization.Metadata;
-using Microsoft.Extensions.DependencyInjection;
 using Kun.EventBus.RabbitMQ.Consuming;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Kun.EventBus.RabbitMQ.DependencyInjection;
 
