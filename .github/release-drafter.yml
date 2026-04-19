@@ -1,0 +1,89 @@
+name-template: 'Kun $RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
+
+version-resolver:
+  major:
+    labels:
+      - 'major'
+      - 'breaking'
+  minor:
+    labels:
+      - 'feat'
+      - 'enhancement'
+  patch:
+    labels:
+      - 'fix'
+      - 'bug'
+      - 'perf'
+      - 'docs'
+      - 'chore'
+  default: patch
+
+categories:
+  - title: '✨ Features'
+    labels:
+      - 'feat'
+      - 'enhancement'
+  - title: '🐛 Bug Fixes'
+    labels:
+      - 'fix'
+      - 'bug'
+  - title: '⚡ Performance'
+    labels:
+      - 'perf'
+  - title: '📚 Documentation'
+    labels:
+      - 'docs'
+  - title: '🧪 Tests'
+    labels:
+      - 'test'
+  - title: '🔧 Chore / Refactor'
+    labels:
+      - 'chore'
+      - 'refactor'
+  - title: '🏗️ Build & CI'
+    labels:
+      - 'build'
+      - 'ci'
+
+autolabeler:
+  - label: 'feat'
+    title:
+      - '/^feat(\(.+\))?(\!)?:/'
+  - label: 'fix'
+    title:
+      - '/^fix(\(.+\))?(\!)?:/'
+  - label: 'docs'
+    title:
+      - '/^docs(\(.+\))?:/'
+  - label: 'test'
+    title:
+      - '/^test(\(.+\))?:/'
+  - label: 'perf'
+    title:
+      - '/^perf(\(.+\))?:/'
+  - label: 'chore'
+    title:
+      - '/^chore(\(.+\))?:/'
+  - label: 'refactor'
+    title:
+      - '/^refactor(\(.+\))?:/'
+  - label: 'build'
+    title:
+      - '/^build(\(.+\))?:/'
+  - label: 'ci'
+    title:
+      - '/^ci(\(.+\))?:/'
+  - label: 'breaking'
+    title:
+      - '/BREAKING.CHANGE|(\(.+\))?!:/'
+
+exclude-labels:
+  - 'skip-changelog'
+
+template: |
+  ## What's Changed
+
+  $CHANGES
+
+  **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
