@@ -124,8 +124,18 @@ public sealed partial class OutboxPublisherBackgroundService : BackgroundService
                 message.MarkPublished(_timeProvider.GetUtcNow());
                 LogPublished(_logger, message.Id, message.EventTypeId);
             }
-            catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
+                // Clean shutdown: the stopping token fired before or during publish.
+                // Do NOT increment AttemptCount — no broker interaction occurred.
+                // Break out so the outer loop can exit cleanly.
+                break;
+            }
+            catch (Exception ex)
+            {
+                // Any other exception (including broker connection failures that happen
+                // to coincide with a shutdown) counts as a failed attempt. This covers
+                // BrokerUnreachableException, socket errors, and channel-level failures.
                 message.IncrementAttempt();
 
                 if (message.AttemptCount >= _options.MaxAttempts)

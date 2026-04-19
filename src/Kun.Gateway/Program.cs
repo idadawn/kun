@@ -48,6 +48,10 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
 
+// gRPC-Web: translates grpc-web (HTTP/1.1) requests to gRPC (HTTP/2) before YARP forwards them.
+// DefaultEnabled=true means all routes support grpc-web without per-route opt-in.
+app.UseGrpcWeb(new GrpcWebOptions { DefaultEnabled = true });
+
 // Expose the gateway's public key for downstream S2S JWT validation
 app.MapKunJwks();
 

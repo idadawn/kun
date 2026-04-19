@@ -227,6 +227,7 @@ public sealed partial class RabbitMqIntegrationEventSubscriber : BackgroundServi
         CancellationToken cancellationToken)
     {
         // Resolve dispatcher registered per subscription — no MakeGenericType.
+        // Dispatchers are singletons; handler resolution uses the scoped services parameter.
         var dispatchers = services.GetServices<ISubscriptionDispatcher>();
         ISubscriptionDispatcher? dispatcher = null;
         foreach (var d in dispatchers)
@@ -244,7 +245,7 @@ public sealed partial class RabbitMqIntegrationEventSubscriber : BackgroundServi
                 $"No ISubscriptionDispatcher registered for event type '{clrType.Name}'.");
         }
 
-        await dispatcher.DispatchAsync(clrType, payload, context, cancellationToken).ConfigureAwait(false);
+        await dispatcher.DispatchAsync(clrType, payload, context, services, cancellationToken).ConfigureAwait(false);
     }
 
     private static string? ReadHeaderString(IDictionary<string, object?>? headers, string key)

@@ -1,5 +1,7 @@
 using Kun.AspNetCore.DependencyInjection;
 using Kun.AspNetCore.Endpoints;
+using Kun.Grpc.DependencyInjection;
+using Kun.Sample.Catalog.Grpc;
 using Kun.Core.Domain;
 using Kun.Core.MultiTenancy;
 using Kun.Dapper;
@@ -89,6 +91,9 @@ builder.Services.AddKunMediator(m =>
 // Validator for CreateProductCommand
 builder.Services.AddValidator<CreateProductCommand, CreateProductCommandValidator>();
 
+// ── gRPC ──────────────────────────────────────────────────────────────────────
+builder.Services.AddKunGrpc();
+
 // ── Build ─────────────────────────────────────────────────────────────────────
 var app = builder.Build();
 
@@ -119,6 +124,8 @@ app.MapGet("/products/{id:guid}", async (Guid id, Kun.Mediator.ISender sender, C
 });
 
 app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
+
+app.MapGrpcService<CatalogGrpcService>();
 
 app.Run();
 

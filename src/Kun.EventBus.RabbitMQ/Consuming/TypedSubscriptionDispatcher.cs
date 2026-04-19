@@ -13,14 +13,10 @@ namespace Kun.EventBus.RabbitMQ.Consuming;
 internal sealed class TypedSubscriptionDispatcher<TEvent> : ISubscriptionDispatcher
     where TEvent : class
 {
-    private readonly IServiceProvider _services;
     private readonly JsonTypeInfo<TEvent> _typeInfo;
 
-    public TypedSubscriptionDispatcher(
-        IServiceProvider services,
-        JsonTypeInfo<TEvent> typeInfo)
+    public TypedSubscriptionDispatcher(JsonTypeInfo<TEvent> typeInfo)
     {
-        _services = services;
         _typeInfo = typeInfo;
     }
 
@@ -32,6 +28,7 @@ internal sealed class TypedSubscriptionDispatcher<TEvent> : ISubscriptionDispatc
         Type clrType,
         string payload,
         MessageContext context,
+        IServiceProvider scopedServices,
         CancellationToken cancellationToken)
     {
         if (clrType != typeof(TEvent))
@@ -44,7 +41,7 @@ internal sealed class TypedSubscriptionDispatcher<TEvent> : ISubscriptionDispatc
             ?? throw new InvalidOperationException(
                 $"Failed to deserialize payload as {typeof(TEvent).Name}.");
 
-        var handler = _services.GetRequiredService<IIntegrationEventHandler<TEvent>>();
+        var handler = scopedServices.GetRequiredService<IIntegrationEventHandler<TEvent>>();
         await handler.HandleAsync(@event, context, cancellationToken).ConfigureAwait(false);
     }
 }

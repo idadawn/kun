@@ -66,6 +66,32 @@ dotnet publish src/Kun.Gateway -c Release -p:PublishAot=true /warnaserror
 - Custom rate limiting: register `IRateLimitPartitionResolver` before calling `AddKunRateLimiter()`.
 - Key rotation: replace PEM files and restart; serve multiple `kid`s in JWKS via `FileKunJwksProvider` from `Kun.Security` if needed.
 
+## gRPC-Web Support
+
+The gateway transparently proxies gRPC-Web requests (browser clients using `grpc-web` or `grpc-web+proto` content types over HTTP/1.1) to backend gRPC services (HTTP/2).
+
+**How it works:**
+
+1. `UseGrpcWeb(new GrpcWebOptions { DefaultEnabled = true })` is registered in the pipeline after `UseRateLimiter()` and before `MapReverseProxy()`.
+2. The middleware detects `Content-Type: application/grpc-web` or `application/grpc-web+proto` and translates the framing to standard gRPC (`application/grpc`) automatically.
+3. YARP then forwards the translated request to the backend cluster, which must be configured for HTTP/2 (`HttpRequest.Version = "2"`).
+
+**No per-route opt-in is needed** — `DefaultEnabled = true` covers all routes. The backend cluster must specify HTTP/2:
+
+```json
+"catalog-grpc-cluster": {
+  "HttpRequest": {
+    "Version": "2",
+    "VersionPolicy": "RequestVersionOrHigher"
+  },
+  "Destinations": {
+    "catalog-grpc-1": { "Address": "http://catalog-service:8090" }
+  }
+}
+```
+
+**AOT note:** `Grpc.AspNetCore.Web` is AOT-safe for the gateway use case — it translates HTTP framing only and does not deserialize gRPC message payloads. `IsAotCandidate=true` is retained.
+
 ## Dependencies
 
 ### Internal
@@ -78,5 +104,6 @@ dotnet publish src/Kun.Gateway -c Release -p:PublishAot=true /warnaserror
 - `Yarp.ReverseProxy` (2.2.0)
 - `Microsoft.AspNetCore.Authentication.JwtBearer` (10.0.0)
 - `Microsoft.IdentityModel.Tokens` (8.2.0)
+- `Grpc.AspNetCore.Web` (2.67.0)
 
 <!-- MANUAL: -->

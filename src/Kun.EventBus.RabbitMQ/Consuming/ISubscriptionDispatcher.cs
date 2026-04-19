@@ -11,9 +11,18 @@ internal interface ISubscriptionDispatcher
     Type EventClrType { get; }
 
     /// <summary>Deserializes <paramref name="payload"/> and invokes the handler.</summary>
+    /// <param name="clrType">The CLR type to dispatch to.</param>
+    /// <param name="payload">The raw JSON payload.</param>
+    /// <param name="context">The message context.</param>
+    /// <param name="scopedServices">
+    /// The per-message scoped <see cref="IServiceProvider"/> from which the handler is resolved.
+    /// Must not be the root provider — handlers are typically registered as scoped.
+    /// </param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     ValueTask DispatchAsync(
         Type clrType,
         string payload,
         MessageContext context,
+        IServiceProvider scopedServices,
         CancellationToken cancellationToken);
 }

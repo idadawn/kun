@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Kun.Core.Time;
+using Kun.EntityFrameworkCore;
 using Kun.Saga.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -126,6 +127,8 @@ public sealed partial class SagaStepExecutor : BackgroundService
             return;
         }
 
+        var dbContext = serviceProvider.GetRequiredService<KunDbContext>();
+
         try
         {
             await registration.ExecuteStepAsync(
@@ -135,8 +138,55 @@ public sealed partial class SagaStepExecutor : BackgroundService
                 serviceProvider,
                 ct).ConfigureAwait(false);
 
-            entry.MarkProcessed(clock.UtcNow);
+            var now = clock.UtcNow;
+
+            if (entry.Direction == StepDirection.Execute)
+            {
+                var nextIndex = entry.StepIndex + 1;
+                if (nextIndex >= registration.StepCount)
+                {
+                    // All steps executed — saga is complete.
+                    instance.MarkCompleted(now);
+                }
+                else
+                {
+                    // Advance to next step.
+                    instance.MoveToStep(nextIndex, now, now.Add(TimeSpan.FromMinutes(5)), instance.ContextPayload);
+                    var nextEntry = new SagaStepQueueEntry(
+                        id: Guid.NewGuid(),
+                        sagaId: instance.Id,
+                        stepIndex: nextIndex,
+                        direction: StepDirection.Execute,
+                        enqueuedAt: now);
+                    await store.EnqueueStepAsync(nextEntry, ct).ConfigureAwait(false);
+                }
+            }
+            else
+            {
+                // Compensation direction.
+                var prevIndex = entry.StepIndex - 1;
+                if (prevIndex < 0)
+                {
+                    // All steps compensated.
+                    instance.MarkCompensated(now);
+                }
+                else
+                {
+                    instance.MoveCompensationToStep(prevIndex, now);
+                    var prevEntry = new SagaStepQueueEntry(
+                        id: Guid.NewGuid(),
+                        sagaId: instance.Id,
+                        stepIndex: prevIndex,
+                        direction: StepDirection.Compensate,
+                        enqueuedAt: now);
+                    await store.EnqueueStepAsync(prevEntry, ct).ConfigureAwait(false);
+                }
+            }
+
+            await store.UpdateAsync(instance, ct).ConfigureAwait(false);
+            entry.MarkProcessed(now);
             await store.UpdateStepAsync(entry, ct).ConfigureAwait(false);
+            await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -167,6 +217,7 @@ public sealed partial class SagaStepExecutor : BackgroundService
 
             entry.MarkProcessed(clock.UtcNow);
             await store.UpdateStepAsync(entry, ct).ConfigureAwait(false);
+            await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
         }
     }
 

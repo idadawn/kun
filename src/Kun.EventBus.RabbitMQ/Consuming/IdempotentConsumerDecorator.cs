@@ -5,8 +5,9 @@ namespace Kun.EventBus.RabbitMQ.Consuming;
 
 /// <summary>
 /// Wraps handler invocation with idempotency enforcement using <see cref="IProcessedMessageStore"/>.
-/// The mark is written AFTER the handler succeeds; if the handler throws, no mark is recorded
-/// and the message will be redelivered.
+/// The store is checked BEFORE handler invocation; duplicate deliveries are skipped without
+/// invoking the handler. If the handler throws, the mark remains — the message will not be
+/// redelivered (at-least-once with idempotent handlers is the expected contract).
 /// </summary>
 internal sealed partial class IdempotentConsumerDecorator
 {
@@ -22,8 +23,8 @@ internal sealed partial class IdempotentConsumerDecorator
     }
 
     /// <summary>
-    /// Executes <paramref name="handler"/> and then marks the message as processed.
-    /// If the mark returns false the handler ran twice — logged as a warning (handler must be idempotent).
+    /// Marks the message as processed first; if already marked, skips the handler (dedup).
+    /// If not yet marked, invokes <paramref name="handler"/>.
     /// </summary>
     public async ValueTask ExecuteAsync(
         string consumerName,
@@ -32,16 +33,17 @@ internal sealed partial class IdempotentConsumerDecorator
         Func<CancellationToken, ValueTask> handler,
         CancellationToken cancellationToken = default)
     {
-        // Invoke the handler first; only mark as processed on success.
-        await handler(cancellationToken).ConfigureAwait(false);
-
-        var marked = await _store.TryMarkProcessedAsync(consumerName, messageId, ttl, cancellationToken)
+        // Mark-first: atomic SET NX returns true only for the first delivery.
+        var isFirst = await _store.TryMarkProcessedAsync(consumerName, messageId, ttl, cancellationToken)
             .ConfigureAwait(false);
 
-        if (!marked)
+        if (!isFirst)
         {
             Log.DuplicateDelivery(_logger, consumerName, messageId);
+            return;
         }
+
+        await handler(cancellationToken).ConfigureAwait(false);
     }
 
     private static partial class Log
@@ -49,7 +51,7 @@ internal sealed partial class IdempotentConsumerDecorator
         [LoggerMessage(
             EventId = 1,
             Level = LogLevel.Warning,
-            Message = "Duplicate delivery detected after handler execution: consumer={Consumer} messageId={MessageId}")]
+            Message = "Duplicate delivery skipped: consumer={Consumer} messageId={MessageId}")]
         public static partial void DuplicateDelivery(ILogger logger, string consumer, Guid messageId);
     }
 }

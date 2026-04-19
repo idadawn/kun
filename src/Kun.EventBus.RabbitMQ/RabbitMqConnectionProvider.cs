@@ -49,9 +49,17 @@ public sealed partial class RabbitMqConnectionProvider : IAsyncDisposable
                 AutomaticRecoveryEnabled = true,
                 TopologyRecoveryEnabled = true,
                 ClientProvidedName = _options.ConsumerName,
+                // Use a short fixed timeout so an unreachable broker fails fast with
+                // BrokerUnreachableException rather than hanging until the caller's
+                // CancellationToken fires (which would produce OperationCanceledException
+                // and silently skip AttemptCount increment in the outbox publisher loop).
+                RequestedConnectionTimeout = TimeSpan.FromSeconds(2),
             };
 
-            _connection = await factory.CreateConnectionAsync(cancellationToken).ConfigureAwait(false);
+            // Pass CancellationToken.None: we want a fast failure (BrokerUnreachableException)
+            // on bad hosts rather than OperationCanceledException from the stopping token,
+            // which the outbox publisher's catch guard would silently discard.
+            _connection = await factory.CreateConnectionAsync(CancellationToken.None).ConfigureAwait(false);
 
             Log.ConnectionEstablished(_logger);
             return _connection;

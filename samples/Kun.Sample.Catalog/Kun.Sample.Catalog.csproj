@@ -16,5 +16,11 @@
     <ProjectReference Include="..\..\src\Kun.AspNetCore\Kun.AspNetCore.csproj" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Npgsql" />
+    <PackageReference Include="Grpc.AspNetCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="All" />
+    <ProjectReference Include="..\..\src\Kun.Grpc\Kun.Grpc.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Protobuf Include="Protos\catalog.proto" GrpcServices="Server" />
   </ItemGroup>
 </Project>

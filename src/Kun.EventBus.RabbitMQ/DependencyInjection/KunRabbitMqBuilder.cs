@@ -35,8 +35,8 @@ public sealed class KunRabbitMqBuilder
         _services.AddScoped<IIntegrationEventHandler<TEvent>, THandler>();
 
         // Register the AOT-safe dispatcher for this event type.
-        _services.AddSingleton<ISubscriptionDispatcher>(sp =>
-            new TypedSubscriptionDispatcher<TEvent>(sp, typeInfo));
+        _services.AddSingleton<ISubscriptionDispatcher>(
+            new TypedSubscriptionDispatcher<TEvent>(typeInfo));
 
         // Record subscription metadata for queue declaration at startup.
         _services.AddSingleton(new SubscriptionRegistration

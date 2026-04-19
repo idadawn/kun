@@ -1,3 +1,4 @@
+using Kun.Core.Time;
 using Kun.Saga.Abstractions;
 using Kun.Saga.Orchestration;
 using Kun.Saga.Persistence;
@@ -36,8 +37,9 @@ public static class KunSagaServiceCollectionExtensions
         services.AddSingleton(registry);
 
         // Register core services.
+        services.TryAddSingleton<ISystemClock>(SystemClock.Instance);
         services.TryAddScoped<ISagaInstanceStore, EfSagaInstanceStore>();
-        services.TryAddSingleton<ISagaOrchestrator, SagaOrchestrator>();
+        services.TryAddScoped<ISagaOrchestrator, SagaOrchestrator>();
 
         // Register executor options with defaults.
         services.TryAddSingleton(new SagaStepExecutorOptions());

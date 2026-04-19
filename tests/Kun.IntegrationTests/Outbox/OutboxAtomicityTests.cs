@@ -5,6 +5,7 @@ using Kun.EntityFrameworkCore;
 using Kun.EntityFrameworkCore.DependencyInjection;
 using Kun.EventBus;
 using Kun.EventBus.DependencyInjection;
+using Kun.Mediator.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Testcontainers.PostgreSql;
@@ -13,10 +14,17 @@ using Xunit;
 namespace Kun.IntegrationTests.Outbox;
 
 // ---------------------------------------------------------------------------
-// Minimal test types (file-scoped — not visible outside this compilation unit)
+// Minimal test types — internal (not file-scoped) so that EF Core's ShortName()
+// gets a non-empty string. File-scoped types compile to names like
+// "<OutboxAtomicityTests>FD1BC8...TestOrder"; EF Core 10.0.0 ShortName() calls
+// Substring(0, text.IndexOf("<")) which yields "" for any name starting with "<",
+// and then CreateNavigationExpansionExpression does ShortName()[0] → IndexOutOfRange.
+// Using internal (no `file` modifier) gives the type a normal CLR name "TestOrder"
+// so ShortName() returns "TestOrder" and [0] = 'T'. These types are in a dedicated
+// namespace so they don't leak into other test files inadvertently.
 // ---------------------------------------------------------------------------
 
-file sealed class TestOrder : AggregateRoot<Guid>
+internal sealed class TestOrder : AggregateRoot<Guid>
 {
     public string Name { get; private set; } = string.Empty;
 
@@ -24,9 +32,9 @@ file sealed class TestOrder : AggregateRoot<Guid>
         new() { Id = id, Name = name };
 }
 
-file sealed record TestOrderPlaced(Guid OrderId);
+internal sealed record TestOrderPlaced(Guid OrderId);
 
-file sealed class TestDbContext : KunDbContext
+internal sealed class TestDbContext : KunDbContext
 {
     public DbSet<TestOrder> Orders => Set<TestOrder>();
 
@@ -83,6 +91,7 @@ public sealed class OutboxAtomicityTests : IAsyncLifetime
         var services = new ServiceCollection();
 
         services.AddSingleton<ITenantContext>(NullTenantContext.Instance);
+        services.AddKunMediator(_ => { });
         services.AddKunEventBus(b => b.Register<TestOrderPlaced>("test.order.placed.v1"));
         services.AddKunEntityFrameworkCore();
         services.AddDbContext<TestDbContext>((_, opts) =>
@@ -128,8 +137,8 @@ public sealed class OutboxAtomicityTests : IAsyncLifetime
 
         // Query without filters so the soft-delete global filter doesn't hide rows.
         var orderCount = await db.Orders.IgnoreQueryFilters().CountAsync(ct);
-        var outboxCount = await db.OutboxMessages
-            .CountAsync(m => m.EventTypeId == "test.order.placed.v1", ct);
+        var messages = await db.OutboxMessages.ToListAsync(ct);
+        var outboxCount = messages.Count(m => m.EventTypeId == "test.order.placed.v1");
 
         orderCount.Should().Be(1, "the aggregate must be persisted");
         outboxCount.Should().Be(1, "the outbox message must be written in the same transaction");

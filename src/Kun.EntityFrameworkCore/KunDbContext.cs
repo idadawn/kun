@@ -28,56 +28,75 @@ public abstract class KunDbContext : DbContext
     }
 
     /// <inheritdoc/>
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        base.ConfigureConventions(configurationBuilder);
+
+        // AggregateRoot exposes DomainEvents as IReadOnlyCollection<IDomainEvent>. EF Core's
+        // model builder treats that as a navigation collection to IDomainEvent and crashes at
+        // query-pipeline navigation expansion (IDomainEvent has no storage shape). Tell the
+        // convention layer to ignore this type everywhere so the property is skipped on every
+        // aggregate, including derived types discovered after OnModelCreating runs.
+        configurationBuilder.IgnoreAny<IDomainEvent>();
+    }
+
+    /// <inheritdoc/>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyConfiguration(new OutboxMessageConfiguration());
-        ApplyTenantFilters(modelBuilder);
-        ApplySoftDeleteFilters(modelBuilder);
+        ApplyGlobalQueryFilters(modelBuilder);
     }
 
-    private void ApplyTenantFilters(ModelBuilder modelBuilder)
+    /// <summary>
+    /// Exposes the current tenant ID for use by a custom <c>IModelCacheKeyFactory</c>
+    /// so EF Core builds a distinct compiled model per tenant rather than sharing the
+    /// first-built model across all instances of the same DbContext type.
+    /// </summary>
+    public string? TenantIdForModelCacheKey => _tenantContext.TenantId;
+
+    private void ApplyGlobalQueryFilters(ModelBuilder modelBuilder)
     {
         foreach (var entity in modelBuilder.Model.GetEntityTypes())
         {
-            if (!typeof(IMultiTenant).IsAssignableFrom(entity.ClrType))
+            var clrType = entity.ClrType;
+            var isMultiTenant = typeof(IMultiTenant).IsAssignableFrom(clrType);
+            var isSoftDelete = typeof(ISoftDelete).IsAssignableFrom(clrType);
+
+            if (!isMultiTenant && !isSoftDelete)
             {
                 continue;
             }
 
-            var parameter = Expression.Parameter(entity.ClrType, "e");
-            var tenantIdProp = Expression.Property(parameter, nameof(IMultiTenant.TenantId));
-            var currentTenantId = Expression.Property(
-                Expression.Constant(_tenantContext),
-                nameof(ITenantContext.TenantId));
+            var parameter = Expression.Parameter(clrType, "e");
+            Expression? combined = null;
 
-            // e.TenantId == _tenantContext.TenantId
-            var filter = Expression.Lambda(
-                Expression.Equal(tenantIdProp, currentTenantId),
-                parameter);
-
-            modelBuilder.Entity(entity.ClrType).HasQueryFilter(filter);
-        }
-    }
-
-    private static void ApplySoftDeleteFilters(ModelBuilder modelBuilder)
-    {
-        foreach (var entity in modelBuilder.Model.GetEntityTypes())
-        {
-            if (!typeof(ISoftDelete).IsAssignableFrom(entity.ClrType))
+            if (isMultiTenant)
             {
-                continue;
+                var tenantIdProp = Expression.Property(parameter, nameof(IMultiTenant.TenantId));
+                var currentTenantId = Expression.Property(
+                    Expression.Constant(_tenantContext),
+                    nameof(ITenantContext.TenantId));
+
+                // e.TenantId == _tenantContext.TenantId
+                combined = Expression.Equal(tenantIdProp, currentTenantId);
             }
 
-            var parameter = Expression.Parameter(entity.ClrType, "e");
-            var isDeletedProp = Expression.Property(parameter, nameof(ISoftDelete.IsDeleted));
+            if (isSoftDelete)
+            {
+                var isDeletedProp = Expression.Property(parameter, nameof(ISoftDelete.IsDeleted));
 
-            // !e.IsDeleted
-            var filter = Expression.Lambda(
-                Expression.Not(isDeletedProp),
-                parameter);
+                // !e.IsDeleted
+                var notDeleted = Expression.Not(isDeletedProp);
+                combined = combined is null ? notDeleted : Expression.AndAlso(combined, notDeleted);
+            }
 
-            modelBuilder.Entity(entity.ClrType).HasQueryFilter(filter);
+            // HasQueryFilter can only be called once per entity type — calling it a second
+            // time overwrites the previous filter. By merging both predicates here we ensure
+            // entities implementing both IMultiTenant and ISoftDelete (e.g. AggregateRoot
+            // subclasses) get a single combined filter: TenantId == X && !IsDeleted.
+            modelBuilder.Entity(clrType).HasQueryFilter(
+                Expression.Lambda(combined!, parameter));
         }
     }
 }

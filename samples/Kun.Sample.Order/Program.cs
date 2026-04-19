@@ -82,6 +82,13 @@ builder.Services.AddKunMediator(m =>
     m.AddRequestHandler<GetSagaStatusQuery, SagaStatusDto?, GetSagaStatusQueryHandler>();
 });
 
+// ── Catalog gRPC client ───────────────────────────────────────────────────────
+builder.Services
+    .AddGrpcClient<Kun.Sample.Catalog.Grpc.CatalogService.CatalogServiceClient>(o =>
+    {
+        o.Address = new Uri(builder.Configuration["CatalogGrpc:Address"] ?? "http://localhost:5001");
+    });
+
 // ── ASP.NET Core ──────────────────────────────────────────────────────────────
 builder.Services.AddKunAspNetCore();
 builder.Services.AddEndpointsApiExplorer();

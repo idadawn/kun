@@ -112,8 +112,9 @@ Kun.Saga.Persistence.StepDirection.Execute = 0 -> Kun.Saga.Persistence.StepDirec
 Kun.Saga.SagaRegistration
 Kun.Saga.SagaRegistration.ExecuteStepAsync.get -> System.Func<int, Kun.Saga.Persistence.StepDirection, string!, System.IServiceProvider!, System.Threading.CancellationToken, System.Threading.Tasks.Task!>!
 Kun.Saga.SagaRegistration.SagaName.get -> string!
-Kun.Saga.SagaRegistration.SagaRegistration(string! sagaName, System.Func<object!, Kun.Saga.Persistence.ISagaInstanceStore!, Kun.Core.Time.ISystemClock!, System.Threading.CancellationToken, System.Threading.Tasks.Task<System.Guid>!>! startAsync, System.Func<int, Kun.Saga.Persistence.StepDirection, string!, System.IServiceProvider!, System.Threading.CancellationToken, System.Threading.Tasks.Task!>! executeStepAsync) -> void
+Kun.Saga.SagaRegistration.SagaRegistration(string! sagaName, System.Func<object!, Kun.Saga.Persistence.ISagaInstanceStore!, Kun.Core.Time.ISystemClock!, System.Threading.CancellationToken, System.Threading.Tasks.Task<System.Guid>!>! startAsync, System.Func<int, Kun.Saga.Persistence.StepDirection, string!, System.IServiceProvider!, System.Threading.CancellationToken, System.Threading.Tasks.Task!>! executeStepAsync, int stepCount = 0) -> void
 Kun.Saga.SagaRegistration.StartAsync.get -> System.Func<object!, Kun.Saga.Persistence.ISagaInstanceStore!, Kun.Core.Time.ISystemClock!, System.Threading.CancellationToken, System.Threading.Tasks.Task<System.Guid>!>!
+Kun.Saga.SagaRegistration.StepCount.get -> int
 Kun.Saga.SagaRegistry
 Kun.Saga.SagaRegistry.Find(string! sagaName) -> Kun.Saga.SagaRegistration?
 Kun.Saga.SagaRegistry.RegisteredNames.get -> System.Collections.Generic.IEnumerable<string!>!

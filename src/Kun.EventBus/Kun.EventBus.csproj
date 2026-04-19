@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Kun.EventBus.Tests" />
+    <InternalsVisibleTo Include="Kun.IntegrationTests" />
   </ItemGroup>
 
 </Project>

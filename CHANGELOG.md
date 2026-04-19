@@ -6,6 +6,15 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **Kun.Saga**: registered `ISystemClock` in `AddKunSaga` (required by
+  `SagaOrchestrator`); `SagaStepExecutor` now persists state via
+  `DbContext.SaveChangesAsync` after each entry; forward execution advances
+  step index and marks completed; reverse compensation walks back to 0 and
+  marks compensated; `ISagaOrchestrator` moved from Singleton to Scoped to
+  match its Scoped dependency `ISagaInstanceStore`.
+
 ### Added — M1 交付（阶段一：奠基）
 
 **Kun.Core** (v1.1)

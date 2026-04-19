@@ -15,7 +15,10 @@ namespace Kun.Saga.DependencyInjection;
 public sealed class KunSagaBuilder
 {
     private readonly IServiceCollection _services;
-    private readonly List<SagaRegistration> _registrations = new();
+
+    // Holds (partial registration without StepCount, step-count resolver) pairs.
+    // StepCount is resolved from a temporary IServiceProvider in BuildRegistry().
+    private readonly List<(SagaRegistration Partial, Func<IServiceProvider, int> StepCountResolver)> _pending = new();
 
     internal KunSagaBuilder(IServiceCollection services)
     {
@@ -110,17 +113,36 @@ public sealed class KunSagaBuilder
             }
         }
 
-        var registration = new SagaRegistration(
+        // Partial registration without StepCount — resolved in BuildRegistry().
+        var partial = new SagaRegistration(
             sagaName: sagaName,
             startAsync: StartDelegate,
-            executeStepAsync: ExecuteStepDelegate);
+            executeStepAsync: ExecuteStepDelegate,
+            stepCount: 0);
 
-        _registrations.Add(registration);
+        _pending.Add((partial, sp => sp.GetRequiredService<TSaga>().Steps.Count));
 
         return this;
     }
 
-    internal SagaRegistry BuildRegistry() => new(_registrations);
+    internal SagaRegistry BuildRegistry()
+    {
+        // Build a temporary service provider to resolve each saga singleton once
+        // so we can read its Steps.Count and store it in the final SagaRegistration.
+        using var tempProvider = _services.BuildServiceProvider();
+
+        var registrations = _pending.Select(p =>
+        {
+            var stepCount = p.StepCountResolver(tempProvider);
+            return new SagaRegistration(
+                sagaName: p.Partial.SagaName,
+                startAsync: p.Partial.StartAsync,
+                executeStepAsync: p.Partial.ExecuteStepAsync,
+                stepCount: stepCount);
+        });
+
+        return new SagaRegistry(registrations);
+    }
 
     private static async Task<Guid> StartCoreAsync(
         SagaInstance instance,
