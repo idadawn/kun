@@ -47,10 +47,13 @@ public sealed class SagaRegistration
     /// <summary>
     /// Starts a new saga instance. Captures <c>TSaga</c> and <c>TContext</c> at registration
     /// time, so no reflection is required at call time.
-    /// Parameters: (contextJson, store, clock, cancellationToken) → sagaId
+    /// Parameters: (contextJson, store, clock, serviceProvider, cancellationToken) → sagaId
     /// The context is passed as the typed object (boxed as <see langword="object"/>).
+    /// The <see cref="IServiceProvider"/> is used to resolve the saga's step-0 timeout via
+    /// <see cref="GetStepTimeout"/> so that <c>SagaInstance.TimeoutAt</c> reflects the actual
+    /// per-step timeout rather than an arbitrary default.
     /// </summary>
-    public Func<object, ISagaInstanceStore, Kun.Core.Time.ISystemClock, CancellationToken, Task<Guid>> StartAsync { get; }
+    public Func<object, ISagaInstanceStore, Kun.Core.Time.ISystemClock, IServiceProvider, CancellationToken, Task<Guid>> StartAsync { get; }
 
     /// <summary>
     /// Executes or compensates a single saga step using the provided context payload JSON.
@@ -87,7 +90,7 @@ public sealed class SagaRegistration
     /// </param>
     public SagaRegistration(
         string sagaName,
-        Func<object, ISagaInstanceStore, Kun.Core.Time.ISystemClock, CancellationToken, Task<Guid>> startAsync,
+        Func<object, ISagaInstanceStore, Kun.Core.Time.ISystemClock, IServiceProvider, CancellationToken, Task<Guid>> startAsync,
         Func<int, StepDirection, string, IServiceProvider, CancellationToken, Task> executeStepAsync,
         Func<int, IServiceProvider, TimeSpan?>? getStepTimeout = null,
         int stepCount = 0)

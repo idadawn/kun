@@ -1,4 +1,5 @@
 using Kun.Core.Time;
+using Kun.EntityFrameworkCore;
 using Kun.Saga.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -72,6 +73,7 @@ public sealed partial class SagaTimeoutDetector : BackgroundService
         await using var scope = _scopeFactory.CreateAsyncScope();
         var store = scope.ServiceProvider.GetRequiredService<ISagaInstanceStore>();
         var clock = scope.ServiceProvider.GetRequiredService<ISystemClock>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<KunDbContext>();
 
         var now = clock.UtcNow;
         var timedOut = await store.FindTimedOutAsync(now, _options.BatchSize, ct).ConfigureAwait(false);
@@ -87,7 +89,7 @@ public sealed partial class SagaTimeoutDetector : BackgroundService
         {
             try
             {
-                await TriggerCompensationAsync(instance, store, clock, ct).ConfigureAwait(false);
+                await TriggerCompensationAsync(instance, store, clock, dbContext, ct).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -100,6 +102,7 @@ public sealed partial class SagaTimeoutDetector : BackgroundService
         SagaInstance instance,
         ISagaInstanceStore store,
         ISystemClock clock,
+        KunDbContext dbContext,
         CancellationToken ct)
     {
         var now = clock.UtcNow;
@@ -122,6 +125,11 @@ public sealed partial class SagaTimeoutDetector : BackgroundService
             enqueuedAt: now);
 
         await store.EnqueueStepAsync(entry, ct).ConfigureAwait(false);
+
+        // Commit the state transition and the compensation queue entry atomically.
+        // Without this SaveChangesAsync the timeout detection is invisible to other
+        // background services (SagaStepExecutor) which query the DB directly.
+        await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
     }
 
     [LoggerMessage(Level = LogLevel.Information, Message = "SagaTimeoutDetector started.")]

@@ -15,19 +15,26 @@ public sealed class SagaOrchestrator : ISagaOrchestrator
     private readonly ISagaInstanceStore _store;
     private readonly SagaRegistry _registry;
     private readonly ISystemClock _clock;
+    private readonly IServiceProvider _serviceProvider;
 
     /// <summary>Creates a new <see cref="SagaOrchestrator"/>.</summary>
     /// <param name="store">The saga instance persistence store.</param>
     /// <param name="registry">The AOT-safe saga registry.</param>
     /// <param name="clock">The system clock.</param>
-    public SagaOrchestrator(ISagaInstanceStore store, SagaRegistry registry, ISystemClock clock)
+    /// <param name="serviceProvider">
+    /// The scoped service provider used to resolve the saga instance so its step-0 timeout
+    /// can be read when computing the initial <c>SagaInstance.TimeoutAt</c>.
+    /// </param>
+    public SagaOrchestrator(ISagaInstanceStore store, SagaRegistry registry, ISystemClock clock, IServiceProvider serviceProvider)
     {
         ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(registry);
         ArgumentNullException.ThrowIfNull(clock);
+        ArgumentNullException.ThrowIfNull(serviceProvider);
         _store = store;
         _registry = registry;
         _clock = clock;
+        _serviceProvider = serviceProvider;
     }
 
     /// <inheritdoc/>
@@ -43,6 +50,7 @@ public sealed class SagaOrchestrator : ISagaOrchestrator
                 $"Saga '{sagaName}' is not registered. Call AddSaga<{sagaName}, ...>() during startup.");
 
         // Delegate to the AOT-safe typed delegate captured at registration time.
-        return registration.StartAsync(context, _store, _clock, cancellationToken);
+        // Pass the service provider so the delegate can resolve step-0 timeout.
+        return registration.StartAsync(context, _store, _clock, _serviceProvider, cancellationToken);
     }
 }

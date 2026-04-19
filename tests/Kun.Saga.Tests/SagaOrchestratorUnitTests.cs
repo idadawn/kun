@@ -48,7 +48,7 @@ public sealed class SagaOrchestratorUnitTests
         clock.UtcNow.Returns(DateTimeOffset.UtcNow);
 
         // Build a minimal registry with a start delegate that calls the store.
-        Task<Guid> StartDelegate(object ctx, ISagaInstanceStore s, ISystemClock c, CancellationToken ct)
+        Task<Guid> StartDelegate(object ctx, ISagaInstanceStore s, ISystemClock c, IServiceProvider _, CancellationToken ct)
         {
             var context = (TestSagaContext)ctx;
             var now = c.UtcNow;
@@ -76,7 +76,8 @@ public sealed class SagaOrchestratorUnitTests
         var registration = new SagaRegistration(sagaName, StartDelegate, ExecuteStepDelegate);
         var registry = new SagaRegistry([registration]);
 
-        var orchestrator = new SagaOrchestrator(store, registry, clock);
+        var serviceProvider = Substitute.For<IServiceProvider>();
+        var orchestrator = new SagaOrchestrator(store, registry, clock, serviceProvider);
         return (orchestrator, store, registry, clock);
     }
 
@@ -123,7 +124,8 @@ public sealed class SagaOrchestratorUnitTests
         clock.UtcNow.Returns(DateTimeOffset.UtcNow);
         var registry = new SagaRegistry([]); // empty registry
 
-        var orchestrator = new SagaOrchestrator(store, registry, clock);
+        var serviceProvider = Substitute.For<IServiceProvider>();
+        var orchestrator = new SagaOrchestrator(store, registry, clock, serviceProvider);
         var context = new TestSagaContext();
 
         var act = async () => await orchestrator.StartAsync<TestSaga, TestSagaContext>(context, TestContext.Current.CancellationToken);

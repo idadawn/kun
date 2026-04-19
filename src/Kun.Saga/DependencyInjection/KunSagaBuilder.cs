@@ -53,14 +53,19 @@ public sealed class KunSagaBuilder
             object contextObj,
             ISagaInstanceStore store,
             ISystemClock clock,
+            IServiceProvider sp,
             CancellationToken ct)
         {
             var context = (TContext)contextObj;
             var now = clock.UtcNow;
             var payload = JsonSerializer.Serialize(context, typeInfo);
 
-            // Default timeout placeholder — SagaStepExecutor will refine per-step.
-            var timeoutAt = now.Add(TimeSpan.FromMinutes(5));
+            // Use step-0's per-step timeout (falling back to the saga's DefaultStepTimeout,
+            // then to 5 min if DefaultStepTimeout is somehow unset).
+            var saga = sp.GetRequiredService<TSaga>();
+            var step0Timeout = (saga.Steps.Count > 0 ? saga.Steps[0].Timeout : null)
+                ?? saga.DefaultStepTimeout;
+            var timeoutAt = now.Add(step0Timeout);
             var traceId = Activity.Current?.Id;
 
             var instance = new SagaInstance(
