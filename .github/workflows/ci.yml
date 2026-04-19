@@ -77,9 +77,10 @@ jobs:
       - name: Publish AOT-candidate services (zero warnings)
         run: |
           # AOT candidates: any project with <IsAotCandidate>true</IsAotCandidate>
+          # -r linux-x64 is required: native AOT compilation must know the target RID.
           for proj in src/Kun.Gateway src/Kun.Mediator src/Kun.Core src/Kun.AspNetCore src/Kun.Grpc src/Kun.Validation; do
             echo "::group::Publishing AOT: $proj"
-            dotnet publish "$proj" -c Release -p:PublishAot=true /warnaserror
+            dotnet publish "$proj" -c Release -r linux-x64 -p:PublishAot=true -p:TreatWarningsAsErrors=true
             echo "::endgroup::"
           done
 
