@@ -1,4 +1,5 @@
 using System.Collections.Frozen;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Kun.Mediator;
 
@@ -10,7 +11,7 @@ namespace Kun.Mediator;
 /// </summary>
 public sealed class KunMediator : ISender, IPublisher
 {
-    private readonly IServiceProvider _services;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly FrozenDictionary<Type, RequestHandlerBase> _handlers;
 
     // Values are NotificationDispatcher<TNotification> instances stored as object
@@ -19,11 +20,11 @@ public sealed class KunMediator : ISender, IPublisher
     private readonly FrozenDictionary<Type, object> _notificationDispatchers;
 
     internal KunMediator(
-        IServiceProvider services,
+        IServiceScopeFactory scopeFactory,
         FrozenDictionary<Type, RequestHandlerBase> handlers,
         FrozenDictionary<Type, object> notificationDispatchers)
     {
-        _services = services;
+        _scopeFactory = scopeFactory;
         _handlers = handlers;
         _notificationDispatchers = notificationDispatchers;
     }
@@ -39,7 +40,7 @@ public sealed class KunMediator : ISender, IPublisher
     /// <exception cref="InvalidOperationException">
     /// Thrown when no handler is registered for <paramref name="request"/>'s concrete type.
     /// </exception>
-    public ValueTask<TResponse> Send<TResponse>(
+    public async ValueTask<TResponse> Send<TResponse>(
         Kun.Core.Cqrs.IRequest<TResponse> request,
         CancellationToken cancellationToken = default)
     {
@@ -57,7 +58,11 @@ public sealed class KunMediator : ISender, IPublisher
         // concrete runtime type and TResponse matches the call-site TResponse. The cast to
         // IRequestHandlerWrapper<TResponse> is therefore safe — no MakeGenericMethod needed.
         var typed = (IRequestHandlerWrapper<TResponse>)wrapperBase;
-        return typed.Handle(request, _services, cancellationToken);
+
+        // Create a child scope so that scoped services (DbContext, UoW, etc.) resolve correctly
+        // even though KunMediator itself is a singleton. The scope is disposed after each Send.
+        await using var scope = _scopeFactory.CreateAsyncScope();
+        return await typed.Handle(request, scope.ServiceProvider, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -68,7 +73,7 @@ public sealed class KunMediator : ISender, IPublisher
     /// <typeparam name="TNotification">The notification type.</typeparam>
     /// <param name="notification">The notification to publish. Must not be <see langword="null"/>.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    public ValueTask Publish<TNotification>(
+    public async ValueTask Publish<TNotification>(
         TNotification notification,
         CancellationToken cancellationToken = default)
         where TNotification : INotification
@@ -77,10 +82,13 @@ public sealed class KunMediator : ISender, IPublisher
 
         if (!_notificationDispatchers.TryGetValue(typeof(TNotification), out var dispatcherObj))
         {
-            return ValueTask.CompletedTask; // no subscribers — no-op
+            return; // no subscribers — no-op
         }
 
         var dispatcher = (NotificationDispatcher<TNotification>)dispatcherObj;
-        return dispatcher.PublishAsync(notification, _services, cancellationToken);
+
+        // Create a child scope so notification handlers can resolve scoped dependencies.
+        await using var scope = _scopeFactory.CreateAsyncScope();
+        await dispatcher.PublishAsync(notification, scope.ServiceProvider, cancellationToken).ConfigureAwait(false);
     }
 }

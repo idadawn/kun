@@ -28,7 +28,8 @@ public static class KunMediatorServiceCollectionExtensions
         var builder = new KunMediatorBuilder(services);
         configure(builder);
 
-        services.AddSingleton<KunMediator>(sp => builder.Build(sp));
+        services.AddSingleton<KunMediator>(sp =>
+            builder.Build(sp.GetRequiredService<IServiceScopeFactory>()));
         services.AddSingleton<ISender>(sp => sp.GetRequiredService<KunMediator>());
         services.AddSingleton<IPublisher>(sp => sp.GetRequiredService<KunMediator>());
         return services;

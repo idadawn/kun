@@ -113,11 +113,20 @@ public sealed class KunSagaBuilder
             }
         }
 
+        // Returns the Timeout for a given step index by resolving the saga from DI.
+        TimeSpan? GetStepTimeoutDelegate(int stepIndex, IServiceProvider sp)
+        {
+            var saga = sp.GetRequiredService<TSaga>();
+            if (stepIndex < 0 || stepIndex >= saga.Steps.Count) return null;
+            return saga.Steps[stepIndex].Timeout;
+        }
+
         // Partial registration without StepCount — resolved in BuildRegistry().
         var partial = new SagaRegistration(
             sagaName: sagaName,
             startAsync: StartDelegate,
             executeStepAsync: ExecuteStepDelegate,
+            getStepTimeout: GetStepTimeoutDelegate,
             stepCount: 0);
 
         _pending.Add((partial, sp => sp.GetRequiredService<TSaga>().Steps.Count));
@@ -138,6 +147,7 @@ public sealed class KunSagaBuilder
                 sagaName: p.Partial.SagaName,
                 startAsync: p.Partial.StartAsync,
                 executeStepAsync: p.Partial.ExecuteStepAsync,
+                getStepTimeout: p.Partial.GetStepTimeout,
                 stepCount: stepCount);
         });
 

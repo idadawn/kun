@@ -60,6 +60,14 @@ public sealed class SagaRegistration
     public Func<int, StepDirection, string, IServiceProvider, CancellationToken, Task> ExecuteStepAsync { get; }
 
     /// <summary>
+    /// Returns the configured <see cref="Kun.Saga.Abstractions.ISagaStep{TContext}.Timeout"/> for
+    /// the given step index, or <see langword="null"/> when the step has no timeout.
+    /// Used by <c>SagaStepExecutor</c> to set per-step <c>TimeoutAt</c> when advancing.
+    /// Parameters: (stepIndex, serviceProvider) → TimeSpan?
+    /// </summary>
+    public Func<int, IServiceProvider, TimeSpan?> GetStepTimeout { get; }
+
+    /// <summary>
     /// Gets the total number of steps in this saga. Used by <c>SagaStepExecutor</c>
     /// to determine when forward execution is complete.
     /// </summary>
@@ -69,6 +77,10 @@ public sealed class SagaRegistration
     /// <param name="sagaName">The stable saga name.</param>
     /// <param name="startAsync">The AOT-safe start delegate.</param>
     /// <param name="executeStepAsync">The AOT-safe step execution delegate.</param>
+    /// <param name="getStepTimeout">
+    /// Returns the timeout for a given step index. May return <see langword="null"/> when
+    /// no per-step timeout is configured. Defaults to a delegate that always returns <see langword="null"/>.
+    /// </param>
     /// <param name="stepCount">
     /// The total number of steps in this saga. Defaults to <c>0</c> when not provided
     /// (e.g. in unit tests that construct registrations directly without a full saga class).
@@ -77,6 +89,7 @@ public sealed class SagaRegistration
         string sagaName,
         Func<object, ISagaInstanceStore, Kun.Core.Time.ISystemClock, CancellationToken, Task<Guid>> startAsync,
         Func<int, StepDirection, string, IServiceProvider, CancellationToken, Task> executeStepAsync,
+        Func<int, IServiceProvider, TimeSpan?>? getStepTimeout = null,
         int stepCount = 0)
     {
         ArgumentNullException.ThrowIfNull(sagaName);
@@ -86,5 +99,6 @@ public sealed class SagaRegistration
         StepCount = stepCount;
         StartAsync = startAsync;
         ExecuteStepAsync = executeStepAsync;
+        GetStepTimeout = getStepTimeout ?? ((_, _) => null);
     }
 }

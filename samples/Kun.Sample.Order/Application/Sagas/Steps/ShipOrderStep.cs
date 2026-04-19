@@ -34,7 +34,9 @@ public sealed partial class ShipOrderStep : ISagaStep<OrderCreationSagaContext>
         if (string.Equals(context.SimulateFailure, "timeout", StringComparison.OrdinalIgnoreCase))
         {
             LogTimeoutSimulated(_logger, context.SagaId, context.OrderId);
-            await Task.Delay(TimeSpan.FromSeconds(60), cancellationToken);
+            // Sleep past the 10s step timeout so SagaTimeoutDetector triggers compensation.
+            // 20s is enough to exceed the timeout while keeping the end-to-end test well under its 60s budget.
+            await Task.Delay(TimeSpan.FromSeconds(20), cancellationToken);
         }
 
         LogShipping(_logger, context.SagaId, context.OrderId);

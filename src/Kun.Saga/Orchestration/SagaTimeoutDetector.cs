@@ -112,17 +112,16 @@ public sealed partial class SagaTimeoutDetector : BackgroundService
 
         await store.UpdateAsync(instance, ct).ConfigureAwait(false);
 
-        for (var i = failedStepIndex; i >= 0; i--)
-        {
-            var entry = new SagaStepQueueEntry(
-                id: Guid.NewGuid(),
-                sagaId: instance.Id,
-                stepIndex: i,
-                direction: StepDirection.Compensate,
-                enqueuedAt: now);
+        // Enqueue only the timed-out step for compensation; each compensate step
+        // enqueues the previous one on success (sequential chaining).
+        var entry = new SagaStepQueueEntry(
+            id: Guid.NewGuid(),
+            sagaId: instance.Id,
+            stepIndex: failedStepIndex,
+            direction: StepDirection.Compensate,
+            enqueuedAt: now);
 
-            await store.EnqueueStepAsync(entry, ct).ConfigureAwait(false);
-        }
+        await store.EnqueueStepAsync(entry, ct).ConfigureAwait(false);
     }
 
     [LoggerMessage(Level = LogLevel.Information, Message = "SagaTimeoutDetector started.")]

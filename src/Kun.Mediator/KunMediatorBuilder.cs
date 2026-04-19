@@ -144,18 +144,20 @@ public sealed class KunMediatorBuilder
     /// <see cref="FrozenDictionary{TKey,TValue}"/> for O(1) dispatch. Called once at
     /// application startup by the DI factory.
     /// </summary>
-    /// <param name="services">The root <see cref="IServiceProvider"/> used to resolve handlers.</param>
+    /// <param name="scopeFactory">The <see cref="IServiceScopeFactory"/> used to create a child scope per dispatch.</param>
     /// <returns>A fully configured, immutable <see cref="KunMediator"/>.</returns>
-    internal KunMediator Build(IServiceProvider services)
+    internal KunMediator Build(IServiceScopeFactory scopeFactory)
     {
+        // Handler/dispatcher wrapper instances are stateless — build them once with a null SP.
+        // The actual SP used at dispatch time comes from the per-call scope created in KunMediator.
         var handlers = _handlerEntries
-            .ToDictionary(e => e.RequestType, e => e.Factory(services))
+            .ToDictionary(e => e.RequestType, e => e.Factory(null!))
             .ToFrozenDictionary();
 
         var notificationDispatchers = _notificationBuilders
-            .ToDictionary(kv => kv.Key, kv => kv.Value(services))
+            .ToDictionary(kv => kv.Key, kv => kv.Value(null!))
             .ToFrozenDictionary();
 
-        return new KunMediator(services, handlers, notificationDispatchers);
+        return new KunMediator(scopeFactory, handlers, notificationDispatchers);
     }
 }

@@ -54,7 +54,8 @@ public sealed partial class PlaceOrderCommandHandler : IRequestHandler<PlaceOrde
         await _db.SaveChangesAsync(cancellationToken);
 
         LogOrderPlaced(_logger, order.Id, sagaId);
-        return order.Id;
+        // Return sagaId so callers can poll saga status via GET /demo/sagas/{id}.
+        return sagaId;
     }
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Order {OrderId} placed. Saga {SagaId} started.")]

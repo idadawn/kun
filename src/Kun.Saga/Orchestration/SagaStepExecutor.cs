@@ -142,24 +142,46 @@ public sealed partial class SagaStepExecutor : BackgroundService
 
             if (entry.Direction == StepDirection.Execute)
             {
+                // Reload the instance from the DB to detect any concurrent state change
+                // (e.g. SagaTimeoutDetector moved it to Compensating while this step ran).
+                dbContext.Entry(instance).State = Microsoft.EntityFrameworkCore.EntityState.Detached;
+                var freshInstance = await store.FindAsync(instance.Id, ct).ConfigureAwait(false);
+
+                if (freshInstance is null || freshInstance.State != SagaState.Running)
+                {
+                    // Timeout detector (or another concurrent actor) already transitioned
+                    // the saga away from Running — just mark this queue entry processed and
+                    // let the compensation path handle the rest.
+                    LogStepSuperseded(_logger, entry.StepIndex, instance.Id, freshInstance?.State.ToString() ?? "null");
+                    entry.MarkProcessed(now);
+                    await store.UpdateStepAsync(entry, ct).ConfigureAwait(false);
+                    await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
+                    return;
+                }
+
                 var nextIndex = entry.StepIndex + 1;
                 if (nextIndex >= registration.StepCount)
                 {
                     // All steps executed — saga is complete.
-                    instance.MarkCompleted(now);
+                    freshInstance.MarkCompleted(now);
                 }
                 else
                 {
-                    // Advance to next step.
-                    instance.MoveToStep(nextIndex, now, now.Add(TimeSpan.FromMinutes(5)), instance.ContextPayload);
+                    // Advance to next step using that step's configured timeout (or 5 minutes default).
+                    var stepTimeout = registration.GetStepTimeout(nextIndex, serviceProvider)
+                        ?? TimeSpan.FromMinutes(5);
+                    var nextTimeoutAt = now.Add(stepTimeout);
+                    freshInstance.MoveToStep(nextIndex, now, nextTimeoutAt, freshInstance.ContextPayload);
                     var nextEntry = new SagaStepQueueEntry(
                         id: Guid.NewGuid(),
-                        sagaId: instance.Id,
+                        sagaId: freshInstance.Id,
                         stepIndex: nextIndex,
                         direction: StepDirection.Execute,
                         enqueuedAt: now);
                     await store.EnqueueStepAsync(nextEntry, ct).ConfigureAwait(false);
                 }
+
+                await store.UpdateAsync(freshInstance, ct).ConfigureAwait(false);
             }
             else
             {
@@ -181,9 +203,10 @@ public sealed partial class SagaStepExecutor : BackgroundService
                         enqueuedAt: now);
                     await store.EnqueueStepAsync(prevEntry, ct).ConfigureAwait(false);
                 }
+
+                await store.UpdateAsync(instance, ct).ConfigureAwait(false);
             }
 
-            await store.UpdateAsync(instance, ct).ConfigureAwait(false);
             entry.MarkProcessed(now);
             await store.UpdateStepAsync(entry, ct).ConfigureAwait(false);
             await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
@@ -198,16 +221,15 @@ public sealed partial class SagaStepExecutor : BackgroundService
                 instance.StartCompensating(entry.StepIndex, ex.Message, clock.UtcNow);
                 await store.UpdateAsync(instance, ct).ConfigureAwait(false);
 
-                for (var i = entry.StepIndex; i >= 0; i--)
-                {
-                    var compensateEntry = new SagaStepQueueEntry(
-                        id: Guid.NewGuid(),
-                        sagaId: instance.Id,
-                        stepIndex: i,
-                        direction: StepDirection.Compensate,
-                        enqueuedAt: clock.UtcNow);
-                    await store.EnqueueStepAsync(compensateEntry, ct).ConfigureAwait(false);
-                }
+                // Enqueue only the failed step for compensation; each compensate step
+                // enqueues the previous one on success (sequential chaining).
+                var compensateEntry = new SagaStepQueueEntry(
+                    id: Guid.NewGuid(),
+                    sagaId: instance.Id,
+                    stepIndex: entry.StepIndex,
+                    direction: StepDirection.Compensate,
+                    enqueuedAt: clock.UtcNow);
+                await store.EnqueueStepAsync(compensateEntry, ct).ConfigureAwait(false);
             }
             else
             {
@@ -235,6 +257,9 @@ public sealed partial class SagaStepExecutor : BackgroundService
 
     [LoggerMessage(Level = LogLevel.Error, Message = "SagaStepExecutor: step {StepIndex} ({Direction}) for saga {SagaId} failed.")]
     private static partial void LogStepFailed(ILogger logger, int stepIndex, StepDirection direction, Guid sagaId, Exception ex);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "SagaStepExecutor: step {StepIndex} for saga {SagaId} was superseded (saga state is now {State}). Skipping advance.")]
+    private static partial void LogStepSuperseded(ILogger logger, int stepIndex, Guid sagaId, string state);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Unexpected error in SagaStepExecutor poll cycle.")]
     private static partial void LogUnexpectedError(ILogger logger, Exception ex);

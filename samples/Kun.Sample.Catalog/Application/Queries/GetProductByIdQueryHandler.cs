@@ -19,15 +19,15 @@ public sealed class GetProductByIdQueryHandler(IReadDbConnectionFactory connecti
         using var connection = await connectionFactory.OpenAsync(cancellationToken);
 
         const string sql = """
-            SELECT id         AS "Id",
-                   name       AS "Name",
-                   description AS "Description",
-                   price      AS "Price",
-                   category_id AS "CategoryId",
-                   stock      AS "Stock"
+            SELECT "Id",
+                   "Name",
+                   "Description",
+                   "Price",
+                   "CategoryId",
+                   "Stock"
             FROM   catalog_products
-            WHERE  id = @Id
-              AND  is_deleted = false
+            WHERE  "Id" = @Id
+              AND  "IsDeleted" = false
             """;
 
         var row = await connection.QuerySingleOrDefaultAsync<ProductDto>(

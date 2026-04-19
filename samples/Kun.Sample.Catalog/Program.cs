@@ -129,3 +129,6 @@ app.MapGrpcService<CatalogGrpcService>();
 
 app.Run();
 
+/// <summary>Test affordance — exposes the top-level Program for WebApplicationFactory.</summary>
+public partial class Program { }
+

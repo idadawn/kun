@@ -58,6 +58,15 @@ builder.Services.AddScoped<IOutboxMessageStore, EfOutboxMessageStore>();
 builder.Services.AddSingleton<IIntegrationEventPublisher, NoOpIntegrationEventPublisher>();
 builder.Services.AddKunOutboxPublisher();
 
+// ── Catalog gRPC client ───────────────────────────────────────────────────────
+// Must be registered BEFORE AddKunSaga so that BuildRegistry()'s temporary
+// ServiceProvider can resolve ReserveInventoryStep (which depends on this client).
+builder.Services
+    .AddGrpcClient<Kun.Sample.Catalog.Grpc.CatalogService.CatalogServiceClient>(o =>
+    {
+        o.Address = new Uri(builder.Configuration["CatalogGrpc:Address"] ?? "http://localhost:5001");
+    });
+
 // ── Saga orchestration ────────────────────────────────────────────────────────
 builder.Services.AddScoped<ReserveInventoryStep>();
 builder.Services.AddScoped<ProcessPaymentStep>();
@@ -81,13 +90,6 @@ builder.Services.AddKunMediator(m =>
     m.AddRequestHandler<GetOrderByIdQuery, OrderDto?, GetOrderByIdQueryHandler>();
     m.AddRequestHandler<GetSagaStatusQuery, SagaStatusDto?, GetSagaStatusQueryHandler>();
 });
-
-// ── Catalog gRPC client ───────────────────────────────────────────────────────
-builder.Services
-    .AddGrpcClient<Kun.Sample.Catalog.Grpc.CatalogService.CatalogServiceClient>(o =>
-    {
-        o.Address = new Uri(builder.Configuration["CatalogGrpc:Address"] ?? "http://localhost:5001");
-    });
 
 // ── ASP.NET Core ──────────────────────────────────────────────────────────────
 builder.Services.AddKunAspNetCore();
@@ -118,6 +120,9 @@ app.MapGet("/", static () => Results.Ok(new
 // ── Route manifest (static readonly avoids CA1861 on repeated array allocation) ─
 
 app.Run();
+
+/// <summary>Test affordance — exposes the top-level Program for WebApplicationFactory.</summary>
+public partial class Program { }
 
 // ── Route manifest ────────────────────────────────────────────────────────────
 file static class DemoRoutes
