@@ -20,6 +20,9 @@ public sealed class S2sTokenIssuer
 
     /// <summary>
     /// Initializes the issuer by loading the RSA private key from <see cref="KunGatewayOptions.SigningKeyPath"/>.
+    /// If the configured signing-key file does not exist, a dev-mode 2048-bit RSA key pair is
+    /// generated and persisted to both <c>SigningKeyPath</c> and <c>PublicKeyPath</c> so local
+    /// runs work out of the box. Production deployments MUST pre-provision real key files.
     /// </summary>
     /// <param name="options">Gateway configuration options.</param>
     public S2sTokenIssuer(IOptions<KunGatewayOptions> options)
@@ -27,11 +30,31 @@ public sealed class S2sTokenIssuer
         ArgumentNullException.ThrowIfNull(options);
         _options = options.Value;
 
-        var pem = File.ReadAllText(_options.SigningKeyPath);
         var rsa = RSA.Create();
-        rsa.ImportFromPem(pem);
+        if (File.Exists(_options.SigningKeyPath))
+        {
+            rsa.ImportFromPem(File.ReadAllText(_options.SigningKeyPath));
+        }
+        else
+        {
+            rsa.KeySize = 2048;
+            EnsureDirectory(_options.SigningKeyPath);
+            File.WriteAllText(_options.SigningKeyPath, rsa.ExportRSAPrivateKeyPem());
+            EnsureDirectory(_options.PublicKeyPath);
+            File.WriteAllText(_options.PublicKeyPath, rsa.ExportRSAPublicKeyPem());
+        }
+
         _signingKey = new RsaSecurityKey(rsa);
         _credentials = new SigningCredentials(_signingKey, SecurityAlgorithms.RsaSha256);
+    }
+
+    private static void EnsureDirectory(string filePath)
+    {
+        var dir = Path.GetDirectoryName(filePath);
+        if (!string.IsNullOrEmpty(dir))
+        {
+            Directory.CreateDirectory(dir);
+        }
     }
 
     /// <summary>
