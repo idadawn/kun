@@ -64,7 +64,14 @@ builder.Services.AddKunOutboxPublisher();
 builder.Services
     .AddGrpcClient<Kun.Sample.Catalog.Grpc.CatalogService.CatalogServiceClient>(o =>
     {
-        o.Address = new Uri(builder.Configuration["CatalogGrpc:Address"] ?? "http://localhost:5001");
+        // Aspire service discovery: services__catalog__grpc__0 / services__catalog__http__0 are
+        // injected by the AppHost when running under .NET Aspire.
+        // For standalone runs, fall back to CatalogGrpc:Address from appsettings.json.
+        var catalogUrl = builder.Configuration["services:catalog:grpc:0"]
+            ?? builder.Configuration["services:catalog:http:0"]
+            ?? builder.Configuration["CatalogGrpc:Address"]
+            ?? "http://localhost:5001";
+        o.Address = new Uri(catalogUrl);
     });
 
 // ── Saga orchestration ────────────────────────────────────────────────────────

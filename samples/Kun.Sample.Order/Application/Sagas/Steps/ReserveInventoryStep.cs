@@ -1,3 +1,4 @@
+// NOTE: idempotency is demo-grade — a real system would dedupe by saga_id+step_index + product_id.
 using Kun.Saga.Abstractions;
 using Kun.Saga.Exceptions;
 using Kun.Sample.Catalog.Grpc;
