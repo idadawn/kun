@@ -10,6 +10,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddKunGateway(opts =>
     builder.Configuration.GetSection("KunGateway").Bind(opts));
 
+// YARP config provider — binds Routes/Clusters from appsettings.json's ReverseProxy section.
+// Required by MapReverseProxy; AddKunGateway registers the transform but not the config source.
+builder.Services.AddReverseProxy()
+    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
+
 // ── Rate limiting (tenant-partitioned, 100 req/min) ───────────────────────────
 builder.Services.AddKunRateLimiter();
 
