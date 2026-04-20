@@ -22,7 +22,14 @@ public static class KunEntityFrameworkCoreServiceCollectionExtensions
 
         services.TryAddScoped<IntegrationEventBuffer>();
         services.TryAddScoped<IUnitOfWork, EfUnitOfWork>();
-        services.TryAddScoped<IIntegrationEventBus, IntegrationEventOutboxAccumulator>();
+
+        // IIntegrationEventBus and IOutboxWriter must resolve to the SAME scoped
+        // instance of IntegrationEventOutboxAccumulator so non-aggregate collaborators
+        // (IOutboxWriter) enqueue into the same buffer the aggregate flow uses.
+        services.TryAddScoped<IntegrationEventOutboxAccumulator>();
+        services.TryAddScoped<IIntegrationEventBus>(sp => sp.GetRequiredService<IntegrationEventOutboxAccumulator>());
+        services.TryAddScoped<IOutboxWriter>(sp => sp.GetRequiredService<IntegrationEventOutboxAccumulator>());
+
         services.TryAddScoped<IDomainEventDispatcher, InProcessDomainEventDispatcher>();
 
         return services;
