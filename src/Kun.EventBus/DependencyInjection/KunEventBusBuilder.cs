@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Kun.EventBus.Idempotency;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -21,7 +22,7 @@ public sealed class KunEventBusBuilder : IEventTypeRegistrar
     }
 
     /// <summary>Registers an <see cref="IIntegrationEventHandler{TEvent}"/> for <typeparamref name="TEvent"/>.</summary>
-    public KunEventBusBuilder AddHandler<TEvent, THandler>()
+    public KunEventBusBuilder AddHandler<TEvent, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] THandler>()
         where TEvent : class
         where THandler : class, IIntegrationEventHandler<TEvent>
     {

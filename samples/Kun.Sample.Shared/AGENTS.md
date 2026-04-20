@@ -1,3 +1,6 @@
+<!-- Parent: ../AGENTS.md -->
+<!-- Generated: 2026-04-20 | Updated: 2026-04-20 -->
+
 # Kun.Sample.Shared
 
 Shared composition helpers for Kun Framework sample services. This project is **not** a framework module — it is only referenced by projects under `samples/`.

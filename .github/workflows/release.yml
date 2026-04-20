@@ -43,10 +43,14 @@ jobs:
 
       - name: AOT publish verify
         run: |
-          for proj in Kun.Core Kun.Mediator Kun.Validation Kun.EventBus Kun.EventBus.RabbitMQ Kun.Saga Kun.Security Kun.AspNetCore Kun.Grpc Kun.Gateway; do
+          # AOT loop must exclude projects whose dependency closure is not AOT-safe:
+          #  - Kun.Saga references Kun.EntityFrameworkCore (IsAotCandidate=false)
+          #  - Kun.AspNetCore is IsAotCandidate=false (minimal-API generic helpers,
+          #    see csproj comment). Mirrors ci.yml's aot-publish job.
+          for proj in Kun.Core Kun.Mediator Kun.Validation Kun.EventBus Kun.EventBus.RabbitMQ Kun.Security Kun.Grpc Kun.Gateway; do
             if [ -d "src/$proj" ]; then
               echo "::group::AOT: $proj"
-              dotnet publish "src/$proj" -c Release -p:PublishAot=true /warnaserror
+              dotnet publish "src/$proj" -c Release -r linux-x64 -p:PublishAot=true /warnaserror
               echo "::endgroup::"
             fi
           done
@@ -69,8 +73,7 @@ jobs:
             -p:ContinuousIntegrationBuild=true \
             -o artifacts/
 
-      - name: Push to NuGet.org (stable releases only)
-        if: steps.version.outputs.prerelease == 'false'
+      - name: Push to NuGet.org
         run: |
           dotnet nuget push artifacts/*.nupkg \
             -k "${{ secrets.NUGET_API_KEY }}" \
@@ -81,8 +84,7 @@ jobs:
             -s https://api.nuget.org/v3/index.json \
             --skip-duplicate || true
 
-      - name: Push to GitHub Packages (pre-releases)
-        if: steps.version.outputs.prerelease == 'true'
+      - name: Push to GitHub Packages
         run: |
           dotnet nuget add source \
             --username "${{ github.repository_owner }}" \
