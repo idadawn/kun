@@ -8,8 +8,10 @@ namespace Kun.Security.Security;
 /// <see cref="ICurrentUser"/> implementation that reads <c>sub</c>, <c>name</c>,
 /// and <c>roles</c> claims from the authenticated <see cref="ClaimsPrincipal"/>
 /// on the current HTTP request.
+/// Also implements <see cref="ITracedCurrentUser"/> to expose the <c>trace_id</c> claim
+/// propagated from the gateway S2S JWT for OpenTelemetry trace continuity.
 /// </summary>
-public sealed class JwtCurrentUser : ICurrentUser
+public sealed class JwtCurrentUser : ICurrentUser, ITracedCurrentUser
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
 
@@ -40,4 +42,8 @@ public sealed class JwtCurrentUser : ICurrentUser
     /// <inheritdoc />
     public bool IsAuthenticated =>
         Principal?.Identity?.IsAuthenticated == true;
+
+    /// <inheritdoc />
+    public string? TraceId =>
+        Principal?.FindFirst("trace_id")?.Value;
 }

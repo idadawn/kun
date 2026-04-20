@@ -25,11 +25,13 @@ Kun.EntityFrameworkCore.EfUnitOfWork.SaveChangesAsync(System.Threading.Cancellat
 Kun.EntityFrameworkCore.IntegrationEventOutboxAccumulator
 Kun.EntityFrameworkCore.IntegrationEventOutboxAccumulator.IntegrationEventOutboxAccumulator(Kun.EventBus.Outbox.IntegrationEventBuffer! buffer, Kun.EventBus.IEventTypeRegistry! registry, Kun.Core.MultiTenancy.ITenantContext! tenantContext) -> void
 Kun.EntityFrameworkCore.IntegrationEventOutboxAccumulator.Publish<TEvent>(TEvent! event) -> void
+Kun.EntityFrameworkCore.IntegrationEventOutboxAccumulator.Enqueue<TEvent>(TEvent! event) -> void
 Kun.EntityFrameworkCore.IUnitOfWork
 Kun.EntityFrameworkCore.IUnitOfWork.SaveChangesAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<int>!
 Kun.EntityFrameworkCore.KunDbContext
 Kun.EntityFrameworkCore.KunDbContext.KunDbContext(Microsoft.EntityFrameworkCore.DbContextOptions! options, Kun.Core.MultiTenancy.ITenantContext! tenantContext) -> void
 Kun.EntityFrameworkCore.KunDbContext.OutboxMessages.get -> Microsoft.EntityFrameworkCore.DbSet<Kun.EventBus.Outbox.OutboxMessage!>!
+virtual Kun.EntityFrameworkCore.KunDbContext.DefaultSchema.get -> string?
 override Kun.EntityFrameworkCore.KunDbContext.ConfigureConventions(Microsoft.EntityFrameworkCore.ModelConfigurationBuilder! configurationBuilder) -> void
 override Kun.EntityFrameworkCore.KunDbContext.OnModelCreating(Microsoft.EntityFrameworkCore.ModelBuilder! modelBuilder) -> void
 Kun.EntityFrameworkCore.NoOpDomainEventDispatcher

@@ -73,6 +73,8 @@ Kun.EventBus.MessageContext.TraceParent.init -> void
 Kun.EventBus.Outbox.IIntegrationEventOutbox
 Kun.EventBus.Outbox.IIntegrationEventOutbox.Add(Kun.EventBus.Outbox.OutboxMessage! message) -> void
 Kun.EventBus.Outbox.IIntegrationEventOutbox.GetPendingMessages() -> System.Collections.Generic.IReadOnlyList<Kun.EventBus.Outbox.OutboxMessage!>!
+Kun.EventBus.Outbox.IOutboxWriter
+Kun.EventBus.Outbox.IOutboxWriter.Enqueue<TEvent>(TEvent! event) -> void
 Kun.EventBus.Outbox.IntegrationEventBuffer
 Kun.EventBus.Outbox.IntegrationEventBuffer.IntegrationEventBuffer() -> void
 Kun.EventBus.Outbox.IntegrationEventBuffer.Add(Kun.EventBus.Outbox.OutboxMessage! message) -> void

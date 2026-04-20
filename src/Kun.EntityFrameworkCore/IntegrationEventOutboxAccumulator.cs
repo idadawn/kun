@@ -11,7 +11,7 @@ namespace Kun.EntityFrameworkCore;
 /// appends them to the <see cref="IntegrationEventBuffer"/> with current trace and tenant context.
 /// The buffer is flushed atomically by <see cref="EfUnitOfWork"/> during <c>SaveChangesAsync</c>.
 /// </summary>
-public sealed class IntegrationEventOutboxAccumulator : IIntegrationEventBus
+public sealed class IntegrationEventOutboxAccumulator : IIntegrationEventBus, IOutboxWriter
 {
     private readonly IntegrationEventBuffer _buffer;
     private readonly IEventTypeRegistry _registry;
@@ -55,4 +55,7 @@ public sealed class IntegrationEventOutboxAccumulator : IIntegrationEventBus
 
         _buffer.Add(message);
     }
+
+    /// <inheritdoc />
+    public void Enqueue<TEvent>(TEvent @event) where TEvent : class => Publish(@event);
 }

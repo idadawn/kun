@@ -27,6 +27,23 @@ public abstract class KunDbContext : DbContext
         _tenantContext = tenantContext;
     }
 
+    /// <summary>
+    /// Default database schema for this context. When non-<see langword="null"/>, applied via
+    /// <see cref="RelationalModelBuilderExtensions.HasDefaultSchema(ModelBuilder, string?)"/>
+    /// before entity configurations run — tables, Outbox, and Saga storage all land under this
+    /// schema by default. Callers should also configure <c>MigrationsHistoryTable</c> to the
+    /// same schema on the Npgsql options so migrations + business tables co-locate.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Overriding services' DbContexts (e.g. <c>CatalogDbContext</c>) should return a service-scoped
+    /// schema like <c>"catalog"</c> to enable single-database, multi-schema isolation
+    /// (SAD §5.1). Leaving this <see langword="null"/> preserves legacy <c>public</c>-schema
+    /// behavior.
+    /// </para>
+    /// </remarks>
+    protected virtual string? DefaultSchema { get; }
+
     /// <inheritdoc/>
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
@@ -44,6 +61,10 @@ public abstract class KunDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        if (DefaultSchema is not null)
+        {
+            modelBuilder.HasDefaultSchema(DefaultSchema);
+        }
         modelBuilder.ApplyConfiguration(new OutboxMessageConfiguration());
         ApplyGlobalQueryFilters(modelBuilder);
     }

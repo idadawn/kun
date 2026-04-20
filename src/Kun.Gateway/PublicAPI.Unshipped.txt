@@ -42,7 +42,9 @@ Kun.Gateway.RateLimiting.Resolvers.TenantRateLimitPartitionResolver.ResolveParti
 Kun.Gateway.RateLimiting.Resolvers.TenantRateLimitPartitionResolver.TenantRateLimitPartitionResolver() -> void
 Kun.Gateway.S2sTokenIssuer
 Kun.Gateway.S2sTokenIssuer.IssueFor(System.Security.Claims.ClaimsPrincipal! externalPrincipal) -> string!
-Kun.Gateway.S2sTokenIssuer.S2sTokenIssuer(Microsoft.Extensions.Options.IOptions<Kun.Gateway.Configuration.KunGatewayOptions!>! options, Microsoft.Extensions.Hosting.IHostEnvironment! env) -> void
+Kun.Gateway.Configuration.KunGatewayOptions.EmitTraceIdClaim.get -> bool
+Kun.Gateway.Configuration.KunGatewayOptions.EmitTraceIdClaim.set -> void
+Kun.Gateway.S2sTokenIssuer.S2sTokenIssuer(Microsoft.Extensions.Options.IOptions<Kun.Gateway.Configuration.KunGatewayOptions!>! options, Microsoft.Extensions.Hosting.IHostEnvironment! env, Microsoft.AspNetCore.Http.IHttpContextAccessor? httpContextAccessor = null) -> void
 Program
 Program.Program() -> void
 static Kun.Gateway.DependencyInjection.KunGatewayServiceCollectionExtensions.AddKunGateway(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.Gateway.Configuration.KunGatewayOptions!>! configure, Microsoft.Extensions.Configuration.IConfiguration? reverseProxyConfig = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!

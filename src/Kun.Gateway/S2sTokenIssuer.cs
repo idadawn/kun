@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using Kun.Gateway.Configuration;
@@ -11,12 +12,15 @@ namespace Kun.Gateway;
 /// Issues short-lived internal S2S JWTs signed with the gateway's RSA private key.
 /// The issued token copies <c>sub</c>, <c>tenant_id</c>, and <c>roles</c> claims from
 /// the authenticated external principal, sets <c>aud=kun-internal</c> and a 60-second TTL.
+/// When <see cref="KunGatewayOptions.EmitTraceIdClaim"/> is <see langword="true"/> and an active
+/// <see cref="Activity"/> with a valid trace id is present, a <c>trace_id</c> claim is also emitted.
 /// </summary>
 public sealed class S2sTokenIssuer
 {
     private readonly RsaSecurityKey _signingKey;
     private readonly SigningCredentials _credentials;
     private readonly KunGatewayOptions _options;
+    private readonly IHttpContextAccessor? _httpContextAccessor;
 
     /// <summary>
     /// Initializes the issuer by loading the RSA private key from <see cref="KunGatewayOptions.SigningKeyPath"/>.
@@ -27,11 +31,16 @@ public sealed class S2sTokenIssuer
     /// </summary>
     /// <param name="options">Gateway configuration options.</param>
     /// <param name="env">Host environment used to differentiate Development from Production.</param>
-    public S2sTokenIssuer(IOptions<KunGatewayOptions> options, IHostEnvironment env)
+    /// <param name="httpContextAccessor">
+    /// Optional HTTP context accessor used to confirm a live HTTP request is in scope before emitting
+    /// the <c>trace_id</c> claim (M3 guard). When <see langword="null"/>, trace-id emission is suppressed.
+    /// </param>
+    public S2sTokenIssuer(IOptions<KunGatewayOptions> options, IHostEnvironment env, IHttpContextAccessor? httpContextAccessor = null)
     {
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(env);
         _options = options.Value;
+        _httpContextAccessor = httpContextAccessor;
 
         var rsa = RSA.Create();
         if (File.Exists(_options.SigningKeyPath))
@@ -97,6 +106,15 @@ public sealed class S2sTokenIssuer
 
         foreach (var role in externalPrincipal.FindAll("roles"))
             claims.Add(new Claim("roles", role.Value));
+
+        // Emit trace_id claim for OpenTelemetry trace continuity (M3 guard)
+        if (_options.EmitTraceIdClaim
+            && Activity.Current is { TraceId: var traceId } activity
+            && activity.TraceId != default
+            && _httpContextAccessor?.HttpContext is not null)
+        {
+            claims.Add(new Claim("trace_id", traceId.ToHexString()));
+        }
 
         var descriptor = new SecurityTokenDescriptor
         {
