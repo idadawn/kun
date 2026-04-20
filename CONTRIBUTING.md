@@ -114,6 +114,22 @@ and triggers compensation for instances where TimeoutAt < UtcNow.
 Closes #42
 ```
 
+## 🏷️ 发布与版本规范
+
+Tag 与分支强绑定，**CI 会强制校验**（见 `.github/workflows/release.yml`）：
+
+| 分支 | Tag 形式 | 语义 | 示例 |
+| :--- | :--- | :--- | :--- |
+| `main` | `vX.Y.Z` | 正式版本 | `v0.2.0` |
+| `develop` | `vX.Y.Z-beta` | 预发布 | `v0.2.0-beta`、`v0.2.1-beta` |
+
+规则：
+
+- 从 `main` 打的 tag **一律不带后缀**；从 `develop` 打的 tag **一律加 `-beta`**。
+- 其它后缀（`-alpha`、`-rc`）目前不在策略内，若打了会被 CI 标注为 `notice` 并跳过分支校验（但仍会走 NuGet 发布）。
+- `develop → main` 合并后再从 `main` 打正式 tag；不要直接把 `-beta` 的 commit 重打成正式 tag。
+- 打错分支会被 Release workflow 的 "Validate tag matches branch policy" 步骤拦下。
+
 ## 🔀 Pull Request 流程
 
 1. **Fork 仓库**，从 `main` 切出特性分支：`feat/xxx` / `fix/xxx` / `docs/xxx`
