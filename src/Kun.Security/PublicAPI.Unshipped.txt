@@ -42,6 +42,7 @@ Kun.Security.Security.JwtCurrentUser
 Kun.Security.Security.JwtCurrentUser.IsAuthenticated.get -> bool
 Kun.Security.Security.JwtCurrentUser.JwtCurrentUser(Microsoft.AspNetCore.Http.IHttpContextAccessor! httpContextAccessor) -> void
 Kun.Security.Security.JwtCurrentUser.Roles.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Kun.Security.Security.JwtCurrentUser.TraceId.get -> string?
 Kun.Security.Security.JwtCurrentUser.UserId.get -> string?
 static Kun.Security.Authentication.KunServiceAuthenticationExtensions.AddKunServiceAuthentication(this Microsoft.AspNetCore.Authentication.AuthenticationBuilder! builder, System.Action<Kun.Security.Authentication.KunServiceAuthenticationOptions!>! configure) -> Microsoft.AspNetCore.Authentication.AuthenticationBuilder!
 static Kun.Security.DependencyInjection.KunSecurityServiceCollectionExtensions.AddKunSecurity(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!

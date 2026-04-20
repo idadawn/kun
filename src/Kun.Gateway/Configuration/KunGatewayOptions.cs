@@ -45,4 +45,12 @@ public sealed class KunGatewayOptions
     /// Absolute path to the PEM-encoded RSA public key file exposed via the JWKS endpoint.
     /// </summary>
     public required string PublicKeyPath { get; set; }
+
+    /// <summary>
+    /// When <see langword="true"/> (default), the gateway emits a <c>trace_id</c> claim in the
+    /// minted S2S JWT if an active OpenTelemetry <see cref="System.Diagnostics.Activity"/> with a
+    /// valid <see cref="System.Diagnostics.ActivityTraceId"/> is present on the request.
+    /// Set to <see langword="false"/> to suppress trace propagation via JWT (e.g. for compliance).
+    /// </summary>
+    public bool EmitTraceIdClaim { get; set; } = true;
 }
