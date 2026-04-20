@@ -1,3 +1,6 @@
+<!-- Parent: ../AGENTS.md -->
+<!-- Generated: 2026-04-20 | Updated: 2026-04-20 -->
+
 # Kun.Sample.AppHost
 
 .NET Aspire AppHost that orchestrates the Kun Framework sample services for local development.

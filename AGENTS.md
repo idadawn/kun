@@ -1,3 +1,4 @@
+<!-- Parent: ../AGENTS.md -->
 <!-- Generated: 2026-04-18 | Updated: 2026-04-18 -->
 
 # Kun Framework
