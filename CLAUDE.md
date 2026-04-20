@@ -142,3 +142,12 @@ Downstream services must extract identity (`sub`, `tenant_id`) from the S2S JWT 
 ## Commit convention
 
 Conventional Commits: `<type>(<scope>): <subject>`. Scope is the module name without the `Kun.` prefix (`mediator`, `saga`, `eventbus`, `security`, `gateway`, etc.). Example: `feat(saga): add timeout detection background service`.
+
+## Release & versioning policy
+
+Tag suffix is bound to the branch — the `Release` workflow (`.github/workflows/release.yml`) rejects mismatches:
+
+- `main` → stable, **no suffix** (`v0.2.0`)
+- `develop` → prerelease, **`-beta` suffix** (`v0.2.0-beta`)
+
+Cut stable releases by merging `develop → main` first, then tagging from `main`. Do not re-tag a `-beta` commit as stable — tag the merge commit on `main`. See `CONTRIBUTING.md` §发布与版本规范 for details.
