@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization.Metadata;
 using Kun.EventBus.RabbitMQ.Consuming;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,7 +26,9 @@ public sealed class KunRabbitMqBuilder
     /// Source-generated <see cref="JsonTypeInfo{T}"/> for AOT-safe deserialization.
     /// Obtain from your <c>JsonSerializerContext</c>, e.g. <c>MyJsonContext.Default.OrderPlacedIntegrationEvent</c>.
     /// </param>
-    public KunRabbitMqBuilder Subscribe<TEvent, THandler>(
+    public KunRabbitMqBuilder Subscribe<
+        TEvent,
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] THandler>(
         string eventTypeId,
         JsonTypeInfo<TEvent> typeInfo)
         where TEvent : class
