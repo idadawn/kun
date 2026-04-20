@@ -43,7 +43,11 @@ jobs:
 
       - name: AOT publish verify
         run: |
-          for proj in Kun.Core Kun.Mediator Kun.Validation Kun.EventBus Kun.EventBus.RabbitMQ Kun.Saga Kun.Security Kun.AspNetCore Kun.Grpc Kun.Gateway; do
+          # AOT loop must exclude projects whose dependency closure is not AOT-safe:
+          #  - Kun.Saga references Kun.EntityFrameworkCore (IsAotCandidate=false)
+          #  - Kun.AspNetCore is IsAotCandidate=false (minimal-API generic helpers,
+          #    see csproj comment). Mirrors ci.yml's aot-publish job.
+          for proj in Kun.Core Kun.Mediator Kun.Validation Kun.EventBus Kun.EventBus.RabbitMQ Kun.Security Kun.Grpc Kun.Gateway; do
             if [ -d "src/$proj" ]; then
               echo "::group::AOT: $proj"
               dotnet publish "src/$proj" -c Release -r linux-x64 -p:PublishAot=true /warnaserror
