@@ -82,7 +82,11 @@ jobs:
           # (MapCommand<T,R> / MapQuery<T,R>) and WriteAsJsonAsync<T> in the
           # global exception handler are not AOT-compatible. Module is
           # trim-safe only (IsAotCandidate=false).
-          for proj in src/Kun.Gateway src/Kun.Mediator src/Kun.Core src/Kun.Grpc src/Kun.Validation; do
+          # Kun.Storage.S3 intentionally excluded: AWSSDK.S3 + AWSSDK.Extensions.NETCore.Setup
+          # are reflection-heavy and not AOT-safe (see open-questions.md A6 — the first
+          # non-AOT library module in the repo). Kun.Storage.Abstractions and
+          # Kun.Storage.Local remain AOT-zero-warning.
+          for proj in src/Kun.Gateway src/Kun.Mediator src/Kun.Core src/Kun.Grpc src/Kun.Validation src/Kun.Storage.Abstractions src/Kun.Storage.Local; do
             echo "::group::Publishing AOT: $proj"
             dotnet publish "$proj" -c Release -r linux-x64 -p:PublishAot=true -p:TreatWarningsAsErrors=true
             echo "::endgroup::"

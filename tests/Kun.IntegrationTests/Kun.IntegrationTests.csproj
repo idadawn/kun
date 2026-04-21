@@ -11,6 +11,8 @@
     <ProjectReference Include="..\..\src\Kun.Saga\Kun.Saga.csproj" />
     <ProjectReference Include="..\..\src\Kun.Security\Kun.Security.csproj" />
     <ProjectReference Include="..\..\src\Kun.Gateway\Kun.Gateway.csproj" />
+    <ProjectReference Include="..\..\src\Kun.Storage.Abstractions\Kun.Storage.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Kun.Storage.S3\Kun.Storage.S3.csproj" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="xunit.runner.visualstudio" />
@@ -18,6 +20,8 @@
     <PackageReference Include="Testcontainers.PostgreSql" />
     <PackageReference Include="Testcontainers.RabbitMq" />
     <PackageReference Include="Testcontainers.Redis" />
+    <PackageReference Include="Testcontainers.Minio" />
+    <PackageReference Include="AWSSDK.S3" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="coverlet.collector" />

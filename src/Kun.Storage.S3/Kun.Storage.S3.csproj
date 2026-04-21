@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!--
+      IsAotCandidate=false: AWSSDK.S3 uses runtime reflection for request/response
+      marshalling that is not trim- or AOT-safe. This module is therefore the first
+      non-AOT library module in the Kun repository (see open-questions.md A6). It is
+      explicitly excluded from the `.github/workflows/ci.yml` AOT-publish zero-warning
+      matrix. See AGENTS.md for rationale and a future-work note on migrating to a
+      native HTTP signing client if AOT becomes a requirement.
+    -->
+    <IsAotCandidate>false</IsAotCandidate>
+    <IsPackable>true</IsPackable>
+    <HasPublicApi>true</HasPublicApi>
+    <Description>Kun Framework — Amazon S3 / S3-compatible (MinIO) IFileStorage implementation. Forces Content-Disposition: attachment on presigned download URLs for active-web content types (text/html, image/svg+xml, application/xhtml+xml, application/xml). Not AOT-compatible.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Kun.Storage.Abstractions\Kun.Storage.Abstractions.csproj" />
+    <PackageReference Include="AWSSDK.S3" />
+    <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+  </ItemGroup>
+
+</Project>

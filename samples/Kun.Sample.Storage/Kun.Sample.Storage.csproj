@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <!--
+      Kun.Sample.Storage wires the Kun.Storage.Local backend into a Minimal API.
+      It is NOT AOT-strict because ASP.NET Core minimal-API routing is not in the
+      AOT-zero-warning matrix today (see CLAUDE.md). The sample demonstrates the
+      force-download rule end-to-end against the local filesystem — no S3 credentials
+      required.
+    -->
+    <IsAotCandidate>false</IsAotCandidate>
+    <Description>Sample Minimal API that wires Kun.Storage.Local and demonstrates the force-download rule for active-web content types (text/html, image/svg+xml, application/xhtml+xml, application/xml).</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Kun.Storage.Abstractions\Kun.Storage.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Kun.Storage.Local\Kun.Storage.Local.csproj" />
+  </ItemGroup>
+
+</Project>
