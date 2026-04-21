@@ -17,6 +17,11 @@ public sealed partial class S2SJwtVerifier : IS2SJwtVerifier
     private readonly ILogger<S2SJwtVerifier> _logger;
     private readonly JwtSecurityTokenHandler _handler = new() { MapInboundClaims = false };
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="S2SJwtVerifier"/> class.
+    /// </summary>
+    /// <param name="options">S2S JWT signing options (used to derive token validation parameters).</param>
+    /// <param name="logger">Logger for verification outcomes.</param>
     public S2SJwtVerifier(IOptions<S2SJwtOptions> options, ILogger<S2SJwtVerifier> logger)
     {
         _logger = logger;
@@ -48,6 +53,7 @@ public sealed partial class S2SJwtVerifier : IS2SJwtVerifier
         };
     }
 
+    /// <inheritdoc />
     public Task<ClaimsPrincipal?> VerifyAsync(string token, string expectedAudience, CancellationToken ct = default)
     {
         // Set the expected audience per call

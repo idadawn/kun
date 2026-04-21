@@ -19,6 +19,11 @@ public sealed partial class S2SJwtIssuer : IS2SJwtIssuer
     private readonly ILogger<S2SJwtIssuer> _logger;
     private readonly JwtSecurityTokenHandler _handler = new();
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="S2SJwtIssuer"/> class.
+    /// </summary>
+    /// <param name="options">S2S JWT signing options.</param>
+    /// <param name="logger">Logger for token issuance.</param>
     public S2SJwtIssuer(IOptions<S2SJwtOptions> options, ILogger<S2SJwtIssuer> logger)
     {
         _options = options.Value;
@@ -30,6 +35,7 @@ public sealed partial class S2SJwtIssuer : IS2SJwtIssuer
         _signingCredentials = new SigningCredentials(_signingKey, SecurityAlgorithms.EcdsaSha256);
     }
 
+    /// <inheritdoc />
     public Task<string> IssueAsync(
         string userId, string tenantId, string[] scopes, string[] audience,
         string sessionId, CancellationToken ct = default)
