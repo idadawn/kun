@@ -18,6 +18,12 @@ public sealed partial class JwksEndpointMiddleware
     private readonly S2SJwtOptions _options;
     private readonly ILogger<JwksEndpointMiddleware> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="JwksEndpointMiddleware"/> class.
+    /// </summary>
+    /// <param name="next">The next middleware in the pipeline.</param>
+    /// <param name="options">S2S JWT signing options.</param>
+    /// <param name="logger">Logger for the middleware.</param>
     public JwksEndpointMiddleware(
         RequestDelegate next,
         IOptions<S2SJwtOptions> options,
@@ -28,6 +34,10 @@ public sealed partial class JwksEndpointMiddleware
         _logger = logger;
     }
 
+    /// <summary>
+    /// Invokes the middleware, serving the JWKS document when the request matches the JWKS endpoint path.
+    /// </summary>
+    /// <param name="context">The current HTTP context.</param>
     public async Task InvokeAsync(HttpContext context)
     {
         if (context.Request.Path == "/.well-known/jwks.json" &&

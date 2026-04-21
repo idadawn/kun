@@ -17,6 +17,12 @@ public sealed partial class S3FileStorage : IFileStorage
     private readonly StorageOptions _options;
     private readonly ILogger<S3FileStorage> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="S3FileStorage"/> class.
+    /// </summary>
+    /// <param name="s3">The S3 client (Amazon S3 or MinIO-compatible).</param>
+    /// <param name="options">Storage options (bucket name, region, etc.).</param>
+    /// <param name="logger">Logger for S3 operations.</param>
     public S3FileStorage(IAmazonS3 s3, IOptions<StorageOptions> options, ILogger<S3FileStorage> logger)
     {
         _s3 = s3;
@@ -24,6 +30,7 @@ public sealed partial class S3FileStorage : IFileStorage
         _logger = logger;
     }
 
+    /// <inheritdoc />
     public async Task PutAsync(string path, Stream content, string contentType, CancellationToken ct = default)
     {
         using var transferUtil = new TransferUtility(_s3);
@@ -39,6 +46,7 @@ public sealed partial class S3FileStorage : IFileStorage
         Log.ObjectPut(_logger, _options.BucketName, path);
     }
 
+    /// <inheritdoc />
     public async Task<Stream> GetAsync(string path, CancellationToken ct = default)
     {
         var request = new GetObjectRequest
@@ -52,6 +60,7 @@ public sealed partial class S3FileStorage : IFileStorage
         return response.ResponseStream;
     }
 
+    /// <inheritdoc />
     public async Task DeleteAsync(string path, CancellationToken ct = default)
     {
         var request = new DeleteObjectRequest
@@ -64,6 +73,7 @@ public sealed partial class S3FileStorage : IFileStorage
         Log.ObjectDeleted(_logger, _options.BucketName, path);
     }
 
+    /// <inheritdoc />
     public async Task<bool> ExistsAsync(string path, CancellationToken ct = default)
     {
         try
@@ -83,6 +93,7 @@ public sealed partial class S3FileStorage : IFileStorage
         }
     }
 
+    /// <inheritdoc />
     public Task<Uri> GetPresignedUrlAsync(string path, TimeSpan expires, CancellationToken ct = default)
     {
         var request = new GetPreSignedUrlRequest
