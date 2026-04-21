@@ -6,17 +6,21 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Kun.Sample.Order.Infrastructure.Migrations;
 
 /// <inheritdoc />
-public partial class InitialCreate : Migration
+public partial class Initial_SchemaQualified : Migration
 {
     private static readonly string[] s_outboxStatusOccurredAt = ["Status", "OccurredAt"];
     private static readonly string[] s_sagaInstancesStateTimeoutAt = ["State", "TimeoutAt"];
-    private static readonly string[] s_sagaStepQueueProcessedEnqueued = ["ProcessedAt", "EnqueuedAt"];
+    private static readonly string[] s_sagaStepQueueProcessedAtEnqueuedAt = ["ProcessedAt", "EnqueuedAt"];
 
     /// <inheritdoc />
     protected override void Up(MigrationBuilder migrationBuilder)
     {
+        migrationBuilder.EnsureSchema(
+            name: "order");
+
         migrationBuilder.CreateTable(
             name: "orders",
+            schema: "order",
             columns: table => new
             {
                 id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -38,6 +42,7 @@ public partial class InitialCreate : Migration
 
         migrationBuilder.CreateTable(
             name: "outbox_messages",
+            schema: "order",
             columns: table => new
             {
                 Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -59,6 +64,7 @@ public partial class InitialCreate : Migration
 
         migrationBuilder.CreateTable(
             name: "saga_instances",
+            schema: "order",
             columns: table => new
             {
                 Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -81,6 +87,7 @@ public partial class InitialCreate : Migration
 
         migrationBuilder.CreateTable(
             name: "saga_step_queue",
+            schema: "order",
             columns: table => new
             {
                 Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -98,6 +105,7 @@ public partial class InitialCreate : Migration
 
         migrationBuilder.CreateTable(
             name: "order_lines",
+            schema: "order",
             columns: table => new
             {
                 id = table.Column<int>(type: "integer", nullable: false)
@@ -113,6 +121,7 @@ public partial class InitialCreate : Migration
                 table.ForeignKey(
                     name: "FK_order_lines_orders_order_id",
                     column: x => x.order_id,
+                    principalSchema: "order",
                     principalTable: "orders",
                     principalColumn: "id",
                     onDelete: ReferentialAction.Cascade);
@@ -120,31 +129,37 @@ public partial class InitialCreate : Migration
 
         migrationBuilder.CreateIndex(
             name: "IX_order_lines_order_id",
+            schema: "order",
             table: "order_lines",
             column: "order_id");
 
         migrationBuilder.CreateIndex(
             name: "IX_outbox_messages_status_occurredAt",
+            schema: "order",
             table: "outbox_messages",
             columns: s_outboxStatusOccurredAt);
 
         migrationBuilder.CreateIndex(
             name: "ix_saga_instances_saga_name",
+            schema: "order",
             table: "saga_instances",
             column: "SagaName");
 
         migrationBuilder.CreateIndex(
             name: "ix_saga_instances_state_timeout_at",
+            schema: "order",
             table: "saga_instances",
             columns: s_sagaInstancesStateTimeoutAt);
 
         migrationBuilder.CreateIndex(
             name: "ix_saga_step_queue_processed_at_enqueued_at",
+            schema: "order",
             table: "saga_step_queue",
-            columns: s_sagaStepQueueProcessedEnqueued);
+            columns: s_sagaStepQueueProcessedAtEnqueuedAt);
 
         migrationBuilder.CreateIndex(
             name: "ix_saga_step_queue_saga_id",
+            schema: "order",
             table: "saga_step_queue",
             column: "SagaId");
     }
@@ -153,18 +168,23 @@ public partial class InitialCreate : Migration
     protected override void Down(MigrationBuilder migrationBuilder)
     {
         migrationBuilder.DropTable(
-            name: "order_lines");
+            name: "order_lines",
+            schema: "order");
 
         migrationBuilder.DropTable(
-            name: "outbox_messages");
+            name: "outbox_messages",
+            schema: "order");
 
         migrationBuilder.DropTable(
-            name: "saga_instances");
+            name: "saga_instances",
+            schema: "order");
 
         migrationBuilder.DropTable(
-            name: "saga_step_queue");
+            name: "saga_step_queue",
+            schema: "order");
 
         migrationBuilder.DropTable(
-            name: "orders");
+            name: "orders",
+            schema: "order");
     }
 }

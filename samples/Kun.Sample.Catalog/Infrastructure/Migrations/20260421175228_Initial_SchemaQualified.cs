@@ -5,15 +5,19 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Kun.Sample.Catalog.Infrastructure.Migrations;
 
 /// <inheritdoc />
-public partial class InitialCreate : Migration
+public partial class Initial_SchemaQualified : Migration
 {
     private static readonly string[] s_outboxStatusOccurredAt = ["Status", "OccurredAt"];
 
     /// <inheritdoc />
     protected override void Up(MigrationBuilder migrationBuilder)
     {
+        migrationBuilder.EnsureSchema(
+            name: "catalog");
+
         migrationBuilder.CreateTable(
             name: "catalog_products",
+            schema: "catalog",
             columns: table => new
             {
                 Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -36,6 +40,7 @@ public partial class InitialCreate : Migration
 
         migrationBuilder.CreateTable(
             name: "outbox_messages",
+            schema: "catalog",
             columns: table => new
             {
                 Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -57,16 +62,19 @@ public partial class InitialCreate : Migration
 
         migrationBuilder.CreateIndex(
             name: "IX_catalog_products_category_id",
+            schema: "catalog",
             table: "catalog_products",
             column: "CategoryId");
 
         migrationBuilder.CreateIndex(
             name: "IX_catalog_products_is_deleted",
+            schema: "catalog",
             table: "catalog_products",
             column: "IsDeleted");
 
         migrationBuilder.CreateIndex(
             name: "IX_outbox_messages_status_occurredAt",
+            schema: "catalog",
             table: "outbox_messages",
             columns: s_outboxStatusOccurredAt);
     }
@@ -75,9 +83,11 @@ public partial class InitialCreate : Migration
     protected override void Down(MigrationBuilder migrationBuilder)
     {
         migrationBuilder.DropTable(
-            name: "catalog_products");
+            name: "catalog_products",
+            schema: "catalog");
 
         migrationBuilder.DropTable(
-            name: "outbox_messages");
+            name: "outbox_messages",
+            schema: "catalog");
     }
 }

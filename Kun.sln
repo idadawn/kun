@@ -69,6 +69,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kun.Sample.Shared", "sample
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kun.Sample.Tests", "samples\Kun.Sample.Tests\Kun.Sample.Tests.csproj", "{D954E48F-2F76-4DCC-B8FE-DEFE02F0F3E2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kun.EntityFrameworkCore.Tests", "tests\Kun.EntityFrameworkCore.Tests\Kun.EntityFrameworkCore.Tests.csproj", "{8798B9DA-1892-4011-9FF2-EA5FE2DD981C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -439,6 +441,18 @@ Global
 		{D954E48F-2F76-4DCC-B8FE-DEFE02F0F3E2}.Release|x64.Build.0 = Release|Any CPU
 		{D954E48F-2F76-4DCC-B8FE-DEFE02F0F3E2}.Release|x86.ActiveCfg = Release|Any CPU
 		{D954E48F-2F76-4DCC-B8FE-DEFE02F0F3E2}.Release|x86.Build.0 = Release|Any CPU
+		{8798B9DA-1892-4011-9FF2-EA5FE2DD981C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8798B9DA-1892-4011-9FF2-EA5FE2DD981C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8798B9DA-1892-4011-9FF2-EA5FE2DD981C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8798B9DA-1892-4011-9FF2-EA5FE2DD981C}.Debug|x64.Build.0 = Debug|Any CPU
+		{8798B9DA-1892-4011-9FF2-EA5FE2DD981C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8798B9DA-1892-4011-9FF2-EA5FE2DD981C}.Debug|x86.Build.0 = Debug|Any CPU
+		{8798B9DA-1892-4011-9FF2-EA5FE2DD981C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8798B9DA-1892-4011-9FF2-EA5FE2DD981C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8798B9DA-1892-4011-9FF2-EA5FE2DD981C}.Release|x64.ActiveCfg = Release|Any CPU
+		{8798B9DA-1892-4011-9FF2-EA5FE2DD981C}.Release|x64.Build.0 = Release|Any CPU
+		{8798B9DA-1892-4011-9FF2-EA5FE2DD981C}.Release|x86.ActiveCfg = Release|Any CPU
+		{8798B9DA-1892-4011-9FF2-EA5FE2DD981C}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -474,5 +488,6 @@ Global
 		{A920ED5B-6407-48CD-A05F-4F16D8CD920C} = {33333333-3333-3333-3333-333333333333}
 		{3C14ED4B-0D15-4AD5-9F1D-58A7B1C4BE34} = {33333333-3333-3333-3333-333333333333}
 		{D954E48F-2F76-4DCC-B8FE-DEFE02F0F3E2} = {33333333-3333-3333-3333-333333333333}
+		{8798B9DA-1892-4011-9FF2-EA5FE2DD981C} = {22222222-2222-2222-2222-222222222222}
 	EndGlobalSection
 EndGlobal

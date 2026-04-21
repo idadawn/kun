@@ -12,14 +12,15 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Kun.Sample.Order.Infrastructure.Migrations
 {
     [DbContext(typeof(OrderDbContext))]
-    [Migration("20260419170938_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260421175250_Initial_SchemaQualified")]
+    partial class Initial_SchemaQualified
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
+                .HasDefaultSchema("order")
                 .HasAnnotation("ProductVersion", "10.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
@@ -73,7 +74,7 @@ namespace Kun.Sample.Order.Infrastructure.Migrations
                     b.HasIndex("Status", "OccurredAt")
                         .HasDatabaseName("IX_outbox_messages_status_occurredAt");
 
-                    b.ToTable("outbox_messages", (string)null);
+                    b.ToTable("outbox_messages", "order");
                 });
 
             modelBuilder.Entity("Kun.Saga.Persistence.SagaInstance", b =>
@@ -129,7 +130,7 @@ namespace Kun.Sample.Order.Infrastructure.Migrations
                     b.HasIndex("State", "TimeoutAt")
                         .HasDatabaseName("ix_saga_instances_state_timeout_at");
 
-                    b.ToTable("saga_instances", (string)null);
+                    b.ToTable("saga_instances", "order");
                 });
 
             modelBuilder.Entity("Kun.Saga.Persistence.SagaStepQueueEntry", b =>
@@ -164,7 +165,7 @@ namespace Kun.Sample.Order.Infrastructure.Migrations
                     b.HasIndex("ProcessedAt", "EnqueuedAt")
                         .HasDatabaseName("ix_saga_step_queue_processed_at_enqueued_at");
 
-                    b.ToTable("saga_step_queue", (string)null);
+                    b.ToTable("saga_step_queue", "order");
                 });
 
             modelBuilder.Entity("Kun.Sample.Order.Domain.Order", b =>
@@ -215,7 +216,7 @@ namespace Kun.Sample.Order.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("orders", (string)null);
+                    b.ToTable("orders", "order");
                 });
 
             modelBuilder.Entity("Kun.Sample.Order.Domain.Order", b =>
@@ -249,7 +250,7 @@ namespace Kun.Sample.Order.Infrastructure.Migrations
 
                             b1.HasIndex("order_id");
 
-                            b1.ToTable("order_lines", (string)null);
+                            b1.ToTable("order_lines", "order");
 
                             b1.WithOwner()
                                 .HasForeignKey("order_id");
