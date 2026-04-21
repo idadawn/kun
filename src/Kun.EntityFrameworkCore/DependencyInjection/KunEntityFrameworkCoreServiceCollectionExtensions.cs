@@ -1,4 +1,5 @@
 using Kun.Core.Domain;
+using Kun.EntityFrameworkCore.Interceptors;
 using Kun.EventBus;
 using Kun.EventBus.Outbox;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,6 +33,29 @@ public static class KunEntityFrameworkCoreServiceCollectionExtensions
 
         services.TryAddScoped<IDomainEventDispatcher, InProcessDomainEventDispatcher>();
 
+        return services;
+    }
+
+    /// <summary>
+    /// Opt-in registration for <see cref="TenantRlsTransactionInterceptor"/>. Consumers must
+    /// also wire the interceptor into their DbContext options via DI resolution, e.g.
+    /// <code>
+    /// services.AddDbContext&lt;CatalogDbContext&gt;((sp, options) =&gt;
+    ///     options.UseNpgsql(cs)
+    ///            .UseKunSchema("catalog")
+    ///            .AddInterceptors(sp.GetRequiredService&lt;TenantRlsTransactionInterceptor&gt;()));
+    /// </code>
+    /// Scoped lifetime — each request's <see cref="Kun.Core.MultiTenancy.ITenantContext"/>
+    /// is resolved per transaction. Not added automatically because the interceptor fires a
+    /// <c>set_config</c> round-trip on every transaction; services without RLS should not pay
+    /// that cost.
+    /// </summary>
+    /// <param name="services">The service collection to configure.</param>
+    /// <returns>The same <paramref name="services"/> for chaining.</returns>
+    public static IServiceCollection AddKunTenantRls(this IServiceCollection services)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        services.TryAddScoped<TenantRlsTransactionInterceptor>();
         return services;
     }
 }
