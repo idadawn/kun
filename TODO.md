@@ -22,17 +22,22 @@
 >
 > **剩余 `[ ]` 条目分类**：① SourceGenerator 延后项（ADR fallback）② AOT 发布本地验证（需 C++ linker，CI 绑定）③ Respawn 包（未引入）④ 链路追踪手工验证（需运行中环境）⑤ NuGet/Git-tag 发布仪式（待用户决定）⑥ GitHub 仓库保护分支（用户操作）
 
+> **📊 实施进度（2026-04-22 复选框对账）**
+> - Sprint 1 gap-closure 进展（与本 TODO.md 正交，详见 `.omc/plans/kun-gap-closure-v1.md`）：P0-2 trace_id claim、P0-3 per-service schema、P0-4 IOutboxWriter、P1-4 Tenant RLS 拦截器均已合入 `develop`；P0-1 IFileStorage 委托 agent 后台执行中。
+> - 本次对账只为 TODO.md 原有条目补打勾，不改写剩余类别。触发条件：条目有硬证据（文件存在、`dotnet --version` 输出、git 分支状态）。
+> - 未勾选项维持原状：需手动验证（AOT publish 本地、跨服务追踪）、需用户决定（NuGet 发布、分支保护）、或被 ADR 主动延后（SourceGenerator、Respawn）的条目依旧留白，避免用"流水账 ✅"掩盖真实阻塞。
+
 ---
 
 ## 🏁 前置准备
 
 - [ ] 在本地克隆仓库：`git clone https://github.com/idadawn/kun.git`
-- [ ] 确认 .NET 10 SDK 已安装：`dotnet --version` 输出 `10.0.100` 或更高
+- [x] 确认 .NET 10 SDK 已安装：`dotnet --version` 输出 `10.0.100` 或更高（当前 `10.0.201`）
 - [ ] 确认 Docker Desktop 可用（Testcontainers 需要）
 - [ ] 阅读 `README.md` 与 `docs/whitepaper.md`，理解框架整体愿景
 - [ ] 阅读 `.claude/skills/kun-framework-conventions/SKILL.md`（总纲，所有任务的共同前置）
-- [ ] 首次执行 `dotnet restore` 成功
-- [ ] 首次执行 `dotnet build -c Release`（会有大量错误，因为实现代码未写——这是预期的）
+- [x] 首次执行 `dotnet restore` 成功
+- [x] 首次执行 `dotnet build -c Release`（M1–M6 实现已落，全程 0 error；原注释"会有大量错误"已过时）
 
 ---
 
@@ -59,7 +64,7 @@
 - [x] CI 中加入 `dotnet format --verify-no-changes`（已在 ci.yml，并补了 `dotnet restore` 步骤使其在 format job 中生效）
 - [x] 在 `Directory.Build.props` 中添加 `<Version>0.1.0-alpha.1</Version>` 与 `<VersionSuffix>` 处理逻辑
 - [ ] 在 GitHub 仓库设置中：保护 `main` 分支，要求 PR 审查 + CI 全绿
-- [ ] 新建 `develop` 分支作为开发主干，`main` 仅接受来自 `develop` 的合并
+- [x] 新建 `develop` 分支作为开发主干，`main` 仅接受来自 `develop` 的合并（本库即在 `develop` 上累积提交；分支保护策略仍需用户在 GitHub 设置）
 
 ---
 
@@ -491,5 +496,5 @@
 
 ---
 
-**当前状态**：🏁 前置准备（未开始）
-**下一个里程碑**：阶段一完成 → `0.1.0-alpha.1`
+**当前状态**：M1–M6 代码全部完成（最近一次对账 2026-04-22）。Sprint 1 gap-closure（`.omc/plans/kun-gap-closure-v1.md`）同步推进：P0-2/P0-3/P0-4/P1-4 已合入 develop，P0-1 IFileStorage 正在委派 agent 执行。
+**下一个里程碑**：AOT 发布 CI 矩阵全绿 + 手工 Aspire 走通 → 触发 `0.1.0-alpha.1` 正式发版仪式（用户决定）。
