@@ -2,6 +2,42 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 🛑 Specs-first rule (READ BEFORE YOU WRITE ANY CODE)
+
+**Never code before reading the relevant specs.** Kun is a framework that downstream services (`neuroagent-csharp`, others) consume as a dependency. Framework drift is far more expensive to fix than delayed delivery. If you're unsure what belongs in Kun vs in the consumer — stop and re-read.
+
+**Mandatory read-first list** (in this order for any new task):
+
+1. **This file** (`CLAUDE.md`) — the non-negotiable constraints below (4-layer deps, AOT rules, naming, CQRS, Outbox, Saga, multi-tenancy, `Result<T>` vs exceptions). CI rejects violations.
+2. **`AGENTS.md`** (repo root) — agent-oriented guidance.
+3. **`CONTRIBUTING.md`** — PR + commit + release process. Must follow.
+4. **`README.md`** — framework overview and module map.
+5. **`docs/whitepaper.md`** — design intent and boundaries (what Kun *is* and *is not*).
+6. **`docs/getting-started.md`** — canonical module wiring patterns.
+7. **`docs/architecture/`** — deep architectural specs; read the one(s) matching the module you're about to touch.
+8. **`docs/security/`** — if anything security-adjacent (auth, tokens, PII, audit).
+9. **`docs/observability/`** — if anything touches metrics / traces / logs.
+10. **`docs/guides/`** — how-to guides; likely relevant to most tasks.
+11. **`docs/neuroagent-phase1-gap.md`** — Phase 1 consumer (neuroagent) gap audit; shows what's urgent vs deferred.
+12. **`TODO.md`** — current roadmap / what's intentionally not done yet.
+13. **Module-level `src/Kun.<Module>/AGENTS.md`** — per-module conventions. Always read the AGENTS.md of every module you're about to modify **and** every module you're about to reference (one-hop).
+14. **`Directory.Build.props`** + **`Directory.Packages.props`** + **`global.json`** — build conventions, central package management, SDK pin. Never add a `<PackageReference Version="...">` in a csproj; CPM handles versions.
+15. **`samples/Kun.Sample.*`** — how consumers wire Kun. Use as reference for API ergonomics.
+
+**What counts as "随意开发" (forbidden)**:
+
+- Writing code in a module without reading its `AGENTS.md` first.
+- Adding a NuGet package without updating `Directory.Packages.props` CPM entry.
+- Introducing a dependency that violates the 4-layer flow (Host → Infrastructure → Abstraction → Core).
+- Adding a `[JsonPropertyName]` / EF `[Column]` / validation attribute on a type in `Kun.Core`.
+- Publishing API with non-AOT-compatible patterns in an `IsAotCandidate=true` module without updating the csproj flag and justifying in the PR.
+- Inventing a new cross-cutting concern (auth / audit / multi-tenancy / eventbus) without an ADR in `docs/architecture/`.
+- Committing without running `dotnet format --verify-no-changes` locally — CI enforces this.
+
+**Task-dispatch contract** (for the main coordinator dispatching to `claude-kun`):
+
+Every Kun task brief MUST include a numbered list of the specs to read first (from the list above, scoped to what's actually relevant). If a brief does not name the specs, reply "need specs list before coding" and pause.
+
 ## Repository status
 
 Kun Framework is at the **project-skeleton stage**: solution, csproj files, `Directory.Build.props`, `Directory.Packages.props`, CI, docs, and `.claude/skills/` are in place. Most `src/Kun.*` projects contain no `.cs` files yet; the sample under `samples/Kun.Sample.Catalog` is a placeholder. When asked to "add X", expect to be creating types from scratch rather than modifying existing code — follow the conventions below strictly.
