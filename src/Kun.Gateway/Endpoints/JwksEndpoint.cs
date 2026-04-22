@@ -18,14 +18,29 @@ public static class JwksEndpoint
     /// underlying public-key file is modified.
     /// </summary>
     /// <param name="endpoints">The endpoint route builder.</param>
+    /// <param name="additionalGate">
+    /// Optional predicate evaluated on each request. Return <see langword="false"/> to respond 404.
+    /// Typical use is a production-only allow-list (e.g. loopback only when this route is
+    /// supposed to be reachable only via mesh-internal hops). When <see langword="null"/>,
+    /// no additional gating is applied.
+    /// </param>
     /// <returns>The <see cref="IEndpointConventionBuilder"/> for the mapped route.</returns>
-    public static IEndpointConventionBuilder MapKunJwks(this IEndpointRouteBuilder endpoints)
+    public static IEndpointConventionBuilder MapKunJwks(
+        this IEndpointRouteBuilder endpoints,
+        Func<HttpContext, bool>? additionalGate = null)
     {
         ArgumentNullException.ThrowIfNull(endpoints);
 
         return endpoints.MapGet("/.well-known/jwks.json",
-            (IOptions<KunGatewayOptions> options, JwksResponseBuilder builder) =>
+            (HttpContext httpContext,
+             IOptions<KunGatewayOptions> options,
+             JwksResponseBuilder builder) =>
             {
+                if (additionalGate is not null && !additionalGate(httpContext))
+                {
+                    return Results.NotFound();
+                }
+
                 var keySet = builder.Build(options.Value.PublicKeyPath);
                 return Results.Ok(keySet);
             });

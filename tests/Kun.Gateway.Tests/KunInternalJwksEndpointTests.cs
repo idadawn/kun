@@ -4,6 +4,7 @@ using Kun.Gateway.Configuration;
 using Kun.Gateway.Jwks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -110,10 +111,43 @@ public sealed class KunInternalJwksEndpointTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
+    [Fact]
+    public async Task Additional_Gate_Returning_False_Yields_404()
+    {
+        using var host = await BuildHostAsync(
+            environment: "Development",
+            exposeInternal: false,
+            additionalGate: _ => false);
+        using var client = host.GetTestClient();
+
+        var response = await client.GetAsync(
+            KunInternalJwksEndpoint.DefaultPattern,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Additional_Gate_Returning_True_Allows_Through()
+    {
+        using var host = await BuildHostAsync(
+            environment: "Development",
+            exposeInternal: false,
+            additionalGate: _ => true);
+        using var client = host.GetTestClient();
+
+        var response = await client.GetAsync(
+            KunInternalJwksEndpoint.DefaultPattern,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
     private async Task<IHost> BuildHostAsync(
         string environment,
         bool exposeInternal,
-        string pattern = KunInternalJwksEndpoint.DefaultPattern)
+        string pattern = KunInternalJwksEndpoint.DefaultPattern,
+        Func<HttpContext, bool>? additionalGate = null)
     {
         var builder = new HostBuilder()
             .ConfigureWebHost(webHost =>
@@ -137,7 +171,7 @@ public sealed class KunInternalJwksEndpointTests : IAsyncLifetime
                 webHost.Configure(app =>
                 {
                     app.UseRouting();
-                    app.UseEndpoints(e => e.MapKunInternalJwks(pattern));
+                    app.UseEndpoints(e => e.MapKunInternalJwks(pattern, additionalGate));
                 });
             });
 

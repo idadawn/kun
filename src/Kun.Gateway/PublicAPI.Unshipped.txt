@@ -48,7 +48,8 @@ Kun.Gateway.Configuration.KunGatewayOptions.ExposeInternalJwks.get -> bool
 Kun.Gateway.Configuration.KunGatewayOptions.ExposeInternalJwks.set -> void
 Kun.Gateway.Jwks.KunInternalJwksEndpoint
 const Kun.Gateway.Jwks.KunInternalJwksEndpoint.DefaultPattern = "/internal/.well-known/jwks.json" -> string!
-static Kun.Gateway.Jwks.KunInternalJwksEndpoint.MapKunInternalJwks(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, string! pattern = "/internal/.well-known/jwks.json") -> Microsoft.AspNetCore.Builder.IEndpointConventionBuilder!
+static Kun.Gateway.Jwks.KunInternalJwksEndpoint.MapKunInternalJwks(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, string! pattern = "/internal/.well-known/jwks.json", System.Func<Microsoft.AspNetCore.Http.HttpContext!, bool>? additionalGate = null) -> Microsoft.AspNetCore.Builder.IEndpointConventionBuilder!
+static Kun.Gateway.Endpoints.JwksEndpoint.MapKunJwks(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, System.Func<Microsoft.AspNetCore.Http.HttpContext!, bool>? additionalGate = null) -> Microsoft.AspNetCore.Builder.IEndpointConventionBuilder!
 Kun.Gateway.Jwks.JwksResponseBuilder
 Kun.Gateway.Jwks.JwksResponseBuilder.JwksResponseBuilder() -> void
 Kun.Gateway.Jwks.JwksResponseBuilder.Build(string! publicKeyPath) -> Kun.Gateway.Endpoints.JwksResponse!
@@ -64,5 +65,4 @@ static Kun.Gateway.Identity.NoOpS2sPrincipalResolver.Instance.get -> Kun.Gateway
 Program
 Program.Program() -> void
 static Kun.Gateway.DependencyInjection.KunGatewayServiceCollectionExtensions.AddKunGateway(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.Gateway.Configuration.KunGatewayOptions!>! configure, Microsoft.Extensions.Configuration.IConfiguration? reverseProxyConfig = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
-static Kun.Gateway.Endpoints.JwksEndpoint.MapKunJwks(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Builder.IEndpointConventionBuilder!
 static Kun.Gateway.RateLimiting.KunRateLimiterExtensions.AddKunRateLimiter(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Microsoft.AspNetCore.RateLimiting.RateLimiterOptions!>? configure = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
