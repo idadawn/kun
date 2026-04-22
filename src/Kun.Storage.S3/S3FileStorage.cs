@@ -283,11 +283,15 @@ public sealed partial class S3FileStorage : IFileStorage
 
         var response = await _s3.ListObjectsV2Async(request, cancellationToken).ConfigureAwait(false);
 
+        // S3's ListObjectsV2 response does not include per-object content type —
+        // fetching it would require a HEAD per item, which would defeat the point
+        // of a paginated list. ObjectMetadata.ContentType is nullable precisely to
+        // model this; callers needing the type call GetMetadataAsync afterwards.
         var items = (response.S3Objects ?? Enumerable.Empty<S3Object>())
             .Select(o => new ObjectMetadata(
                 o.Key,
                 o.Size,
-                "application/octet-stream",
+                ContentType: null,
                 o.ETag,
                 o.LastModified))
             .ToList();

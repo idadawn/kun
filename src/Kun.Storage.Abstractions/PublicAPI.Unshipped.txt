@@ -25,7 +25,7 @@ Kun.Storage.ListObjectsResult.ListObjectsResult(System.Collections.Generic.IRead
 Kun.Storage.ListObjectsResult.Objects.get -> System.Collections.Generic.IReadOnlyList<Kun.Storage.ObjectMetadata!>!
 Kun.Storage.ListObjectsResult.Objects.init -> void
 Kun.Storage.ObjectMetadata
-Kun.Storage.ObjectMetadata.ContentType.get -> string!
+Kun.Storage.ObjectMetadata.ContentType.get -> string?
 Kun.Storage.ObjectMetadata.ContentType.init -> void
 Kun.Storage.ObjectMetadata.ETag.get -> string?
 Kun.Storage.ObjectMetadata.ETag.init -> void
@@ -33,7 +33,7 @@ Kun.Storage.ObjectMetadata.Key.get -> string!
 Kun.Storage.ObjectMetadata.Key.init -> void
 Kun.Storage.ObjectMetadata.LastModified.get -> System.DateTimeOffset
 Kun.Storage.ObjectMetadata.LastModified.init -> void
-Kun.Storage.ObjectMetadata.ObjectMetadata(string! Key, long Size, string! ContentType, string? ETag, System.DateTimeOffset LastModified) -> void
+Kun.Storage.ObjectMetadata.ObjectMetadata(string! Key, long Size, string? ContentType, string? ETag, System.DateTimeOffset LastModified) -> void
 Kun.Storage.ObjectMetadata.Size.get -> long
 Kun.Storage.ObjectMetadata.Size.init -> void
 Kun.Storage.PresignedDownloadUrl
