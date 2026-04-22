@@ -5,7 +5,7 @@
 
 ## 当前状态
 
-M1–M6 代码全部完成。Sprint 1 gap-closure 亦已全部合入 `develop`：
+M1–M6 代码全部完成。Sprint 1 + Sprint 2 gap-closure 亦已全部合入 `develop`：
 
 | 缺口 | 内容 | 落地 commit |
 |---|---|---|
@@ -13,9 +13,15 @@ M1–M6 代码全部完成。Sprint 1 gap-closure 亦已全部合入 `develop`�
 | P0-2 | `ITracedCurrentUser` + `trace_id` claim | `4564278` / `4f5aa62` |
 | P0-3 | `UseKunSchema` + `SchemaConsistencyInterceptor` + per-service schema migrations | `ce55f5c` / `deb3d11` / `c8ca297` |
 | P0-4 | `IOutboxWriter` primitive | `e25be27` / `2de6cd2` |
+| P1-1 | `IEventTypeRegistry.GetAll()` + `tools/Kun.IntegrationEvents.SchemaGen` | `bf55161` |
+| P1-3 | Internal JWKS endpoint (gated) | `82d53f8` |
 | P1-4 | `TenantRlsTransactionInterceptor` + PgBouncer M2 测试 | `fa40945` / `6b7c9a1` |
+| P1-5 | PgBouncer README + 100-并发压测 | `aa52801` |
+| P1-6 | `IS2sPrincipalResolver` hook + overloaded ctor (3-arg obsolete) | `29870ed` |
+| P1-7 | OpenAPI pipeline template + Catalog 样例 | `f3312e2` |
+| P1-8 | `docs/schema-per-service.md` + 样例 README 联动 | `bd896b4` |
 
-202 单元测试全绿；全量 `dotnet build Kun.sln -c Release -p:TreatWarningsAsErrors=true` 零错误（预存在 8 条 Aspire `CS1591` 为已知噪声）。
+全量 `dotnet build Kun.sln -c Release -p:TreatWarningsAsErrors=true` 零错误（预存在 8 条 Aspire `CS1591` 为已知噪声）；所有相关单元测试绿，Docker 依赖的集成测试在 CI 跑。
 
 ## 里程碑
 
@@ -34,14 +40,8 @@ M1–M6 代码全部完成。Sprint 1 gap-closure 亦已全部合入 `develop`�
 
 ### Sprint 2 候选项（`.omc/plans/kun-gap-closure-v1.md` 内部计划区）
 
-- **P1-1** 集成事件 JSON Schema 导出工具（供消费方生成类型）
-- **P1-2** 审计日志约定：EF 拦截器 + 集成事件（依赖 P0-4 `IOutboxWriter`）
-- **P1-3** `Kun.Gateway` 内部 JWKS 端点扩展
-- **P1-5** PgBouncer transaction-mode 兼容性审计（P1-4 已给出 `PgBouncerPostgresFixture`）
-- **P1-6** `IS2sPrincipalResolver` 钩子
-- **P1-7** OpenAPI pipeline 模板
-- **P1-8** Schema-per-service 文档 + 样例 walk-through
-- **P1-9** NuGet 首次发版（`0.1.0-alpha.2` / `0.1.0-alpha.3`）
+- **P1-2** 审计日志约定：EF 拦截器 + 集成事件（依赖 P0-4 `IOutboxWriter`）——进行中，agent 派发执行
+- **P1-9** NuGet 首次发版（`0.1.0-alpha.2` / `0.1.0-alpha.3`）——用户决定触发
 
 ### 环境与流程类（ADR 延后 / 需外部条件）
 

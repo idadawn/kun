@@ -6,6 +6,88 @@
 
 ## [Unreleased]
 
+### Added — Sprint 1 gap-closure (2026-04-22)
+
+- **Kun.Storage.Abstractions / Kun.Storage.Local / Kun.Storage.S3** (P0-1): three
+  new packages landing `IFileStorage` with the seven SAD §6.4 operations, a
+  `FrozenSet` of the four canonical "active web" MIME types that trigger
+  force-download on S3 presigned URLs, a dev-grade local filesystem
+  implementation, and an AWSSDK-based S3 implementation. S3 is the repo's first
+  non-AOT library module (A6) — explicitly excluded from the CI AOT-zero-warning
+  matrix; documented in `src/Kun.Storage.S3/AGENTS.md`.
+- **Kun.EntityFrameworkCore**:
+  - `KunDbContext.DefaultSchema` virtual property + auto-registered
+    `SchemaConsistencyInterceptor` (P0-3 M5). Overriding `DefaultSchema` without
+    calling `.UseKunSchema(schema)` on the options builder now throws
+    `InvalidOperationException` with a remediation message at the first
+    `SaveChangesAsync`. Outbox rows, tenant/audit columns, and the migrations
+    history table all co-locate under the service schema.
+  - `UseKunSchema(schema)` extension method on `DbContextOptionsBuilder` that
+    wires `MigrationsHistoryTableSchema` through `RelationalOptionsExtension`.
+    Provider-agnostic — stays out of the Npgsql dependency.
+  - `TenantRlsTransactionInterceptor` + `AddKunTenantRls()` (P1-4). Opt-in
+    defence-in-depth layer that emits
+    `SELECT set_config('app.current_tenant_id', @tenant, true)` at every
+    transaction start so PostgreSQL RLS policies enforce isolation even when a
+    caller bypasses the EF global query filter. Hooks
+    `DbTransactionInterceptor.TransactionStartedAsync` — PgBouncer
+    transaction-pool safe.
+- **Kun.EventBus**: `IEventTypeRegistry.GetAll()` returns every registered
+  `(eventId, clrType)` pair in stable alphabetical order, enabling the
+  `tools/Kun.IntegrationEvents.SchemaGen` JSON-Schema export tool (P1-1).
+- **Kun.Gateway**:
+  - `ITracedCurrentUser` sub-interface + `trace_id` claim on the minted S2S
+    JWT (P0-2). Default `EmitTraceIdClaim = true`; kill-switchable.
+  - `KunInternalJwksEndpoint.MapKunInternalJwks()` — internal-network JWKS
+    route gated on `IHostEnvironment.IsDevelopment()` OR
+    `KunGatewayOptions.ExposeInternalJwks = true` (P1-3). Fail-closed:
+    Production returns 404 unless opted in.
+  - `IS2sPrincipalResolver` + `NoOpS2sPrincipalResolver` (P1-6). Optional
+    enrichment hook the issuer runs before claim mapping. Default registered
+    via DI. `S2sTokenIssuer` grows a 4-arg ctor taking the resolver; the
+    3-arg overload is kept obsolete with `DiagnosticId = "KUN0002"` for one
+    release, scheduled for removal in `0.2.0`.
+- **Kun.EventBus.Outbox**: `IOutboxWriter` primitive (P0-4). Non-aggregate
+  enqueuers (future audit interceptor, storage event adapters) can drop
+  `OutboxMessage` rows into the current transaction without implementing the
+  full `IIntegrationEventBus` surface. `IntegrationEventOutboxAccumulator`
+  resolves to both `IIntegrationEventBus` and `IOutboxWriter` from a single
+  scoped instance so aggregates and non-aggregate collaborators share one
+  in-request buffer.
+- **samples/Kun.Sample.Catalog** and **samples/Kun.Sample.Order**: override
+  `DefaultSchema => "catalog"` / `"order"`; design-time factories chain
+  `.UseKunSchema(...)`. Migrations regenerated; outbox, saga, business tables,
+  and `__ef_migrations_history` all land under the service schema.
+- **samples/Kun.Sample.Catalog**: `AddOpenApi()` + `MapOpenApi()` guarded on
+  `IsDevelopment()` as the reference wiring for **P1-7** (OpenAPI pipeline
+  template).
+- **samples/Kun.Sample.Storage**: new Minimal API sample demonstrating
+  force-download via `Kun.Storage.Local` — no AWS credentials required.
+- **tools/Kun.IntegrationEvents.SchemaGen**: console tool (non-AOT) that emits
+  `{eventId}.schema.json` per registered integration event using
+  `JsonSchema.Net.Generation`. Consumers provide a public static zero-arg
+  factory method that returns `IEventTypeRegistry` (P1-1).
+- **docs**:
+  - `docs/roadmap.md` — consolidated public roadmap (replaces the 495-line
+    `TODO.md` at repo root).
+  - `docs/schema-per-service.md` (P1-8) — end-to-end recipe for running many
+    Kun services against one Postgres with service-scoped schemas.
+  - `docs/openapi-template.md` (P1-7) — source-gen-friendly OpenAPI wiring
+    guidance with environment gating + CI smoke-test recipe.
+  - `src/Kun.EntityFrameworkCore/README.md` (P1-5) — PgBouncer transaction-pool
+    compatibility notes (required connection-string parameters) +
+    RLS-with-explicit-transactions contract.
+- **tests**:
+  - `tests/Kun.EntityFrameworkCore.Tests` — new xunit.v3 project with schema /
+    interceptor / RLS unit coverage (11 cases).
+  - `tests/Kun.IntegrationTests/Persistence/{RlsEnforcementTests,TenantRlsInterceptorPgBouncerTests,PgBouncerCompatTests,SchemaPerServiceTests}` +
+    `tests/Kun.IntegrationTests/Fixtures/PgBouncerPostgresFixture` — acceptance
+    paths for P0-3 / P1-4 / P1-5, Docker-gated with `Assert.Skip` when
+    containers aren't reachable.
+  - `tests/Kun.Gateway.Tests` grows five new cases for
+    `KunInternalJwksEndpoint` (gating matrix + document shape) and five for
+    `IS2sPrincipalResolver` / obsolete-ctor compat.
+
 ### Fixed
 
 - **Kun.Gateway**: `S2sTokenIssuer` now injects `IHostEnvironment` and throws `InvalidOperationException` when the signing key file is missing in non-Development environments, preventing silent ephemeral-key self-signing in production.
