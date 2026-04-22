@@ -82,5 +82,6 @@ public sealed class OutboxWriterDependencyInjectionTests
     {
         public Type? Resolve(string eventType) => null;
         public string? GetEventType(Type clrType) => null;
+        public IReadOnlyCollection<(string EventId, Type ClrType)> GetAll() => [];
     }
 }

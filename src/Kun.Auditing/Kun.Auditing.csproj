@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsAotCandidate>true</IsAotCandidate>
+    <IsPackable>true</IsPackable>
+    <HasPublicApi>true</HasPublicApi>
+    <Description>Kun Framework — audit logging: EF SaveChanges interceptor, AuditEventIntegrationEvent (kun.audit.event.v1) via Outbox, explicit AddAuditable&lt;T&gt; registration (no runtime reflection).</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Kun.Core\Kun.Core.csproj" />
+    <ProjectReference Include="..\Kun.EventBus\Kun.EventBus.csproj" />
+    <ProjectReference Include="..\Kun.EntityFrameworkCore\Kun.EntityFrameworkCore.csproj" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Kun.Auditing.Tests" />
+    <InternalsVisibleTo Include="Kun.IntegrationTests" />
+  </ItemGroup>
+
+</Project>
