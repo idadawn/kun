@@ -58,6 +58,13 @@ public interface IFileStorage
     /// record carries the exact HTTP headers the caller must send so server-side
     /// constraint enforcement works.
     /// </summary>
+    /// <remarks>
+    /// The PUT URL returned here cannot embed <see cref="UploadConstraints.MaxBytes"/> in
+    /// the signature; consumers that need size enforcement at the S3 layer should use
+    /// <see cref="GetPresignedPostUploadAsync"/> instead — its signed POST policy bakes
+    /// <c>content-length-range</c> into the signature so S3 rejects oversized bodies with
+    /// HTTP 400 before any bytes are persisted.
+    /// </remarks>
     /// <param name="objectKey">Storage object key.</param>
     /// <param name="contentType">Declared content type for the upload.</param>
     /// <param name="constraints">Size / content-type policy enforced by the URL signature.</param>
@@ -66,6 +73,24 @@ public interface IFileStorage
     Task<PresignedUploadUrl> GetPresignedUploadAsync(
         string objectKey,
         string contentType,
+        UploadConstraints? constraints = null,
+        TimeSpan? expiresIn = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Creates a presigned POST upload descriptor. The signed policy embeds
+    /// <see cref="UploadConstraints.MaxBytes"/> when set, so the backing store (not the
+    /// framework) rejects oversized uploads before any bytes are persisted. Allowed
+    /// content types are encoded into the policy when
+    /// <see cref="UploadConstraints.AllowedContentTypes"/> is supplied.
+    /// </summary>
+    /// <param name="objectKey">Target object key.</param>
+    /// <param name="constraints">Optional upload constraints. When <c>null</c>, no size/type
+    /// limits are baked into the policy.</param>
+    /// <param name="expiresIn">Lifetime of the signed policy.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task<PresignedPostUpload> GetPresignedPostUploadAsync(
+        string objectKey,
         UploadConstraints? constraints = null,
         TimeSpan? expiresIn = null,
         CancellationToken cancellationToken = default);

@@ -1,3 +1,7 @@
+using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Microsoft.Extensions.Logging;
@@ -204,6 +208,104 @@ public sealed partial class S3FileStorage : IFileStorage
     }
 
     /// <inheritdoc/>
+    public Task<PresignedPostUpload> GetPresignedPostUploadAsync(
+        string objectKey,
+        UploadConstraints? constraints = null,
+        TimeSpan? expiresIn = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(objectKey);
+
+        if (string.IsNullOrWhiteSpace(_options.AccessKey) || string.IsNullOrWhiteSpace(_options.SecretKey))
+        {
+            throw new InvalidOperationException(
+                "GetPresignedPostUploadAsync requires S3StorageOptions.AccessKey and " +
+                "S3StorageOptions.SecretKey to be set so the POST policy can be signed. " +
+                "Configure static credentials on S3StorageOptions; the AWSSDK default credential " +
+                "resolution chain is not consulted for POST-policy signing.");
+        }
+
+        if (string.IsNullOrWhiteSpace(_options.Region))
+        {
+            throw new InvalidOperationException(
+                "GetPresignedPostUploadAsync requires S3StorageOptions.Region to be set so the " +
+                "signing credential scope can be constructed.");
+        }
+
+        // Extract the single allowed content type (if any). A multi-entry whitelist cannot be
+        // represented as a single exact-match policy condition without introducing a separate
+        // form variant per content type — reject that case with a remediation message.
+        string? fixedContentType = null;
+        if (constraints?.AllowedContentTypes is { Count: > 0 } allow)
+        {
+            if (allow.Count > 1)
+            {
+                throw new NotSupportedException(
+                    "Presigned POST policies with more than one allowed content type are not " +
+                    "supported: the signed policy encodes Content-Type as an equality condition, " +
+                    "so multiple allowed types would require multiple signed policies. " +
+                    "Either narrow UploadConstraints.AllowedContentTypes to a single entry, or " +
+                    "omit it and validate the content type server-side after upload.");
+            }
+
+            fixedContentType = allow.First();
+        }
+
+        var lifetime = expiresIn ?? _options.DefaultPresignedUrlLifetime;
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        var expiresAt = new DateTimeOffset(now, TimeSpan.Zero).Add(lifetime);
+
+        var amzDate = now.ToString("yyyyMMddTHHmmssZ", CultureInfo.InvariantCulture);
+        var shortDate = now.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
+        var credentialScope = string.Create(
+            CultureInfo.InvariantCulture,
+            $"{_options.AccessKey}/{shortDate}/{_options.Region}/s3/aws4_request");
+
+        // Build policy JSON. Order matters for readability only — S3 parses conditions as a
+        // set, not an ordered list. We keep the order {bucket, key, acl, content-length-range,
+        // Content-Type, x-amz-*} so tests can compare a stable document shape.
+        var policyJson = BuildPostPolicyJson(
+            bucket: _options.BucketName,
+            objectKey: objectKey,
+            acl: "private",
+            maxBytes: constraints?.MaxBytes,
+            contentType: fixedContentType,
+            credentialScope: credentialScope,
+            amzDate: amzDate,
+            expiresAt: expiresAt.UtcDateTime);
+
+        var policyBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(policyJson));
+
+        // SigV4: derive signing key and HMAC the base64 policy.
+        var signingKey = DeriveSigningKey(_options.SecretKey!, shortDate, _options.Region!, "s3");
+        var signatureBytes = HMACSHA256.HashData(signingKey, Encoding.UTF8.GetBytes(policyBase64));
+        var signature = Convert.ToHexStringLower(signatureBytes);
+
+        // Assemble form fields in the order the S3 docs recommend; callers must iterate and
+        // append each field in order to their multipart body BEFORE the `file` field.
+        var form = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["key"] = objectKey,
+            ["acl"] = "private",
+        };
+
+        if (fixedContentType is not null)
+        {
+            form["Content-Type"] = fixedContentType;
+        }
+
+        form["x-amz-algorithm"] = "AWS4-HMAC-SHA256";
+        form["x-amz-credential"] = credentialScope;
+        form["x-amz-date"] = amzDate;
+        form["policy"] = policyBase64;
+        form["x-amz-signature"] = signature;
+
+        var postUrl = BuildBucketEndpointUri();
+        Log.PostPolicySigned(_logger, objectKey, _options.BucketName);
+        return Task.FromResult(new PresignedPostUpload(postUrl, form, expiresAt));
+    }
+
+    /// <inheritdoc/>
     public async Task<bool> ExistsAsync(string objectKey, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(objectKey);
@@ -332,6 +434,134 @@ public sealed partial class S3FileStorage : IFileStorage
         return len == 0 ? "download" : new string(buf[..len]);
     }
 
+    /// <summary>
+    /// Builds the AWS S3 POST policy document as compact JSON, matching the format described
+    /// at <see href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/HTTPPOSTForms.html"/>.
+    /// The conditions array includes bucket, key (exact-match), acl, optional
+    /// content-length-range, optional Content-Type equality, and the SigV4 credential /
+    /// algorithm / date fields that must match the accompanying form fields.
+    /// </summary>
+    private static string BuildPostPolicyJson(
+        string bucket,
+        string objectKey,
+        string acl,
+        long? maxBytes,
+        string? contentType,
+        string credentialScope,
+        string amzDate,
+        DateTime expiresAt)
+    {
+        using var stream = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(stream))
+        {
+            writer.WriteStartObject();
+            writer.WriteString("expiration", expiresAt.ToString("yyyy-MM-ddTHH:mm:ss.fffZ", CultureInfo.InvariantCulture));
+            writer.WritePropertyName("conditions");
+            writer.WriteStartArray();
+
+            // {"bucket": "<bucket>"}
+            writer.WriteStartObject();
+            writer.WriteString("bucket", bucket);
+            writer.WriteEndObject();
+
+            // {"key": "<objectKey>"}  (exact match)
+            writer.WriteStartObject();
+            writer.WriteString("key", objectKey);
+            writer.WriteEndObject();
+
+            // {"acl": "<acl>"}
+            writer.WriteStartObject();
+            writer.WriteString("acl", acl);
+            writer.WriteEndObject();
+
+            // ["content-length-range", 0, maxBytes]
+            if (maxBytes is { } max)
+            {
+                writer.WriteStartArray();
+                writer.WriteStringValue("content-length-range");
+                writer.WriteNumberValue(0);
+                writer.WriteNumberValue(max);
+                writer.WriteEndArray();
+            }
+
+            // {"Content-Type": "<fixed>"}  (only when a single allowed type is supplied)
+            if (contentType is not null)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("Content-Type", contentType);
+                writer.WriteEndObject();
+            }
+
+            // {"x-amz-algorithm": "AWS4-HMAC-SHA256"}
+            writer.WriteStartObject();
+            writer.WriteString("x-amz-algorithm", "AWS4-HMAC-SHA256");
+            writer.WriteEndObject();
+
+            // {"x-amz-credential": "<scope>"}
+            writer.WriteStartObject();
+            writer.WriteString("x-amz-credential", credentialScope);
+            writer.WriteEndObject();
+
+            // {"x-amz-date": "<amzDate>"}
+            writer.WriteStartObject();
+            writer.WriteString("x-amz-date", amzDate);
+            writer.WriteEndObject();
+
+            writer.WriteEndArray();
+            writer.WriteEndObject();
+        }
+
+        return Encoding.UTF8.GetString(stream.ToArray());
+    }
+
+    /// <summary>
+    /// Derives an AWS SigV4 signing key by chaining HMAC-SHA256 over date, region, service,
+    /// and the "aws4_request" terminator. See the AWS SigV4 spec §3.3.
+    /// </summary>
+    private static byte[] DeriveSigningKey(string secretKey, string shortDate, string region, string service)
+    {
+        var kSecret = Encoding.UTF8.GetBytes("AWS4" + secretKey);
+        var kDate = HMACSHA256.HashData(kSecret, Encoding.UTF8.GetBytes(shortDate));
+        var kRegion = HMACSHA256.HashData(kDate, Encoding.UTF8.GetBytes(region));
+        var kService = HMACSHA256.HashData(kRegion, Encoding.UTF8.GetBytes(service));
+        return HMACSHA256.HashData(kService, Encoding.UTF8.GetBytes("aws4_request"));
+    }
+
+    /// <summary>
+    /// Produces the bucket endpoint URL clients POST uploads to. Prefers
+    /// <see cref="S3StorageOptions.ServiceUrl"/> (MinIO / LocalStack: path-style
+    /// <c>{serviceUrl}/{bucket}</c>); falls back to the regional virtual-host style
+    /// <c>https://{bucket}.s3.{region}.amazonaws.com</c> otherwise.
+    /// </summary>
+    private Uri BuildBucketEndpointUri()
+    {
+        if (_options.ServiceUrl is not null)
+        {
+            var baseUrl = _options.ServiceUrl.AbsoluteUri;
+            if (_options.ForcePathStyle)
+            {
+                if (!baseUrl.EndsWith('/'))
+                {
+                    baseUrl += "/";
+                }
+
+                return new Uri(baseUrl + Uri.EscapeDataString(_options.BucketName), UriKind.Absolute);
+            }
+
+            // Virtual-host style against a custom endpoint is rare, but honor it.
+            var hostInsert = new UriBuilder(_options.ServiceUrl)
+            {
+                Host = _options.BucketName + "." + _options.ServiceUrl.Host,
+            };
+            return hostInsert.Uri;
+        }
+
+        var region = _options.Region ?? "us-east-1";
+        return new Uri(
+            string.Create(CultureInfo.InvariantCulture, $"https://{_options.BucketName}.s3.{region}.amazonaws.com"),
+            UriKind.Absolute);
+    }
+
     private static partial class Log
     {
         [LoggerMessage(EventId = 1, Level = LogLevel.Debug,
@@ -341,5 +571,9 @@ public sealed partial class S3FileStorage : IFileStorage
         [LoggerMessage(EventId = 2, Level = LogLevel.Debug,
             Message = "Deleted object {ObjectKey} from bucket {Bucket}")]
         public static partial void Deleted(ILogger logger, string objectKey, string bucket);
+
+        [LoggerMessage(EventId = 3, Level = LogLevel.Debug,
+            Message = "Signed POST policy for object {ObjectKey} in bucket {Bucket}")]
+        public static partial void PostPolicySigned(ILogger logger, string objectKey, string bucket);
     }
 }

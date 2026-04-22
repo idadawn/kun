@@ -207,6 +207,25 @@ public sealed partial class LocalFileSystemStorage : IFileStorage
     }
 
     /// <inheritdoc/>
+    /// <remarks>
+    /// Not supported on the local-filesystem implementation: signing a POST policy is an
+    /// S3-specific construct with no meaningful analogue for a developer-local store.
+    /// Callers that need dev-time presigned uploads should use
+    /// <see cref="GetPresignedUploadAsync(string, string, UploadConstraints?, TimeSpan?, CancellationToken)"/>;
+    /// callers that need MaxBytes-in-signature enforcement must swap to <c>Kun.Storage.S3</c>
+    /// against an S3-compatible endpoint (e.g. MinIO for dev).
+    /// </remarks>
+    public Task<PresignedPostUpload> GetPresignedPostUploadAsync(
+        string objectKey,
+        UploadConstraints? constraints = null,
+        TimeSpan? expiresIn = null,
+        CancellationToken cancellationToken = default)
+        => throw new NotSupportedException(
+            "Kun.Storage.Local does not implement presigned-POST uploads. " +
+            "Use GetPresignedUploadAsync for dev scenarios or swap to Kun.Storage.S3 " +
+            "against a Minio/S3 endpoint to get MaxBytes baked into the signed policy.");
+
+    /// <inheritdoc/>
     public Task<bool> ExistsAsync(string objectKey, CancellationToken cancellationToken = default)
     {
         ValidateKey(objectKey);

@@ -31,6 +31,14 @@ minimal API for a reference wiring).
   `Content-Disposition: attachment` header when the stored content type is in
   `ActiveWebContentTypes.Value`, regardless of `DownloadOptions.ForceDownload`. This keeps
   Local's presigned URLs behaviorally equivalent to S3's force-download guarantee.
+- **Presigned POST uploads are not supported here** (`GetPresignedPostUploadAsync` throws
+  `NotSupportedException`). Signing a POST policy is an S3-specific construct — there is no
+  meaningful way for a developer-local file store to enforce `content-length-range` against a
+  signed policy. Dev scenarios should use `GetPresignedUploadAsync` (PUT); scenarios that
+  need `MaxBytes` baked into the signature must swap to `Kun.Storage.S3` against a
+  Minio/S3 endpoint. The Local impl intentionally does not synthesize a fake POST endpoint:
+  a fake would either silently accept over-limit uploads (security regression) or diverge
+  from the S3 wire format (dev/prod skew).
 - **Object key validation**: keys are forward-slash-delimited relative paths. `..` segments
   and absolute paths are rejected to prevent traversal into parent directories.
 - **Content-type persistence**: the declared MIME type is written to a sidecar file
