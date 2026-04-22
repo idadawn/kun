@@ -51,7 +51,7 @@ M1–M6 代码全部完成。Sprint 1 + Sprint 2 gap-closure 亦已全部合入 
 | 1 | JWKS 响应 mtime 缓存 | `922d922` |
 | 2 | `S2sTokenIssuer.IssueForAsync` | `084c29a` |
 | 3 | `LocalFileSystemStorage` 流式 MaxBytes | `6d47b5a` |
-| 4 | S3 presigned-POST MaxBytes 签名 | 进行中（agent） |
+| 4 | S3 presigned-POST MaxBytes 签名 | `06ddf61` |
 | 6 | `ObjectMetadata.ContentType` nullable | `f7087d3` |
 | 7 | JWKS `additionalGate` | `2a3c544` |
 | 8 | `SchemaConsistencyInterceptor` 读路径 | 按 M5 刻意设计，不改 |
