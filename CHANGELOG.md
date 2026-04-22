@@ -88,6 +88,63 @@
     `KunInternalJwksEndpoint` (gating matrix + document shape) and five for
     `IS2sPrincipalResolver` / obsolete-ctor compat.
 
+### Migration guide — `alpha.1` → `alpha.2`
+
+All Sprint 1 changes are **additive**. `PublicAPI.Shipped.txt` is untouched;
+every new member lives in `PublicAPI.Unshipped.txt`. Consumers upgrading
+from `0.1.0-alpha.1` do not need to change code to keep the old behaviour,
+but the new capabilities below require explicit opt-in:
+
+1. **Per-service schemas** (P0-3). To run multiple Kun services against one
+   Postgres instance without name collisions:
+   - Override `DefaultSchema` on your `KunDbContext` subclass: `protected override string? DefaultSchema => "catalog";`.
+   - Chain `.UseKunSchema("catalog")` on the options builder alongside
+     `.UseNpgsql(...)`.
+   - Regenerate migrations so they emit `schema: "catalog"` — see
+     [docs/schema-per-service.md](../docs/schema-per-service.md).
+   - `SchemaConsistencyInterceptor` auto-registers via `KunDbContext.OnConfiguring`
+     and will throw at first `SaveChangesAsync` if you miss either step.
+2. **trace_id claim** (P0-2). `S2sTokenIssuer` now emits a `trace_id` claim
+   when `Activity.Current` is live AND an HTTP context is in scope (M3
+   guard). Downstream services see it on `JwtCurrentUser` via
+   `ITracedCurrentUser.TraceId`. Default on; kill-switch via
+   `KunGatewayOptions.EmitTraceIdClaim = false`.
+3. **IFileStorage** (P0-1). Add `.AddKunLocalFileStorage(...)` (dev) or
+   `.AddKunS3FileStorage(...)` (prod) to compose storage. `Kun.Storage.S3`
+   is non-AOT — exclude from your AOT publish matrix if you have one.
+4. **IOutboxWriter** (P0-4). Non-aggregate code can now enqueue outbox
+   messages via `IOutboxWriter.Enqueue<TEvent>(evt)`. Existing
+   `IIntegrationEventBus.Publish<T>` remains — both resolve to the same
+   scoped accumulator instance. Prefer `IOutboxWriter` from interceptors
+   and infrastructure code; `IIntegrationEventBus` for aggregate flows.
+5. **Tenant RLS** (P1-4). Opt-in via `services.AddKunTenantRls()`. Wire the
+   resulting interceptor into your DbContext options with
+   `.AddInterceptors(sp.GetRequiredService<TenantRlsTransactionInterceptor>())`.
+   Only needed when the database has `CREATE POLICY` rules using
+   `app.current_tenant_id`.
+6. **IS2sPrincipalResolver** (P1-6). `S2sTokenIssuer`'s 3-arg ctor is
+   marked `[Obsolete(DiagnosticId = "KUN0002")]` and scheduled for removal
+   in `0.2.0`. Switch manual construction sites to the 4-arg ctor, passing
+   `NoOpS2sPrincipalResolver.Instance` for the identity transform. Custom
+   enrichment: register your own `IS2sPrincipalResolver` implementation
+   before `AddKunGateway`. DI-wired consumers do not need code changes.
+7. **Internal JWKS endpoint** (P1-3). `app.MapKunInternalJwks()` at
+   `/internal/.well-known/jwks.json`. Gated: Development auto-on, Production
+   returns 404 unless `KunGatewayOptions.ExposeInternalJwks = true`. The
+   existing public `/.well-known/jwks.json` route is unchanged.
+8. **PgBouncer transaction mode** (P1-5). Append
+   `No Reset On Close=true;Max Auto Prepare=0` to any Npgsql connection
+   string routed through PgBouncer; see
+   [src/Kun.EntityFrameworkCore/README.md](../src/Kun.EntityFrameworkCore/README.md).
+9. **OpenAPI** (P1-7). `builder.Services.AddOpenApi();` +
+   `if (app.Environment.IsDevelopment()) app.MapOpenApi();`. Requires the
+   `Microsoft.AspNetCore.OpenApi` package.
+10. **JSON Schema export** (P1-1). `IEventTypeRegistry.GetAll()` enumerates
+    every `(eventId, clrType)` pair in stable order — used by
+    `tools/Kun.IntegrationEvents.SchemaGen`. Provide a public static
+    zero-arg factory method that returns your registry to plug into the
+    tool; see `tools/Kun.IntegrationEvents.SchemaGen/README.md`.
+
 ### Fixed
 
 - **Kun.Gateway**: `S2sTokenIssuer` now injects `IHostEnvironment` and throws `InvalidOperationException` when the signing key file is missing in non-Development environments, preventing silent ephemeral-key self-signing in production.
