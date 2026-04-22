@@ -87,6 +87,47 @@
   - `tests/Kun.Gateway.Tests` grows five new cases for
     `KunInternalJwksEndpoint` (gating matrix + document shape) and five for
     `IS2sPrincipalResolver` / obsolete-ctor compat.
+- **Kun.Auditing** (P1-2): new AOT-candidate module wiring an EF Core
+  `SavingChanges` interceptor that iterates `ChangeTracker.Entries()`,
+  keeps only entity types registered via explicit
+  `services.AddAuditable<TEntity>()` (no runtime attribute scan — A3
+  path c), and enqueues one `AuditEventIntegrationEvent` per mutation
+  through `IOutboxWriter` (the P0-4 primitive). Payload is the M4
+  13-field record with stable event id `kun.audit.event.v1`; JSON via a
+  source-generated `AuditJsonContext`. `AuditContextMiddleware` captures
+  IP / User-Agent / TraceId into a scoped `AuditContext` before the EF
+  interceptor runs. DI helpers: `AddKunAuditing`, `AddAuditable<T>`,
+  `AddAuditingInterceptor(DbContextOptionsBuilder, IServiceProvider)`;
+  stable event id wired via `IEventTypeRegistrar.RegisterAuditing()`.
+- **Kun.EventBus** (architect M2): `IEventTypeRegistrar.Register<TEvent>`
+  gains an overload that accepts a source-generated `JsonTypeInfo<TEvent>`;
+  `IEventTypeRegistry.GetJsonTypeInfo(Type)` exposes it. The outbox
+  accumulator now prefers the typed serializer when registered and falls
+  back to reflection-based `JsonSerializer.Serialize(obj)` only when no
+  info is supplied — the fallback path carries `[RequiresUnreferencedCode]`
+  and `[RequiresDynamicCode]` annotations so the AOT analyzer flags
+  callers that haven't migrated.
+- **Kun.Gateway** (review #7): `MapKunJwks` + `MapKunInternalJwks` accept
+  an optional `Func<HttpContext, bool>? additionalGate` that runs after
+  the environment / `ExposeInternalJwks` check. Typical use: RFC1918
+  allow-list for production deployments without service-mesh isolation.
+- **Kun.Gateway** (review #2): `S2sTokenIssuer.IssueForAsync(ClaimsPrincipal, CancellationToken)`
+  lets callers await the configured `IS2sPrincipalResolver` without
+  `.GetAwaiter().GetResult()` blocking. The sync `IssueFor` stays for
+  back-compat and delegates to the async path internally.
+- **Kun.Gateway** (review #1): both JWKS endpoints share a DI-registered
+  `JwksResponseBuilder` singleton that caches the JWK response keyed on
+  public-key-file mtime. Rebuilds only on key rotation; typical downstream
+  JWKS fetch is a single `File.GetLastWriteTimeUtc` stat.
+- **Kun.Storage.Local** (review #3): streaming `MaxBytes` enforcement.
+  `UploadAsync` now rejects oversized uploads mid-copy via a chunked
+  `ReadAsync` loop backed by `ArrayPool<byte>` — no more "park a 1 GB
+  payload on disk before deleting it" failure mode.
+- **Kun.Storage** (review #6): `ObjectMetadata.ContentType` is now
+  `string?`. `S3FileStorage.ListAsync` reports `null` instead of a
+  synthetic `"application/octet-stream"` when the S3 listing API omits
+  the content type — callers needing it follow up with
+  `GetMetadataAsync` per item.
 
 ### Migration guide — `alpha.1` → `alpha.2`
 
@@ -144,6 +185,26 @@ but the new capabilities below require explicit opt-in:
     `tools/Kun.IntegrationEvents.SchemaGen`. Provide a public static
     zero-arg factory method that returns your registry to plug into the
     tool; see `tools/Kun.IntegrationEvents.SchemaGen/README.md`.
+11. **Auditing** (P1-2). Opt-in via `services.AddKunAuditing()` +
+    `services.AddAuditable<YourEntity>()` for each entity you want audited.
+    Attach the interceptor to your DbContext with
+    `options.AddAuditingInterceptor(sp)` inside the factory lambda.
+    Wire the stable event id via
+    `services.AddKunEventBus(b => b.RegisterAuditing())`.
+12. **AOT-safe outbox serialization** (architect M2). Upgrade existing
+    `bus.Register<T>("t")` calls to
+    `bus.Register<T>("t", MyJsonContext.Default.T)` to thread a
+    source-generated `JsonTypeInfo<T>` through the outbox accumulator.
+    Reflection fallback still works for non-AOT consumers but now warns
+    via `[RequiresUnreferencedCode]` at call sites.
+13. **JWKS `additionalGate`** (review #7, optional). Pass a predicate to
+    `MapKunJwks` / `MapKunInternalJwks` to restrict by IP range or header
+    when NetworkPolicy / mesh isn't available. Default behavior unchanged
+    when the parameter is omitted.
+14. **`S2sTokenIssuer.IssueForAsync`** (review #2). Prefer the async
+    overload for hot-path token minting; the sync `IssueFor` delegates to
+    it via `.GetAwaiter().GetResult()` and stays available for existing
+    synchronous call sites.
 
 ### Fixed
 

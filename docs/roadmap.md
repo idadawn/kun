@@ -40,8 +40,22 @@ M1–M6 代码全部完成。Sprint 1 + Sprint 2 gap-closure 亦已全部合入 
 
 ### Sprint 2 候选项（`.omc/plans/kun-gap-closure-v1.md` 内部计划区）
 
-- **P1-2** 审计日志约定：EF 拦截器 + 集成事件（依赖 P0-4 `IOutboxWriter`）——进行中，agent 派发执行
 - **P1-9** NuGet 首次发版（`0.1.0-alpha.2` / `0.1.0-alpha.3`）——用户决定触发
+
+### Code-review MAJOR follow-ups 状态
+
+全部已消化（合入 develop 或留为文档化 follow-up）：
+
+| # | 内容 | Commit |
+|---|---|---|
+| 1 | JWKS 响应 mtime 缓存 | `922d922` |
+| 2 | `S2sTokenIssuer.IssueForAsync` | `084c29a` |
+| 3 | `LocalFileSystemStorage` 流式 MaxBytes | `6d47b5a` |
+| 4 | S3 presigned-POST MaxBytes 签名 | 进行中（agent） |
+| 6 | `ObjectMetadata.ContentType` nullable | `f7087d3` |
+| 7 | JWKS `additionalGate` | `2a3c544` |
+| 8 | `SchemaConsistencyInterceptor` 读路径 | 按 M5 刻意设计，不改 |
+| M2 | `IntegrationEventOutboxAccumulator` JsonTypeInfo pathway | `d4a0f49` |
 
 ### 环境与流程类（ADR 延后 / 需外部条件）
 
