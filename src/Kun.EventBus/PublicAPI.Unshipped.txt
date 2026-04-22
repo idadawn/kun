@@ -45,11 +45,13 @@ static Kun.EventBus.DependencyInjection.KunEventBusServiceCollectionExtensions.A
 Kun.EventBus.EventTypeRegistry
 Kun.EventBus.EventTypeRegistry.GetEventType(System.Type! clrType) -> string?
 Kun.EventBus.EventTypeRegistry.Resolve(string! eventType) -> System.Type?
+Kun.EventBus.EventTypeRegistry.GetAll() -> System.Collections.Generic.IReadOnlyCollection<(string! EventId, System.Type! ClrType)>!
 Kun.EventBus.IEventTypeRegistrar
 Kun.EventBus.IEventTypeRegistrar.Register<TEvent>(string! eventType) -> Kun.EventBus.IEventTypeRegistrar!
 Kun.EventBus.IEventTypeRegistry
 Kun.EventBus.IEventTypeRegistry.GetEventType(System.Type! clrType) -> string?
 Kun.EventBus.IEventTypeRegistry.Resolve(string! eventType) -> System.Type?
+Kun.EventBus.IEventTypeRegistry.GetAll() -> System.Collections.Generic.IReadOnlyCollection<(string! EventId, System.Type! ClrType)>!
 Kun.EventBus.Idempotency.IProcessedMessageStore
 Kun.EventBus.Idempotency.IProcessedMessageStore.TryMarkProcessedAsync(string! consumerName, System.Guid messageId, System.TimeSpan ttl, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<bool>
 Kun.EventBus.IIntegrationEventPublisher
