@@ -38,6 +38,10 @@ M1–M6 代码全部完成。Sprint 1 + Sprint 2 gap-closure 亦已全部合入 
 
 ## 剩余工作
 
+### Phase 2 候选清单
+
+白皮书 §12.2 的 5 条 Phase-2 路标已在 [`docs/roadmap-p2.md`](roadmap-p2.md) 展开为可立项的 kickoff 清单（作用域、可交付物、前置依赖、风险、工作量、PRD 草稿），用户按图索骥挑选首个赛道后再进入 `ralplan`。
+
 ### Sprint 2 候选项（`.omc/plans/kun-gap-closure-v1.md` 内部计划区）
 
 - **P1-9** NuGet 首次发版（`0.1.0-alpha.2` / `0.1.0-alpha.3`）——用户决定触发

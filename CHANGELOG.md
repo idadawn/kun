@@ -69,7 +69,7 @@
   factory method that returns `IEventTypeRegistry` (P1-1).
 - **docs**:
   - `docs/roadmap.md` — consolidated public roadmap (replaces the 495-line
-    `TODO.md` at repo root).
+    `TODO.md` at repo root, merged 2026-04-22).
   - `docs/schema-per-service.md` (P1-8) — end-to-end recipe for running many
     Kun services against one Postgres with service-scoped schemas.
   - `docs/openapi-template.md` (P1-7) — source-gen-friendly OpenAPI wiring
@@ -265,7 +265,7 @@ but the new capabilities below require explicit opt-in:
 - `Kun.AspNetCore` / `Kun.Grpc` csproj：从 `Microsoft.NET.Sdk.Web` 修正为 `Microsoft.NET.Sdk`（它们是库，不是 Host）
 - `PublicAPI.Unshipped.txt` → `PublicAPI.Shipped.txt`：Kun.Core (137)、Kun.Mediator (32)、Kun.Validation (25) 的 API 冻结入库
 
-### Deferred（M1 已决定延后的项，详见 TODO.md）
+### Deferred（M1 已决定延后的项，详见 docs/roadmap.md）
 - `Kun.Mediator.SourceGenerator` / `Kun.Validation.SourceGenerator`：当前用手工注册 API 替代，SG 作为 stretch goal（ralplan ADR fallback 路径）
 - `Kun.Validation` 属性包（`[Required]`、`[MaxLength]` 等）：无 SG 时属性无运行时意义，与 SG 一同回归
 - Result-aware 验证 Behavior（返回 `Result.Fail(Error.Validation(...))`）：可在核心抛异常 Behavior 之上封装，follow-up
