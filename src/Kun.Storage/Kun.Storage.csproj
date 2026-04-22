@@ -1,15 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <IsAotCandidate>false</IsAotCandidate>
+    <IsAotCandidate>true</IsAotCandidate>
     <IsPackable>true</IsPackable>
     <HasPublicApi>false</HasPublicApi>
-    <Description>Kun Framework storage abstractions: IFileStorage with S3/MinIO and local filesystem implementations.</Description>
+    <Description>Kun Framework object-storage abstraction (IFileStorage) with S3/MinIO and local-filesystem implementations. Active-web MIME types are stored with Content-Disposition: attachment as an anti-XSS defense.</Description>
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Kun.Storage.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="AWSSDK.S3" />
-    <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Options" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
