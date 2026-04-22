@@ -1,8 +1,4 @@
-using System.Security.Cryptography;
 using Kun.Gateway.Configuration;
-using Kun.Gateway.Endpoints;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 
 namespace Kun.Gateway.Jwks;
 
@@ -45,8 +41,9 @@ public static class KunInternalJwksEndpoint
         ArgumentException.ThrowIfNullOrWhiteSpace(pattern);
 
         return endpoints.MapGet(pattern, (
-            IOptions<KunGatewayOptions> options,
-            IHostEnvironment environment) =>
+            Microsoft.Extensions.Options.IOptions<KunGatewayOptions> options,
+            IHostEnvironment environment,
+            JwksResponseBuilder builder) =>
         {
             var opts = options.Value;
 
@@ -58,24 +55,7 @@ public static class KunInternalJwksEndpoint
                 return Results.NotFound();
             }
 
-            var pem = File.ReadAllText(opts.PublicKeyPath);
-            using var rsa = RSA.Create();
-            rsa.ImportFromPem(pem);
-
-            var rsaKey = new RsaSecurityKey(rsa);
-            var jwk = JsonWebKeyConverter.ConvertFromRSASecurityKey(rsaKey);
-
-            var modulusBytes = rsa.ExportParameters(false).Modulus ?? [];
-            var hash = SHA256.HashData(modulusBytes);
-            jwk.KeyId = Convert.ToBase64String(hash)[..16];
-            jwk.Use = "sig";
-            jwk.Alg = "RS256";
-
-            var keySet = new JwksResponse
-            {
-                Keys = [new JwkDto(jwk)],
-            };
-
+            var keySet = builder.Build(opts.PublicKeyPath);
             return Results.Ok(keySet);
         });
     }
