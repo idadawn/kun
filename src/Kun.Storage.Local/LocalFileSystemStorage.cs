@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Globalization;
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -62,20 +63,49 @@ public sealed partial class LocalFileSystemStorage : IFileStorage
             Directory.CreateDirectory(targetDir);
         }
 
-        long size;
-        await using (var fs = new FileStream(
-            target, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 81920, useAsync: true))
+        var maxBytes = constraints?.MaxBytes;
+
+        // Fast-path: reject seekable streams that already exceed the cap without ever
+        // opening the output file. Guards against pathological client uploads landing
+        // multi-GB bytes on disk before we bounce them.
+        if (maxBytes is { } preflight && content.CanSeek && content.Length > preflight)
         {
-            await content.CopyToAsync(fs, cancellationToken).ConfigureAwait(false);
-            size = fs.Length;
+            throw new InvalidOperationException(
+                $"Upload size {content.Length} bytes exceeds MaxBytes={preflight}.");
         }
 
-        if (constraints?.MaxBytes is { } max && size > max)
+        long size;
+        const int bufferSize = 81920;
+        var buffer = ArrayPool<byte>.Shared.Rent(bufferSize);
+        var fs = new FileStream(
+            target, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize, useAsync: true);
+        try
         {
-            // Revert: oversized uploads must not leave a partial object behind.
-            try { File.Delete(target); } catch (IOException) { /* best-effort cleanup */ }
-            throw new InvalidOperationException(
-                $"Upload size {size} bytes exceeds MaxBytes={max}.");
+            long totalWritten = 0;
+            int read;
+            while ((read = await content.ReadAsync(buffer.AsMemory(0, bufferSize), cancellationToken).ConfigureAwait(false)) > 0)
+            {
+                // Stream-level enforcement: bail mid-copy the instant the next chunk would
+                // push us past MaxBytes. The file is deleted below; no partial bytes remain
+                // on disk once the caller sees the exception.
+                if (maxBytes is { } max && totalWritten + read > max)
+                {
+                    await fs.DisposeAsync().ConfigureAwait(false);
+                    try { File.Delete(target); } catch (IOException) { /* best-effort cleanup */ }
+                    throw new InvalidOperationException(
+                        $"Upload size exceeds MaxBytes={max}.");
+                }
+
+                await fs.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
+                totalWritten += read;
+            }
+
+            size = fs.Length;
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buffer);
+            await fs.DisposeAsync().ConfigureAwait(false);
         }
 
         WriteContentType(target, contentType);
