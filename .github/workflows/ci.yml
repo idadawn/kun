@@ -82,7 +82,7 @@ jobs:
           # (MapCommand<T,R> / MapQuery<T,R>) and WriteAsJsonAsync<T> in the
           # global exception handler are not AOT-compatible. Module is
           # trim-safe only (IsAotCandidate=false).
-          for proj in src/Kun.Gateway src/Kun.Mediator src/Kun.Core src/Kun.Grpc src/Kun.Validation src/Kun.Audit src/Kun.Storage src/Kun.Observability src/Kun.Caching src/Kun.RateLimit src/Kun.MultiTenancy; do
+          for proj in src/Kun.Gateway src/Kun.Mediator src/Kun.Core src/Kun.Grpc src/Kun.Validation src/Kun.Audit src/Kun.Storage src/Kun.Observability src/Kun.Caching src/Kun.RateLimit src/Kun.MultiTenancy src/Kun.Identity; do
             echo "::group::Publishing AOT: $proj"
             dotnet publish "$proj" -c Release -r linux-x64 -p:PublishAot=true -p:TreatWarningsAsErrors=true
             echo "::endgroup::"
