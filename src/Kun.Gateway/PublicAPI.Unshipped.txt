@@ -44,6 +44,11 @@ Kun.Gateway.S2sTokenIssuer
 Kun.Gateway.S2sTokenIssuer.IssueFor(System.Security.Claims.ClaimsPrincipal! externalPrincipal) -> string!
 Kun.Gateway.Configuration.KunGatewayOptions.EmitTraceIdClaim.get -> bool
 Kun.Gateway.Configuration.KunGatewayOptions.EmitTraceIdClaim.set -> void
+Kun.Gateway.Configuration.KunGatewayOptions.ExposeInternalJwks.get -> bool
+Kun.Gateway.Configuration.KunGatewayOptions.ExposeInternalJwks.set -> void
+Kun.Gateway.Jwks.KunInternalJwksEndpoint
+const Kun.Gateway.Jwks.KunInternalJwksEndpoint.DefaultPattern = "/internal/.well-known/jwks.json" -> string!
+static Kun.Gateway.Jwks.KunInternalJwksEndpoint.MapKunInternalJwks(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, string! pattern = "/internal/.well-known/jwks.json") -> Microsoft.AspNetCore.Builder.IEndpointConventionBuilder!
 Kun.Gateway.S2sTokenIssuer.S2sTokenIssuer(Microsoft.Extensions.Options.IOptions<Kun.Gateway.Configuration.KunGatewayOptions!>! options, Microsoft.Extensions.Hosting.IHostEnvironment! env, Microsoft.AspNetCore.Http.IHttpContextAccessor? httpContextAccessor = null) -> void
 Program
 Program.Program() -> void
