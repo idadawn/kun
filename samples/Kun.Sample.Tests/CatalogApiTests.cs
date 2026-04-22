@@ -120,6 +120,36 @@ public sealed class CatalogApiTests : IClassFixture<CatalogWebFactory>
     }
 
     /// <summary>
+    /// GET /openapi/v1.json returns a well-formed document listing the registered
+    /// routes. Serves as the P1-7 smoke test — catches regressions where someone
+    /// drops <c>AddOpenApi</c>/<c>MapOpenApi</c> or breaks the Minimal-API metadata
+    /// pipeline that feeds the document.
+    /// </summary>
+    [Fact]
+    public async Task OpenApi_Document_Is_Served_And_Lists_Registered_Paths()
+    {
+        var ct = TestContext.Current.CancellationToken;
+
+        var response = await _client.GetAsync("/openapi/v1.json", ct);
+        response.StatusCode.Should().Be(HttpStatusCode.OK,
+            because: $"Development environment should expose the OpenAPI document; body: {await response.Content.ReadAsStringAsync(ct)}");
+
+        var body = await response.Content.ReadAsStringAsync(ct);
+        using var doc = JsonDocument.Parse(body);
+
+        doc.RootElement.TryGetProperty("openapi", out var openapiVersion).Should().BeTrue();
+        openapiVersion.GetString().Should().StartWith("3.",
+            because: "Kun services default to OAS 3.x via Microsoft.AspNetCore.OpenApi");
+
+        doc.RootElement.TryGetProperty("paths", out var paths).Should().BeTrue();
+        paths.EnumerateObject().Should().NotBeEmpty(
+            because: "the catalog service registers at least /products and /products/{id}");
+
+        var pathNames = paths.EnumerateObject().Select(p => p.Name).ToHashSet();
+        pathNames.Should().Contain("/products");
+    }
+
+    /// <summary>
     /// POST /products with an empty name returns 400 (validation failure).
     /// </summary>
     [Fact]

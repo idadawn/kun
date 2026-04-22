@@ -94,10 +94,20 @@ builder.Services.AddValidator<CreateProductCommand, CreateProductCommandValidato
 // ── gRPC ──────────────────────────────────────────────────────────────────────
 builder.Services.AddKunGrpc();
 
+// ── OpenAPI (ASP.NET Core 10 built-in, source-gen-friendly) ──────────────────
+// Exposed at /openapi/v1.json; gated by environment below so production hosts
+// don't leak the document without an explicit opt-in.
+builder.Services.AddOpenApi();
+
 // ── Build ─────────────────────────────────────────────────────────────────────
 var app = builder.Build();
 
 app.UseExceptionHandler();
+
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+}
 
 // ── Database initialisation (apply EF migrations on startup) ─────────────────
 using (var scope = app.Services.CreateScope())
