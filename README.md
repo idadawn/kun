@@ -75,6 +75,7 @@ Kun Framework 的名字源自《庄子》。"鲲"寓意框架从轻量级单体�
 | `Kun.Saga` | Saga Orchestration 编排器 | ✅ |
 | `Kun.Security` | S2S JWT 签发/校验、租户上下文注入 | ✅ |
 | `Kun.Validation` | SourceGen 验证器 | ✅ |
+| `Kun.Observability` | 统一 OpenTelemetry 装配：`AddKunObservability` 一键接入 Kun 全套 ActivitySource + HTTP/EF/Runtime 指令 | ✅ |
 | `Kun.AspNetCore` | Minimal API 扩展、Pipeline Behaviors | ✅ |
 | `Kun.Grpc` | gRPC 拦截器、Result→RpcException 映射 | ✅ |
 | `Kun.Gateway` | YARP 扩展、S2S 签发、限流 | ✅ |
@@ -95,6 +96,34 @@ dotnet run --project samples/Kun.Sample.AppHost
 The Aspire Dashboard opens at **http://localhost:15888**. All service URLs and ports are visible
 in the Dashboard Resources panel. See [`samples/Kun.Sample.AppHost/README.md`](samples/Kun.Sample.AppHost/README.md)
 for details.
+
+## Observability — `AddKunObservability`
+
+`Kun.Observability` wires up OpenTelemetry traces, metrics, and logs in one line.
+It pre-registers every framework `ActivitySource` (`Kun.Mediator`,
+`Kun.EventBus.Outbox`, `Kun.Grpc`, `Kun.Saga`) and the ASP.NET Core /
+HttpClient / EF Core / .NET Runtime instrumentation packages, then exports
+via OTLP. Defaults are safe for both HTTP services and background workers.
+
+```csharp
+// Program.cs / host composition root
+builder.Services.AddKunObservability(o =>
+{
+    o.ServiceName = "neuroagent-platform";
+    o.ServiceVersion = "1.4.2";
+    // o.OtlpEndpoint = new Uri(...);     // optional — falls back to OTEL_EXPORTER_OTLP_ENDPOINT
+    // o.IncludeAspNetCore = false;       // background worker without HTTP
+    // o.TracingEnabled = false;          // only keep metrics + logs
+});
+```
+
+Passing no callback yields a zero-config trace + metric + log pipeline with
+every instrumentation enabled. W3C Trace Context propagation is on by
+default (OpenTelemetry 1.x default). Calls are idempotent — libraries may
+call `AddKunObservability` defensively without risking double-registration.
+See [ADR-004](docs/architecture/ADR-004-Kun.Observability-module.md) for the
+split rationale and [`docs/observability/tracing-tour.md`](docs/observability/tracing-tour.md)
+for the span catalog.
 
 ## Docs
 
