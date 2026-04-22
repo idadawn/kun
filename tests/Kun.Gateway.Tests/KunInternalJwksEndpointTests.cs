@@ -123,6 +123,7 @@ public sealed class KunInternalJwksEndpointTests : IAsyncLifetime
                 webHost.ConfigureServices(services =>
                 {
                     services.AddRouting();
+                    services.AddSingleton<JwksResponseBuilder>();
                     services.Configure<KunGatewayOptions>(opts =>
                     {
                         opts.ExternalIssuer = "https://unused.example";
