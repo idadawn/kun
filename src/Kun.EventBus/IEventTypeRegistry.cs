@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization.Metadata;
+
 namespace Kun.EventBus;
 
 /// <summary>Maps stable event-type tokens to their CLR types at runtime.</summary>
@@ -19,4 +21,12 @@ public interface IEventTypeRegistry
     /// <see cref="GetEventType(Type)"/>.
     /// </summary>
     IReadOnlyCollection<(string EventId, Type ClrType)> GetAll();
+
+    /// <summary>
+    /// Returns the source-generated <see cref="JsonTypeInfo"/> registered for
+    /// <paramref name="clrType"/> via <see cref="IEventTypeRegistrar.Register{TEvent}(string, JsonTypeInfo{TEvent})"/>.
+    /// Returns <see langword="null"/> when the type was registered via the token-only overload
+    /// — in that case, callers fall back to reflection-based serialization (not AOT-safe).
+    /// </summary>
+    JsonTypeInfo? GetJsonTypeInfo(Type clrType);
 }

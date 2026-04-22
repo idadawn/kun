@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization.Metadata;
 using Kun.EventBus.Idempotency;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -11,6 +12,7 @@ public sealed class KunEventBusBuilder : IEventTypeRegistrar
 {
     private readonly IServiceCollection _services;
     internal readonly Dictionary<string, Type> EventTypeMap = [];
+    internal readonly Dictionary<Type, JsonTypeInfo> JsonTypeInfoMap = [];
 
     internal KunEventBusBuilder(IServiceCollection services) => _services = services;
 
@@ -18,6 +20,15 @@ public sealed class KunEventBusBuilder : IEventTypeRegistrar
     public IEventTypeRegistrar Register<TEvent>(string eventType) where TEvent : class
     {
         EventTypeMap[eventType] = typeof(TEvent);
+        return this;
+    }
+
+    /// <inheritdoc/>
+    public IEventTypeRegistrar Register<TEvent>(string eventType, JsonTypeInfo<TEvent> typeInfo) where TEvent : class
+    {
+        ArgumentNullException.ThrowIfNull(typeInfo);
+        EventTypeMap[eventType] = typeof(TEvent);
+        JsonTypeInfoMap[typeof(TEvent)] = typeInfo;
         return this;
     }
 

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Kun.Core.MultiTenancy;
 using Kun.EventBus;
@@ -32,6 +33,13 @@ public sealed class IntegrationEventOutboxAccumulator : IIntegrationEventBus, IO
     }
 
     /// <inheritdoc/>
+    [RequiresUnreferencedCode(
+        "Falls back to reflection-based JSON serialization when the event type was registered " +
+        "without a source-generated JsonTypeInfo. AOT consumers must use " +
+        "IEventTypeRegistrar.Register<TEvent>(string, JsonTypeInfo<TEvent>) at registration time.")]
+    [RequiresDynamicCode(
+        "Falls back to reflection-based JSON serialization when the event type was registered " +
+        "without a source-generated JsonTypeInfo.")]
     public void Publish<TEvent>(TEvent @event) where TEvent : class
     {
         ArgumentNullException.ThrowIfNull(@event);
@@ -41,7 +49,21 @@ public sealed class IntegrationEventOutboxAccumulator : IIntegrationEventBus, IO
                 $"Event type '{typeof(TEvent).FullName}' is not registered in IEventTypeRegistry. " +
                 "Register it via IEventTypeRegistrar before publishing.");
 
-        var payload = JsonSerializer.Serialize(@event);
+        // Prefer source-generated JsonTypeInfo when the consumer registered it (AOT-safe).
+        // Fall back to reflection-based Serialize for legacy registrations; this path is
+        // explicitly annotated unsafe for trim/AOT above so the analyzer warns at callers
+        // rather than silently breaking at publish time.
+        string payload;
+        var typeInfo = _registry.GetJsonTypeInfo(typeof(TEvent));
+        if (typeInfo is System.Text.Json.Serialization.Metadata.JsonTypeInfo<TEvent> typed)
+        {
+            payload = JsonSerializer.Serialize(@event, typed);
+        }
+        else
+        {
+            payload = JsonSerializer.Serialize(@event);
+        }
+
         var activity = Activity.Current;
 
         var message = new OutboxMessage(
@@ -57,5 +79,9 @@ public sealed class IntegrationEventOutboxAccumulator : IIntegrationEventBus, IO
     }
 
     /// <inheritdoc />
+    [RequiresUnreferencedCode(
+        "Delegates to Publish<TEvent>; see Publish for AOT-safety requirements.")]
+    [RequiresDynamicCode(
+        "Delegates to Publish<TEvent>; see Publish for AOT-safety requirements.")]
     public void Enqueue<TEvent>(TEvent @event) where TEvent : class => Publish(@event);
 }
