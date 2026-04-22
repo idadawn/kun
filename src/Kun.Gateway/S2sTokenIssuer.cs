@@ -111,19 +111,37 @@ public sealed class S2sTokenIssuer
     /// principal, then <c>sub</c>, <c>tenant_id</c>, and all <c>roles</c> claims are copied
     /// into the new token.
     /// </summary>
+    /// <remarks>
+    /// Synchronous convenience wrapper over <see cref="IssueForAsync(ClaimsPrincipal, CancellationToken)"/>.
+    /// Prefer the async form on the Gateway request path — it avoids the
+    /// <c>GetAwaiter().GetResult()</c> hop and lets resolvers that perform real I/O work
+    /// without starving the thread pool.
+    /// </remarks>
     /// <param name="externalPrincipal">The authenticated principal from the external IdP JWT.</param>
     /// <returns>A signed RS256 JWT string.</returns>
     public string IssueFor(ClaimsPrincipal externalPrincipal)
     {
-        ArgumentNullException.ThrowIfNull(externalPrincipal);
-
-        // Resolver is expected to be cheap (cache-backed or CompletedTask-returning). Blocking
-        // here keeps the sync public API while letting consumers plug an async lookup if they
-        // understand the cost.
-        var principal = _resolver
-            .ResolveAsync(externalPrincipal, CancellationToken.None)
+        return IssueForAsync(externalPrincipal, CancellationToken.None)
             .GetAwaiter()
             .GetResult();
+    }
+
+    /// <summary>
+    /// Async variant of <see cref="IssueFor(ClaimsPrincipal)"/>. Awaits the configured
+    /// <see cref="IS2sPrincipalResolver"/> without blocking, then mints the token.
+    /// </summary>
+    /// <param name="externalPrincipal">The authenticated principal from the external IdP JWT.</param>
+    /// <param name="cancellationToken">Cancellation token passed to the resolver.</param>
+    /// <returns>A signed RS256 JWT string.</returns>
+    public async Task<string> IssueForAsync(
+        ClaimsPrincipal externalPrincipal,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(externalPrincipal);
+
+        var principal = await _resolver
+            .ResolveAsync(externalPrincipal, cancellationToken)
+            .ConfigureAwait(false);
 
         ArgumentNullException.ThrowIfNull(principal);
 

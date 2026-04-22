@@ -54,6 +54,7 @@ Kun.Gateway.Jwks.JwksResponseBuilder.JwksResponseBuilder() -> void
 Kun.Gateway.Jwks.JwksResponseBuilder.Build(string! publicKeyPath) -> Kun.Gateway.Endpoints.JwksResponse!
 Kun.Gateway.S2sTokenIssuer.S2sTokenIssuer(Microsoft.Extensions.Options.IOptions<Kun.Gateway.Configuration.KunGatewayOptions!>! options, Microsoft.Extensions.Hosting.IHostEnvironment! env, Microsoft.AspNetCore.Http.IHttpContextAccessor? httpContextAccessor) -> void
 Kun.Gateway.S2sTokenIssuer.S2sTokenIssuer(Microsoft.Extensions.Options.IOptions<Kun.Gateway.Configuration.KunGatewayOptions!>! options, Microsoft.Extensions.Hosting.IHostEnvironment! env, Kun.Gateway.Identity.IS2sPrincipalResolver! resolver, Microsoft.AspNetCore.Http.IHttpContextAccessor? httpContextAccessor = null) -> void
+Kun.Gateway.S2sTokenIssuer.IssueForAsync(System.Security.Claims.ClaimsPrincipal! externalPrincipal, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<string!>!
 Kun.Gateway.Identity.IS2sPrincipalResolver
 Kun.Gateway.Identity.IS2sPrincipalResolver.ResolveAsync(System.Security.Claims.ClaimsPrincipal! externalPrincipal, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Security.Claims.ClaimsPrincipal!>!
 Kun.Gateway.Identity.NoOpS2sPrincipalResolver
