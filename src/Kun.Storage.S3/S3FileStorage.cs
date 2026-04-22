@@ -67,6 +67,12 @@ public sealed partial class S3FileStorage : IFileStorage
             InputStream = content,
             ContentType = contentType,
             AutoCloseStream = false,
+            // Required when InputStream is non-seekable (e.g. a live upload
+            // passing through an HttpRequest body). AWS SIGv4 otherwise needs
+            // to hash the full payload before transmitting, which forces the
+            // SDK to buffer everything in memory. Confidentiality is still
+            // guaranteed by TLS; integrity relies on the HTTPS layer instead
+            // of the signed-body hash.
             DisablePayloadSigning = true,
         };
 
@@ -133,15 +139,25 @@ public sealed partial class S3FileStorage : IFileStorage
             var fileName = SanitizeFileName(options?.DownloadFileName ?? GetLeafName(objectKey));
             disposition = $"attachment; filename=\"{fileName}\"";
             request.ResponseHeaderOverrides.ContentDisposition = disposition;
-            responseHeaders["Content-Disposition"] = disposition;
         }
 
+        // Apply caller-provided overrides first so our force-attachment clamp
+        // below cannot be shadowed by a hostile caller dict in the returned
+        // PresignedDownloadUrl.ResponseHeaders (the signed URL itself still
+        // carries the forced disposition via ResponseHeaderOverrides, but
+        // server-side proxies that echo the dict to their own responses would
+        // otherwise lose the hardening).
         if (options?.ResponseHeaders is { Count: > 0 } custom)
         {
             foreach (var (k, v) in custom)
             {
                 responseHeaders[k] = v;
             }
+        }
+
+        if (forceAttachment)
+        {
+            responseHeaders["Content-Disposition"] = disposition!;
         }
 
         var url = await _s3.GetPreSignedURLAsync(request).ConfigureAwait(false);

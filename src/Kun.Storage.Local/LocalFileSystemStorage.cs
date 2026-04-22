@@ -109,21 +109,31 @@ public sealed partial class LocalFileSystemStorage : IFileStorage
         };
 
         var responseHeaders = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        string? disposition = null;
 
         if (forceAttachment)
         {
             var fileName = SanitizeFileName(options?.DownloadFileName ?? Path.GetFileName(objectKey));
-            var disposition = $"attachment; filename=\"{fileName}\"";
+            disposition = $"attachment; filename=\"{fileName}\"";
             query["disposition"] = disposition;
-            responseHeaders["Content-Disposition"] = disposition;
         }
 
+        // Apply caller-provided headers first so the force-attachment clamp
+        // below always wins. Stops a server-side proxy path that echoes
+        // PresignedDownloadUrl.ResponseHeaders from accidentally replacing
+        // the active-web-type Content-Disposition with caller-supplied
+        // "inline" for text/html + friends.
         if (options?.ResponseHeaders is { Count: > 0 } custom)
         {
             foreach (var (k, v) in custom)
             {
                 responseHeaders[k] = v;
             }
+        }
+
+        if (forceAttachment)
+        {
+            responseHeaders["Content-Disposition"] = disposition!;
         }
 
         var uri = BuildUri(_options.PublicBaseUrl, objectKey, query);

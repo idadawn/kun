@@ -7,8 +7,4 @@
     <Description>Kun Framework — object-storage abstractions: IFileStorage contract, presigned URL records, upload constraints, and the ActiveWebContentTypes set used to force-download rendered web payloads.</Description>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
-  </ItemGroup>
-
 </Project>

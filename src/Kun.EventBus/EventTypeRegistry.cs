@@ -1,4 +1,5 @@
 using System.Collections.Frozen;
+using System.Collections.ObjectModel;
 
 namespace Kun.EventBus;
 
@@ -7,7 +8,7 @@ public sealed class EventTypeRegistry : IEventTypeRegistry
 {
     private readonly FrozenDictionary<string, Type> _tokenToType;
     private readonly FrozenDictionary<Type, string> _typeToToken;
-    private readonly (string EventId, Type ClrType)[] _sortedAll;
+    private readonly ReadOnlyCollection<(string EventId, Type ClrType)> _sortedAll;
 
     internal EventTypeRegistry(Dictionary<string, Type> tokenToType)
     {
@@ -17,10 +18,13 @@ public sealed class EventTypeRegistry : IEventTypeRegistry
             .ToFrozenDictionary();
 
         // Pre-sort so GetAll() can return a stable ordering without per-call allocation.
-        _sortedAll = tokenToType
+        // Wrap in ReadOnlyCollection so a consumer downcasting via the declared
+        // IReadOnlyCollection return type cannot mutate the underlying array.
+        var sorted = tokenToType
             .OrderBy(kv => kv.Key, StringComparer.Ordinal)
             .Select(kv => (kv.Key, kv.Value))
             .ToArray();
+        _sortedAll = new ReadOnlyCollection<(string EventId, Type ClrType)>(sorted);
     }
 
     /// <inheritdoc/>
