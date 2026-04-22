@@ -150,3 +150,12 @@ dotnet run --project samples/Kun.Sample.Order \
 ```
 
 The service calls `EnsureCreated` at startup. No migration step is needed for development.
+
+### Schema isolation
+
+`OrderDbContext` overrides `DefaultSchema => "order"` and the design-time factory chains
+`.UseKunSchema("order")`, so orders, order-lines, Saga tables, `outbox_messages`, and
+`__ef_migrations_history` all land in the `order` Postgres schema. Catalog uses
+`catalog`; both samples can run against a single Postgres instance in the AppHost without
+name collisions. See [docs/schema-per-service.md](../../docs/schema-per-service.md) for
+the full recipe and the `SchemaConsistencyInterceptor` safety net.

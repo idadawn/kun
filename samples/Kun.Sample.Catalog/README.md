@@ -99,6 +99,15 @@ dotnet run --project samples/Kun.Sample.Catalog \
 The service calls `EnsureCreated` at startup, so no migration step is needed. This is suitable
 for development only; a production deployment should use EF Core Migrations.
 
+### Schema isolation
+
+`CatalogDbContext` overrides `DefaultSchema => "catalog"` and the design-time factory
+chains `.UseKunSchema("catalog")`, so every table — including `outbox_messages` and
+`__ef_migrations_history` — lives under the `catalog` Postgres schema. The Order sample
+uses the `order` schema; both can coexist in a single Postgres instance without name
+collisions. See [docs/schema-per-service.md](../../docs/schema-per-service.md) for the
+end-to-end recipe and the `SchemaConsistencyInterceptor` safety net.
+
 ---
 
 ## Endpoints
