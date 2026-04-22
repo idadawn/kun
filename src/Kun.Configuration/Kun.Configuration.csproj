@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsAotCandidate>true</IsAotCandidate>
+    <IsPackable>true</IsPackable>
+    <HasPublicApi>false</HasPublicApi>
+    <Description>Kun Framework typed-options validation: AddKunOptions&lt;T&gt;(section) wires BindConfiguration + ValidateDataAnnotations + ValidateOnStart in a single call, plus [RequiredConfig] / [UrlConfig] / [NonEmptyStringConfig] attributes that produce section-qualified error messages.</Description>
+    <!-- SYSLIB1100/1101/1104 are Configuration-Binder source-generator diagnostics emitted
+         for the unbounded-generic BindConfiguration<TOptions> call. AddKunOptions is
+         deliberately generic (TOptions is DynamicallyAccessedMembers-annotated) and already
+         carries [RequiresUnreferencedCode]/[RequiresDynamicCode] — the runtime reflection
+         fallback is the contract, so the caller has opted in. Suppress here. -->
+    <NoWarn>$(NoWarn);SYSLIB1100;SYSLIB1101;SYSLIB1104</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Kun.Configuration.Tests" />
+  </ItemGroup>
+
+</Project>
