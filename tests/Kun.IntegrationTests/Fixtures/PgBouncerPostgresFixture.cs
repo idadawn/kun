@@ -65,9 +65,13 @@ public sealed class PgBouncerPostgresFixture : IAsyncLifetime
                 .Build();
             await _pgBouncer.StartAsync(ct);
 
+            // No Reset On Close=true + Max Auto Prepare=0 are required by PgBouncer's
+            // transaction-pool mode: it recycles the backend connection between
+            // transactions, so client-side prepared statements (Npgsql's auto-prepare)
+            // and DISCARD ALL on close both break. See P1-5 / M6 of the gap-closure plan.
             BouncerConnectionString =
                 $"Host=localhost;Port={_pgBouncer.GetMappedPublicPort(6432)};Database=kun;" +
-                "Username=kun;Password=kun_secret";
+                "Username=kun;Password=kun_secret;No Reset On Close=true;Max Auto Prepare=0";
         }
         catch (ArgumentException ex) when (ex.Message.Contains("Docker", StringComparison.OrdinalIgnoreCase))
         {
