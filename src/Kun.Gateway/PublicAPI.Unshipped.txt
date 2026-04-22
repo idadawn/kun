@@ -49,7 +49,14 @@ Kun.Gateway.Configuration.KunGatewayOptions.ExposeInternalJwks.set -> void
 Kun.Gateway.Jwks.KunInternalJwksEndpoint
 const Kun.Gateway.Jwks.KunInternalJwksEndpoint.DefaultPattern = "/internal/.well-known/jwks.json" -> string!
 static Kun.Gateway.Jwks.KunInternalJwksEndpoint.MapKunInternalJwks(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, string! pattern = "/internal/.well-known/jwks.json") -> Microsoft.AspNetCore.Builder.IEndpointConventionBuilder!
-Kun.Gateway.S2sTokenIssuer.S2sTokenIssuer(Microsoft.Extensions.Options.IOptions<Kun.Gateway.Configuration.KunGatewayOptions!>! options, Microsoft.Extensions.Hosting.IHostEnvironment! env, Microsoft.AspNetCore.Http.IHttpContextAccessor? httpContextAccessor = null) -> void
+Kun.Gateway.S2sTokenIssuer.S2sTokenIssuer(Microsoft.Extensions.Options.IOptions<Kun.Gateway.Configuration.KunGatewayOptions!>! options, Microsoft.Extensions.Hosting.IHostEnvironment! env, Microsoft.AspNetCore.Http.IHttpContextAccessor? httpContextAccessor) -> void
+Kun.Gateway.S2sTokenIssuer.S2sTokenIssuer(Microsoft.Extensions.Options.IOptions<Kun.Gateway.Configuration.KunGatewayOptions!>! options, Microsoft.Extensions.Hosting.IHostEnvironment! env, Kun.Gateway.Identity.IS2sPrincipalResolver! resolver, Microsoft.AspNetCore.Http.IHttpContextAccessor? httpContextAccessor = null) -> void
+Kun.Gateway.Identity.IS2sPrincipalResolver
+Kun.Gateway.Identity.IS2sPrincipalResolver.ResolveAsync(System.Security.Claims.ClaimsPrincipal! externalPrincipal, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Security.Claims.ClaimsPrincipal!>!
+Kun.Gateway.Identity.NoOpS2sPrincipalResolver
+Kun.Gateway.Identity.NoOpS2sPrincipalResolver.NoOpS2sPrincipalResolver() -> void
+Kun.Gateway.Identity.NoOpS2sPrincipalResolver.ResolveAsync(System.Security.Claims.ClaimsPrincipal! externalPrincipal, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Security.Claims.ClaimsPrincipal!>!
+static Kun.Gateway.Identity.NoOpS2sPrincipalResolver.Instance.get -> Kun.Gateway.Identity.NoOpS2sPrincipalResolver!
 Program
 Program.Program() -> void
 static Kun.Gateway.DependencyInjection.KunGatewayServiceCollectionExtensions.AddKunGateway(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.Gateway.Configuration.KunGatewayOptions!>! configure, Microsoft.Extensions.Configuration.IConfiguration? reverseProxyConfig = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!

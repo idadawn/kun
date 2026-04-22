@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using FluentAssertions;
 using Kun.Gateway;
 using Kun.Gateway.Configuration;
+using Kun.Gateway.Identity;
 using Kun.Security.Authentication;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
@@ -47,7 +48,7 @@ public sealed class S2sTokenRoundTripTests : IDisposable
         });
 
         var env = new FakeHostEnvironment { EnvironmentName = Environments.Development };
-        _issuer = new S2sTokenIssuer(options, env);
+        _issuer = new S2sTokenIssuer(options, env, NoOpS2sPrincipalResolver.Instance);
 
         var rsaValidation = RSA.Create();
         rsaValidation.ImportFromPem(File.ReadAllText(_publicKeyPath));

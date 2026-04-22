@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using FluentAssertions;
 using Kun.Gateway.Configuration;
+using Kun.Gateway.Identity;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -137,7 +138,7 @@ public sealed class S2sTokenIssuerTraceIdTests : IDisposable
         var accessor = Substitute.For<IHttpContextAccessor>();
         accessor.HttpContext.Returns(hasHttpContext ? new DefaultHttpContext() : null);
 
-        return new S2sTokenIssuer(options, CreateDevEnv(), accessor);
+        return new S2sTokenIssuer(options, CreateDevEnv(), NoOpS2sPrincipalResolver.Instance, accessor);
     }
 
     private TokenValidationParameters BuildStrictValidationParams()
