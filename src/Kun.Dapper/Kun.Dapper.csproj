@@ -1,5 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <!--
+      IsAotCandidate=false: the Kun.Dapper assembly is a thin wrapper
+      (KunConnectionFactory, pagination helpers, DI glue). Real AOT-safe
+      read-side code lives in each consumer's query handlers, which opt
+      into Dapper.AOT's source generator via [DapperAot]. Making this
+      wrapper assembly AOT-strict adds friction without buying anything.
+      See docs/architecture/AOT-audit-2026-04-23.md §YELLOW.
+    -->
+    <IsAotCandidate>false</IsAotCandidate>
     <HasPublicApi>true</HasPublicApi>
     <Description>Kun Framework — Dapper read-side abstractions: connection factory, pagination, and DI extensions.</Description>
   </PropertyGroup>
