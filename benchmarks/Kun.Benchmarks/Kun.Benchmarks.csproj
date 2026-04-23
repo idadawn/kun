@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Kun.Benchmarks</RootNamespace>
+    <AssemblyName>Kun.Benchmarks</AssemblyName>
+    <!--
+      Benchmarks are a developer tool, not a library; do not pack, do not
+      publish, do not participate in the AOT matrix. BenchmarkDotNet itself
+      relies on runtime codegen (spawning child processes per benchmark),
+      which is fundamentally incompatible with NativeAOT.
+    -->
+    <IsPackable>false</IsPackable>
+    <IsPublishable>false</IsPublishable>
+    <IsAotCandidate>false</IsAotCandidate>
+    <Description>BenchmarkDotNet performance baselines for Kun Framework critical paths.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" />
+  </ItemGroup>
+
+  <ItemGroup Label="Modules under benchmark">
+    <ProjectReference Include="..\..\src\Kun.Caching\Kun.Caching.csproj" />
+    <ProjectReference Include="..\..\src\Kun.Storage\Kun.Storage.csproj" />
+    <ProjectReference Include="..\..\src\Kun.Audit\Kun.Audit.csproj" />
+    <ProjectReference Include="..\..\src\Kun.Audit.EntityFrameworkCore\Kun.Audit.EntityFrameworkCore.csproj" />
+    <ProjectReference Include="..\..\src\Kun.MultiTenancy\Kun.MultiTenancy.csproj" />
+    <ProjectReference Include="..\..\src\Kun.MultiTenancy.EntityFrameworkCore\Kun.MultiTenancy.EntityFrameworkCore.csproj" />
+    <ProjectReference Include="..\..\src\Kun.EntityFrameworkCore\Kun.EntityFrameworkCore.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Label="Benchmark support packages">
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" />
+  </ItemGroup>
+
+</Project>
