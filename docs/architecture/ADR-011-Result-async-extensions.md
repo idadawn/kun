@@ -127,9 +127,17 @@ preserves fluent chaining without forcing `.AsTask()` /
 
 ### `CancellationToken` semantics
 
-- Async overloads accept `CancellationToken ct = default`. When
-  they forward to an async delegate, they forward the token
-  unchanged.
+- Async overloads accept `CancellationToken ct` and forward it
+  unchanged to the supplied delegate.
+- **Required, not optional.** The sketch above intended
+  `CancellationToken ct = default` but the Roslyn PublicAPI analyzer
+  rule `RS0026` ("Do not add multiple overloads with optional
+  parameters") flags that combination. Rather than suppress the rule
+  blanket-wide, the async-delegate overloads require an explicit CT;
+  callers who want no token pass `default` or
+  `CancellationToken.None`. The UX cost is small and the binary-
+  compat safety is concrete — future ADR revisions may revisit if a
+  pattern for safely suppressing RS0026 per-symbol emerges.
 - A pre-cancelled token surfaces `OperationCanceledException` via
   the awaited delegate (or via `CancellationToken.ThrowIfCancellationRequested()`
   where no delegate is called). We deliberately do **not** wrap

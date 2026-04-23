@@ -6,6 +6,42 @@
 
 ## [Unreleased]
 
+### Added — ADR-011 Result<T> composition extensions (2026-04-24)
+
+- **docs/architecture/ADR-011-Result-async-extensions.md** — accepted.
+  Specifies the canonical Map / Bind / Tap / Ensure / Match surface
+  (sync + async) for `Kun.Core.Results` before more downstream consumers
+  hand-roll their own. Normative short-circuit and cancellation
+  semantics; alternatives (`Then`, LINQ `Select`/`SelectMany`,
+  `Flatten`) explicitly deferred.
+- **`Kun.Core.Results.ResultExtensions`** — synchronous extensions on
+  `Result` and `Result<T>`: `Tap`, `Ensure`, `Match`, `Bind` (plus
+  `Result<T>.Map` / `Result<T>.Bind` into `Result<TOut>` or `Result`).
+- **`Kun.Core.Results.TaskResultExtensions`** — async extensions on
+  `Task<Result>` / `Task<Result<T>>` receivers. Each op has two
+  overloads: a sync-delegate variant and an async-delegate variant
+  with required `CancellationToken`. Return type stays on the Task
+  rail.
+- **`Kun.Core.Results.ValueTaskResultExtensions`** — mirror of
+  `TaskResultExtensions` for hot-path handlers that return
+  `ValueTask<…>` (Mediator pipeline, Saga step executors). Same
+  two-overload shape per op; async-delegate variant accepts
+  `Func<…, ValueTask<…>>` and returns `ValueTask<…>`.
+- **Deliberate deviation from ADR-011 sketch**: `CancellationToken`
+  on async-delegate overloads is required, not `= default`. RS0026
+  (PublicAPI analyzer "do not add multiple overloads with optional
+  parameters") flags the alternative; we prefer passing the analyzer
+  over masking it with a blanket suppression. Callers who want no
+  token pass `default` or `CancellationToken.None` explicitly.
+- **41 new tests in `tests/Kun.Core.Tests/Results/ResultExtensionsTests.cs`**
+  — sync success / failure / short-circuit, async Task + ValueTask
+  parity, CT forwarding, pre-cancelled CT surfaces
+  `OperationCanceledException`, null-argument guards.
+- **Scope note**: additive only. `Kun.Core` stays AOT-candidate with
+  zero third-party deps; `PublicAPI.Unshipped.txt` listing every new
+  symbol. Migration of `neuroagent-csharp` handlers off hand-rolled
+  patterns is a separate follow-up task (ADR-011 §Follow-ups F1).
+
 ### Added — P2-A Part 2 benchmarks CI workflow (2026-04-24)
 
 - **.github/workflows/benchmarks.yml** — weekly cron (Mon 06:00 UTC) + PR-label
