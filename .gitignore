@@ -4,6 +4,7 @@ obj/
 out/
 publish/
 artifacts/
+BenchmarkDotNet.Artifacts/
 *.user
 *.suo
 *.userosscache

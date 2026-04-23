@@ -10,10 +10,11 @@ namespace Kun.Benchmarks;
 /// BenchmarkDotNet entry point.
 ///
 /// <para>
-/// Default config: <c>--job short --exporters json,markdown</c>. The
-/// <c>ShortRunJob</c> warmup/iteration counts keep the Phase 1 baselines
-/// runnable in &lt; 3 minutes end-to-end on a developer laptop; switch to
-/// <c>Job.Default</c> via <c>--job long</c> for publishable numbers.
+/// Default config: <c>Job.ShortRun</c> + JSON + GitHub-flavoured Markdown
+/// exporters wired programmatically (no need to pass <c>--exporters</c>
+/// on the CLI). <c>ShortRunJob</c>'s warmup/iteration counts keep the
+/// Phase 1 baselines runnable in &lt; 5 minutes end-to-end on a developer
+/// laptop; switch to <c>Job.Default</c> for publishable numbers.
 /// </para>
 ///
 /// <para>
