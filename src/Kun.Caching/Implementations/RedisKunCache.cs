@@ -122,6 +122,53 @@ public sealed partial class RedisKunCache : IKunCache
     }
 
     /// <inheritdoc />
+    public async Task<byte[]?> GetBytesAsync(string key, CancellationToken cancellationToken = default)
+    {
+        var full = KeyPrefixer.Apply(_options, key);
+        try
+        {
+            return await _distributed.GetAsync(full, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (IsTransient(ex))
+        {
+            Log.RedisFailureReadThrough(_logger, full, ex);
+            if (_fallback is null)
+            {
+                throw;
+            }
+            return await _fallback.GetBytesAsync(key, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task SetBytesAsync(string key, byte[] value, TimeSpan? ttl = null, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        var full = KeyPrefixer.Apply(_options, key);
+
+        var entryOptions = new DistributedCacheEntryOptions();
+        var effectiveTtl = ttl ?? _options.DefaultTtl;
+        if (effectiveTtl is { } window)
+        {
+            entryOptions.AbsoluteExpirationRelativeToNow = window;
+        }
+
+        try
+        {
+            await _distributed.SetAsync(full, value, entryOptions, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (IsTransient(ex))
+        {
+            Log.RedisFailureWriteThrough(_logger, full, ex);
+            if (_fallback is null)
+            {
+                throw;
+            }
+            await _fallback.SetBytesAsync(key, value, ttl, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    /// <inheritdoc />
     [RequiresUnreferencedCode("IKunCache.GetOrSetAsync contract.")]
     [RequiresDynamicCode("IKunCache.GetOrSetAsync contract.")]
     public async Task<T> GetOrSetAsync<T>(

@@ -129,6 +129,71 @@ public sealed class KunCacheBackendTests : IClassFixture<RedisFixture>
 
     [Theory]
     [MemberData(nameof(BackendNames))]
+    public async Task SetBytes_ThenGetBytes_RoundTripsPayload(string backend)
+    {
+        var cache = CreateCache(backend, new KunCachingOptions { KeyPrefix = $"b-rt-{Guid.NewGuid():N}-" });
+        var ct = TestContext.Current.CancellationToken;
+        var payload = new byte[] { 0x01, 0x02, 0x03, 0xFF, 0x00, 0x7A };
+
+        await cache.SetBytesAsync("blob", payload, cancellationToken: ct);
+        var hit = await cache.GetBytesAsync("blob", ct);
+
+        hit.Should().NotBeNull();
+        hit!.Should().Equal(payload);
+    }
+
+    [Theory]
+    [MemberData(nameof(BackendNames))]
+    public async Task GetBytes_ReturnsNullOnMiss(string backend)
+    {
+        var cache = CreateCache(backend, new KunCachingOptions { KeyPrefix = $"b-miss-{Guid.NewGuid():N}-" });
+        var ct = TestContext.Current.CancellationToken;
+
+        var value = await cache.GetBytesAsync("absent", ct);
+
+        value.Should().BeNull();
+    }
+
+    [Theory]
+    [MemberData(nameof(BackendNames))]
+    public async Task SetBytes_RejectsNullPayload(string backend)
+    {
+        var cache = CreateCache(backend, new KunCachingOptions { KeyPrefix = $"b-null-{Guid.NewGuid():N}-" });
+        var ct = TestContext.Current.CancellationToken;
+
+        var act = () => cache.SetBytesAsync("k", null!, cancellationToken: ct);
+
+        await act.Should().ThrowAsync<ArgumentNullException>();
+    }
+
+    [Theory]
+    [MemberData(nameof(BackendNames))]
+    public async Task SetBytes_WithTtl_ExpiresEntry(string backend)
+    {
+        var cache = CreateCache(backend, new KunCachingOptions { KeyPrefix = $"b-ttl-{Guid.NewGuid():N}-" });
+        var ct = TestContext.Current.CancellationToken;
+
+        await cache.SetBytesAsync("soon-gone", new byte[] { 1, 2, 3 }, TimeSpan.FromMilliseconds(200), ct);
+        await Task.Delay(600, ct);
+
+        (await cache.GetBytesAsync("soon-gone", ct)).Should().BeNull();
+    }
+
+    [Theory]
+    [MemberData(nameof(BackendNames))]
+    public async Task RemoveAsync_EvictsBytesPayload(string backend)
+    {
+        var cache = CreateCache(backend, new KunCachingOptions { KeyPrefix = $"b-rm-{Guid.NewGuid():N}-" });
+        var ct = TestContext.Current.CancellationToken;
+
+        await cache.SetBytesAsync("transient", new byte[] { 9 }, cancellationToken: ct);
+        await cache.RemoveAsync("transient", ct);
+
+        (await cache.GetBytesAsync("transient", ct)).Should().BeNull();
+    }
+
+    [Theory]
+    [MemberData(nameof(BackendNames))]
     public async Task KeyPrefix_IsolatesBetweenCaches(string backend)
     {
         var a = CreateCache(backend, new KunCachingOptions { KeyPrefix = $"a-{Guid.NewGuid():N}-" });

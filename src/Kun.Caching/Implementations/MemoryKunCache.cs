@@ -66,6 +66,32 @@ public sealed class MemoryKunCache : IKunCache
     }
 
     /// <inheritdoc />
+    public Task<byte[]?> GetBytesAsync(string key, CancellationToken cancellationToken = default)
+    {
+        var full = KeyPrefixer.Apply(_options, key);
+        if (_cache.TryGetValue(full, out var value) && value is byte[] bytes)
+        {
+            return Task.FromResult<byte[]?>(bytes);
+        }
+        return Task.FromResult<byte[]?>(null);
+    }
+
+    /// <inheritdoc />
+    public Task SetBytesAsync(string key, byte[] value, TimeSpan? ttl = null, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        var full = KeyPrefixer.Apply(_options, key);
+        var entryOptions = new MemoryCacheEntryOptions();
+        var effectiveTtl = ttl ?? _options.DefaultTtl;
+        if (effectiveTtl is { } window)
+        {
+            entryOptions.AbsoluteExpirationRelativeToNow = window;
+        }
+        _cache.Set(full, value, entryOptions);
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
     [RequiresUnreferencedCode("IKunCache.GetOrSetAsync contract.")]
     [RequiresDynamicCode("IKunCache.GetOrSetAsync contract.")]
     public async Task<T> GetOrSetAsync<T>(

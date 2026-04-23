@@ -40,6 +40,24 @@ public interface IKunCache
     Task RemoveAsync(string key, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Reads the cached byte payload for <paramref name="key"/>; returns
+    /// <see langword="null"/> on miss. Reflection-free path intended for
+    /// AOT-strict callers (e.g. <c>Kun.Identity</c>'s Redis session
+    /// store) that already own their serialization — typically via a
+    /// source-generated <see cref="System.Text.Json.Serialization.JsonSerializerContext"/>.
+    /// </summary>
+    Task<byte[]?> GetBytesAsync(string key, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Writes <paramref name="value"/> byte-for-byte under
+    /// <paramref name="key"/>. When <paramref name="ttl"/> is
+    /// <see langword="null"/>, <c>KunCachingOptions.DefaultTtl</c> applies;
+    /// when both are <see langword="null"/>, the entry never expires.
+    /// Reflection-free path; see <see cref="GetBytesAsync"/>.
+    /// </summary>
+    Task SetBytesAsync(string key, byte[] value, TimeSpan? ttl = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Returns the cached value, invoking <paramref name="factory"/> exactly
     /// once under concurrent access on the same process when the key is
     /// absent. The produced value is written to the cache under
