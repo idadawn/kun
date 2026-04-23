@@ -40,6 +40,9 @@ Kun.Gateway.RateLimiting.Resolvers.IpRateLimitPartitionResolver.ResolvePartition
 Kun.Gateway.RateLimiting.Resolvers.TenantRateLimitPartitionResolver
 Kun.Gateway.RateLimiting.Resolvers.TenantRateLimitPartitionResolver.ResolvePartitionKey(Microsoft.AspNetCore.Http.HttpContext! context) -> string!
 Kun.Gateway.RateLimiting.Resolvers.TenantRateLimitPartitionResolver.TenantRateLimitPartitionResolver() -> void
+Kun.Gateway.RateLimiting.Resolvers.UserPrincipalRateLimitPartitionResolver
+Kun.Gateway.RateLimiting.Resolvers.UserPrincipalRateLimitPartitionResolver.UserPrincipalRateLimitPartitionResolver() -> void
+Kun.Gateway.RateLimiting.Resolvers.UserPrincipalRateLimitPartitionResolver.ResolvePartitionKey(Microsoft.AspNetCore.Http.HttpContext! context) -> string!
 Kun.Gateway.S2sTokenIssuer
 Kun.Gateway.S2sTokenIssuer.IssueFor(System.Security.Claims.ClaimsPrincipal! externalPrincipal) -> string!
 Kun.Gateway.Configuration.KunGatewayOptions.EmitTraceIdClaim.get -> bool

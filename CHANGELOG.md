@@ -6,6 +6,18 @@
 
 ## [Unreleased]
 
+### Added — P2-C Part 1 user-principal rate-limit partition resolver (2026-04-23)
+
+- **Kun.Gateway.RateLimiting.Resolvers.UserPrincipalRateLimitPartitionResolver** —
+  third partition resolver flavour, alongside the existing IP and tenant resolvers.
+  Reads the authenticated user's `sub` claim and returns it as the rate-limit
+  partition key; falls back to `"anonymous"` when the claim is absent. Pair with
+  `AddKunRateLimiter` for free-tier APIs where rate limits are per-account rather
+  than per-organization.
+- Tests: 6 new unit tests in `tests/Kun.Gateway.Tests`. P2-C remaining items
+  (sliding-window / token-bucket policies, Redis-backed shared counter,
+  Testcontainers concurrent-precision test, dedicated guides) tracked for Part 2.
+
 ### Added — P2-D Part 3 DatabasePerTenant runtime (2026-04-23)
 
 - **Kun.EntityFrameworkCore.MultiTenancy** (additive):
