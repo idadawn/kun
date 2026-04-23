@@ -6,6 +6,18 @@
 
 ## [Unreleased]
 
+### Added — P2-A Part 2 benchmarks CI workflow (2026-04-24)
+
+- **.github/workflows/benchmarks.yml** — weekly cron (Mon 06:00 UTC) + PR-label
+  trigger (`benchmarks` label) + manual dispatch. Runs the
+  `Kun.Benchmarks.Grpc` project with `--exporters json markdown` and uploads
+  `BenchmarkDotNet.Artifacts/**` as a named artifact (30-day retention).
+- Matrix includes `jit` only for now; the `aot` matrix entry is sketched in a
+  comment and unlocks once a `PublishAot=true` variant of the benchmarks
+  project lands (Part 2 follow-up).
+- Out of scope (future Part 3): a runbook that downloads the artifact + diffs
+  against a stored baseline to fail PRs on allocation regression.
+
 ### Added — P2-A Part 1 BenchmarkDotNet scaffold (2026-04-24)
 
 - **benchmarks/Kun.Benchmarks.Grpc** — new standalone BenchmarkDotNet console project
