@@ -6,6 +6,26 @@
 
 ## [Unreleased]
 
+### Added — P2-C Part 2 sliding-window + token-bucket rate-limit policies (2026-04-24)
+
+- **Kun.Gateway.RateLimiting.KunSlidingWindowRateLimiterPolicy** (internal) + public
+  `KunSlidingWindowOptions` + `AddKunSlidingWindowRateLimiter()` DI extension. Named
+  policy `kun-sliding-window`. Defaults: 100 permits per 1-minute window split into
+  6 segments, immediate rejection on exceed (QueueLimit=0). Smoother enforcement than
+  fixed-window at the cost of proportionally higher memory per partition.
+- **Kun.Gateway.RateLimiting.KunTokenBucketRateLimiterPolicy** (internal) + public
+  `KunTokenBucketOptions` + `AddKunTokenBucketRateLimiter()` DI extension. Named
+  policy `kun-token-bucket`. Defaults: 100-token burst budget refilled at 20 tokens
+  every 10 seconds (≈120/min steady state) with `AutoReplenishment=true`. Absorbs
+  bursty traffic; use for webhook fanout / batch import APIs.
+- Both policies reuse the existing `IRateLimitPartitionResolver` abstraction so the
+  three partition resolvers (Tenant / IP / UserPrincipal) compose freely with any
+  of the three policies (fixed-window / sliding-window / token-bucket) via the
+  matching `AddKunXxxRateLimiter` call.
+- Tests: 9 new unit tests in `tests/Kun.Gateway.Tests`. P2-C remaining for Part 3:
+  Redis-backed shared counter for distributed rate limiting + Testcontainers
+  concurrent-precision test + dedicated guides.
+
 ### Added — P2-C Part 1 user-principal rate-limit partition resolver (2026-04-23)
 
 - **Kun.Gateway.RateLimiting.Resolvers.UserPrincipalRateLimitPartitionResolver** —

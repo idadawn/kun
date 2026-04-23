@@ -69,3 +69,29 @@ Program
 Program.Program() -> void
 static Kun.Gateway.DependencyInjection.KunGatewayServiceCollectionExtensions.AddKunGateway(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.Gateway.Configuration.KunGatewayOptions!>! configure, Microsoft.Extensions.Configuration.IConfiguration? reverseProxyConfig = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Kun.Gateway.RateLimiting.KunRateLimiterExtensions.AddKunRateLimiter(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Microsoft.AspNetCore.RateLimiting.RateLimiterOptions!>? configure = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+const Kun.Gateway.RateLimiting.KunRateLimiterExtensions.SlidingWindowPolicyName = "kun-sliding-window" -> string!
+const Kun.Gateway.RateLimiting.KunRateLimiterExtensions.TokenBucketPolicyName = "kun-token-bucket" -> string!
+static Kun.Gateway.RateLimiting.KunRateLimiterExtensions.AddKunSlidingWindowRateLimiter(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.Gateway.RateLimiting.KunSlidingWindowOptions!>? configureKun = null, System.Action<Microsoft.AspNetCore.RateLimiting.RateLimiterOptions!>? configureHost = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Kun.Gateway.RateLimiting.KunRateLimiterExtensions.AddKunTokenBucketRateLimiter(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.Gateway.RateLimiting.KunTokenBucketOptions!>? configureKun = null, System.Action<Microsoft.AspNetCore.RateLimiting.RateLimiterOptions!>? configureHost = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Kun.Gateway.RateLimiting.KunSlidingWindowOptions
+Kun.Gateway.RateLimiting.KunSlidingWindowOptions.KunSlidingWindowOptions() -> void
+Kun.Gateway.RateLimiting.KunSlidingWindowOptions.PermitLimit.get -> int
+Kun.Gateway.RateLimiting.KunSlidingWindowOptions.PermitLimit.set -> void
+Kun.Gateway.RateLimiting.KunSlidingWindowOptions.Window.get -> System.TimeSpan
+Kun.Gateway.RateLimiting.KunSlidingWindowOptions.Window.set -> void
+Kun.Gateway.RateLimiting.KunSlidingWindowOptions.SegmentsPerWindow.get -> int
+Kun.Gateway.RateLimiting.KunSlidingWindowOptions.SegmentsPerWindow.set -> void
+Kun.Gateway.RateLimiting.KunSlidingWindowOptions.QueueLimit.get -> int
+Kun.Gateway.RateLimiting.KunSlidingWindowOptions.QueueLimit.set -> void
+Kun.Gateway.RateLimiting.KunTokenBucketOptions
+Kun.Gateway.RateLimiting.KunTokenBucketOptions.KunTokenBucketOptions() -> void
+Kun.Gateway.RateLimiting.KunTokenBucketOptions.TokenLimit.get -> int
+Kun.Gateway.RateLimiting.KunTokenBucketOptions.TokenLimit.set -> void
+Kun.Gateway.RateLimiting.KunTokenBucketOptions.TokensPerPeriod.get -> int
+Kun.Gateway.RateLimiting.KunTokenBucketOptions.TokensPerPeriod.set -> void
+Kun.Gateway.RateLimiting.KunTokenBucketOptions.ReplenishmentPeriod.get -> System.TimeSpan
+Kun.Gateway.RateLimiting.KunTokenBucketOptions.ReplenishmentPeriod.set -> void
+Kun.Gateway.RateLimiting.KunTokenBucketOptions.QueueLimit.get -> int
+Kun.Gateway.RateLimiting.KunTokenBucketOptions.QueueLimit.set -> void
+Kun.Gateway.RateLimiting.KunTokenBucketOptions.AutoReplenishment.get -> bool
+Kun.Gateway.RateLimiting.KunTokenBucketOptions.AutoReplenishment.set -> void
