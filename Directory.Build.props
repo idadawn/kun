@@ -59,11 +59,20 @@
   </PropertyGroup>
 
   <PropertyGroup Label="Versioning">
-    <!-- VersionPrefix is the stable SemVer base; CI can override VersionSuffix (e.g. alpha.1, rc.1).
-         Local builds: 0.1.0-alpha.1
-         CI builds: override via -p:VersionSuffix=alpha.<buildnum> to produce 0.1.0-alpha.<buildnum> -->
+    <!--
+      Current milestone: 0.1.0-phase1 (first NeuroAgent-integration-ready Kun release;
+      see CHANGELOG.md and docs/whitepaper.md §13).
+
+      Resolution precedence:
+        1. Explicit -p:Version=… on the command line overrides everything
+           (release.yml derives it from the git tag, e.g. v0.1.0-phase1 → 0.1.0-phase1).
+        2. Otherwise VersionPrefix + VersionSuffix compose the SemVer.
+        3. CI without an explicit suffix → VersionPrefix only (no local default pollution).
+        4. Local dev → VersionPrefix-phase1 so dotnet pack produces nupkgs
+           that match the current milestone without the developer remembering a flag.
+    -->
     <VersionPrefix>0.1.0</VersionPrefix>
-    <VersionSuffix Condition="'$(VersionSuffix)' == '' AND '$(CI)' != 'true'">alpha.1</VersionSuffix>
+    <VersionSuffix Condition="'$(VersionSuffix)' == '' AND '$(CI)' != 'true'">phase1</VersionSuffix>
   </PropertyGroup>
 
   <PropertyGroup Label="NuGet Package Metadata">
