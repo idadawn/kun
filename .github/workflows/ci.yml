@@ -35,6 +35,8 @@ jobs:
 
       # Unit tests only — fast, no external deps.
       # Kun.IntegrationTests: runs in a separate step below (Testcontainers).
+      # Kun.Integration.AotTests: runs in the sample-aot-integration job
+      #   so the matrix can install clang alongside dotnet publish.
       # Kun.Sample.Tests: excluded from CI because these tests require Aspire
       #   service-discovery env vars (services__catalog__*, etc.) that CI does
       #   not set. TODO: add a dedicated integration-compose job that wires the
@@ -46,7 +48,7 @@ jobs:
           --no-build
           --verbosity minimal
           --collect:"XPlat Code Coverage"
-          --filter "FullyQualifiedName!~Kun.IntegrationTests&FullyQualifiedName!~Kun.Sample.Tests"
+          --filter "FullyQualifiedName!~Kun.IntegrationTests&FullyQualifiedName!~Kun.Sample.Tests&FullyQualifiedName!~Kun.Integration.AotTests"
 
       # Testcontainers integration tests — Docker is available on ubuntu-latest.
       - name: Integration Tests (Testcontainers)
@@ -62,8 +64,65 @@ jobs:
           name: coverage
           path: '**/coverage.cobertura.xml'
 
-  aot-publish:
-    name: AOT Publish Verification
+  # Full-module AOT audit — every IsAotCandidate=true project is fanned
+  # out across a job matrix so a trim / AOT regression in one module
+  # does not mask another, and the reported failure points directly
+  # at the offending project. See
+  # docs/architecture/AOT-audit-2026-04-23.md for the module-status
+  # matrix. Intentionally-excluded non-AOT modules (AspNetCore, Dapper,
+  # Saga, EntityFrameworkCore + its adapters) are not in this matrix
+  # and stay covered by the Build & Test job.
+  aot-audit:
+    name: AOT Audit — ${{ matrix.module }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module:
+          - Kun.Audit
+          - Kun.Caching
+          - Kun.Configuration
+          - Kun.Core
+          - Kun.EventBus
+          - Kun.EventBus.RabbitMQ
+          - Kun.Gateway
+          - Kun.Grpc
+          - Kun.Identity
+          - Kun.Infrastructure
+          - Kun.Mediator
+          - Kun.MultiTenancy
+          - Kun.Observability
+          - Kun.RateLimit
+          - Kun.Sandbox
+          - Kun.Security
+          - Kun.Storage
+          - Kun.Validation
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Install NativeAOT prerequisites
+        run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
+
+      - name: Publish AOT (zero trim / AOT warnings, warnings-as-errors)
+        run: |
+          dotnet publish "src/${{ matrix.module }}" \
+            -c Release \
+            -r linux-x64 \
+            -p:PublishAot=true \
+            -p:TreatWarningsAsErrors=true
+
+  # Runs Kun.Integration.AotTests, which AOT-publishes
+  # samples/Kun.Sample.Minimal and executes the produced native binary.
+  # Requires clang + zlib1g-dev for the NativeAOT linker step. See
+  # tests/Kun.Integration.AotTests/AGENTS.md.
+  sample-aot-integration:
+    name: Sample AOT Integration
     runs-on: ubuntu-latest
 
     steps:
@@ -74,23 +133,24 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Publish AOT-candidate services (zero warnings)
-        run: |
-          # AOT candidates: any project with <IsAotCandidate>true</IsAotCandidate>
-          # -r linux-x64 is required: native AOT compilation must know the target RID.
-          # Kun.AspNetCore intentionally excluded: minimal-API generic helpers
-          # (MapCommand<T,R> / MapQuery<T,R>) and WriteAsJsonAsync<T> in the
-          # global exception handler are not AOT-compatible. Module is
-          # trim-safe only (IsAotCandidate=false).
-          # Kun.Storage.S3 intentionally excluded: AWSSDK.S3 + AWSSDK.Extensions.NETCore.Setup
-          # are reflection-heavy and not AOT-safe (see open-questions.md A6 — the first
-          # non-AOT library module in the repo). Kun.Storage.Abstractions and
-          # Kun.Storage.Local remain AOT-zero-warning.
-          for proj in src/Kun.Gateway src/Kun.Mediator src/Kun.Core src/Kun.Grpc src/Kun.Validation src/Kun.Storage.Abstractions src/Kun.Storage.Local; do
-            echo "::group::Publishing AOT: $proj"
-            dotnet publish "$proj" -c Release -r linux-x64 -p:PublishAot=true -p:TreatWarningsAsErrors=true
-            echo "::endgroup::"
-          done
+      - name: Install NativeAOT prerequisites
+        run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
+
+      - name: Restore
+        run: dotnet restore tests/Kun.Integration.AotTests/Kun.Integration.AotTests.csproj
+
+      - name: Build
+        run: >
+          dotnet build tests/Kun.Integration.AotTests/Kun.Integration.AotTests.csproj
+          --configuration Release
+          --no-restore
+
+      - name: Run AOT integration tests
+        run: >
+          dotnet test tests/Kun.Integration.AotTests/Kun.Integration.AotTests.csproj
+          --configuration Release
+          --no-build
+          --verbosity minimal
 
   format:
     name: Code Format

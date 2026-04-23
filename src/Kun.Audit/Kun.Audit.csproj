@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsAotCandidate>true</IsAotCandidate>
+    <IsPackable>true</IsPackable>
+    <HasPublicApi>false</HasPublicApi>
+    <Description>Kun Framework audit-log abstractions: IAuditWriter / IAuditReader / AuditableAttribute, plus a no-op default writer and an optional integration-event fan-out writer. EF Core adapter lives in Kun.Audit.EntityFrameworkCore.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Kun.Core\Kun.Core.csproj" />
+    <ProjectReference Include="..\Kun.EventBus\Kun.EventBus.csproj" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Kun.Audit.Tests" />
+    <InternalsVisibleTo Include="Kun.Audit.EntityFrameworkCore" />
+  </ItemGroup>
+
+</Project>

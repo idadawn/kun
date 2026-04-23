@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsAotCandidate>false</IsAotCandidate>
+    <IsPackable>true</IsPackable>
+    <HasPublicApi>false</HasPublicApi>
+    <Description>EF Core adapter for Kun.Audit: AuditSaveChangesInterceptor, EfAuditWriter, AuditLog entity configuration. Trim-safe; not AOT-compatible because EF Core 10 AOT support is incomplete (see ADR-003).</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Kun.Audit\Kun.Audit.csproj" />
+    <ProjectReference Include="..\Kun.Core\Kun.Core.csproj" />
+    <ProjectReference Include="..\Kun.EntityFrameworkCore\Kun.EntityFrameworkCore.csproj" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Kun.Audit.Tests" />
+  </ItemGroup>
+
+</Project>

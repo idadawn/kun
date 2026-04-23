@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsAotCandidate>false</IsAotCandidate>
+    <IsPackable>true</IsPackable>
+    <HasPublicApi>false</HasPublicApi>
+    <Description>EF Core glue for Kun.MultiTenancy: ModelBuilder extension that attaches HasQueryFilter to every IMultiTenant entity, plus a SaveChangesInterceptor that auto-fills TenantId on insert. Trim-safe; not AOT-compatible because EF Core 10 AOT support is incomplete.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Kun.Core\Kun.Core.csproj" />
+    <ProjectReference Include="..\Kun.MultiTenancy\Kun.MultiTenancy.csproj" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Kun.MultiTenancy.Tests" />
+  </ItemGroup>
+
+</Project>

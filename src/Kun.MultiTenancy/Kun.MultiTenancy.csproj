@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsAotCandidate>true</IsAotCandidate>
+    <IsPackable>true</IsPackable>
+    <HasPublicApi>false</HasPublicApi>
+    <Description>Kun Framework multi-tenancy: ITenantResolver (JWT claim / HTTP header / fallback), AsyncLocal-backed ITenantContext, and the UseKunMultiTenancy middleware that scopes tenant identity across the request pipeline. EF Core query-filter + SaveChanges interceptor live in Kun.MultiTenancy.EntityFrameworkCore.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Kun.Core\Kun.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Kun.MultiTenancy.EntityFrameworkCore" />
+    <InternalsVisibleTo Include="Kun.MultiTenancy.Tests" />
+  </ItemGroup>
+
+</Project>

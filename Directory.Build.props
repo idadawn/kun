@@ -15,12 +15,42 @@
     <AnalysisMode>AllEnabledByDefault</AnalysisMode>
   </PropertyGroup>
 
-  <PropertyGroup Label="AOT Compatibility" Condition="'$(IsAotCandidate)' == 'true'">
+  <!--
+    AOT / trim policy is centralised here. Individual csproj files must NOT
+    redeclare IsTrimmable, IsAotCompatible, EnableTrimAnalyzer,
+    EnableAotAnalyzer, EnableSingleFileAnalyzer, or EnableDynamicLoading.
+    They opt in by setting a single switch: <IsAotCandidate>true|false</IsAotCandidate>.
+
+      - true  : library is AOT-strict; all trim/AOT/single-file analyzers run.
+      - false : library is NOT AOT; trimming is explicitly disabled and no
+                analyzer warnings are raised. Use for EF Core / ASP.NET Minimal-API
+                hosts / dynamic-loading hosts and similar.
+
+    PublishAot itself is never set here — it is a publish-time executable
+    flag (set only in the concrete entry-point csproj, e.g.
+    samples/Kun.Sample.Minimal/Kun.Sample.Minimal.csproj). Setting PublishAot
+    on a library would turn every consumer's dotnet publish into a native-AOT
+    publish whether they want it or not.
+  -->
+  <PropertyGroup Label="AOT Compatibility — AOT-strict libraries" Condition="'$(IsAotCandidate)' == 'true'">
     <IsAotCompatible>true</IsAotCompatible>
     <IsTrimmable>true</IsTrimmable>
     <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
     <EnableAotAnalyzer>true</EnableAotAnalyzer>
     <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
+    <!-- EnableDynamicLoading stays off in AOT-strict libraries: an AOT-strict
+         library must not expose public AssemblyLoadContext / dynamic-loading
+         APIs, which would undermine the trim/AOT analyzers. -->
+    <EnableDynamicLoading>false</EnableDynamicLoading>
+  </PropertyGroup>
+
+  <PropertyGroup Label="AOT Compatibility — explicit non-AOT libraries" Condition="'$(IsAotCandidate)' == 'false'">
+    <!-- Explicit non-AOT libraries (EF Core adapters, ASP.NET Minimal-API
+         hosts, etc.). We set IsTrimmable=false so a consumer's top-level
+         PublishTrimmed flag doesn't silently pull these assemblies into the
+         trimmer — they are not trim-safe by construction. -->
+    <IsAotCompatible>false</IsAotCompatible>
+    <IsTrimmable>false</IsTrimmable>
   </PropertyGroup>
 
   <PropertyGroup Label="Deterministic Build">
@@ -29,11 +59,20 @@
   </PropertyGroup>
 
   <PropertyGroup Label="Versioning">
-    <!-- VersionPrefix is the stable SemVer base; CI can override VersionSuffix (e.g. alpha.1, rc.1).
-         Local builds: 0.1.0-alpha.1
-         CI builds: override via -p:VersionSuffix=alpha.<buildnum> to produce 0.1.0-alpha.<buildnum> -->
+    <!--
+      Current milestone: 0.1.0-phase1 (first NeuroAgent-integration-ready Kun release;
+      see CHANGELOG.md and docs/whitepaper.md §13).
+
+      Resolution precedence:
+        1. Explicit -p:Version=… on the command line overrides everything
+           (release.yml derives it from the git tag, e.g. v0.1.0-phase1 → 0.1.0-phase1).
+        2. Otherwise VersionPrefix + VersionSuffix compose the SemVer.
+        3. CI without an explicit suffix → VersionPrefix only (no local default pollution).
+        4. Local dev → VersionPrefix-phase1 so dotnet pack produces nupkgs
+           that match the current milestone without the developer remembering a flag.
+    -->
     <VersionPrefix>0.1.0</VersionPrefix>
-    <VersionSuffix Condition="'$(VersionSuffix)' == '' AND '$(CI)' != 'true'">alpha.1</VersionSuffix>
+    <VersionSuffix Condition="'$(VersionSuffix)' == '' AND '$(CI)' != 'true'">phase1</VersionSuffix>
   </PropertyGroup>
 
   <PropertyGroup Label="NuGet Package Metadata">

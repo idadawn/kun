@@ -108,6 +108,25 @@ uses the `order` schema; both can coexist in a single Postgres instance without 
 collisions. See [docs/schema-per-service.md](../../docs/schema-per-service.md) for the
 end-to-end recipe and the `SchemaConsistencyInterceptor` safety net.
 
+### Audit & Sandbox wiring
+
+`Program.cs` registers two additional Kun modules to demonstrate the minimal DI ergonomics
+new in Phase 1:
+
+```csharp
+// Kun.Audit — fallback NullAuditWriter; call .UseEventBus() or register
+// Kun.Audit.EntityFrameworkCore to enable persistence.
+builder.Services.AddKunAudit();
+
+// Kun.Sandbox — in-memory backend (no isolation, no egress) for dev-loop smoke tests.
+// Production: UseSupervisor(baseUrl [, mTLS cert]) or UseE2BCloud(apiKey, teamId).
+builder.Services.AddKunSandbox(opts => opts.UseInMemory());
+```
+
+These lines show the API shape; the sample does not exercise the writers/providers at
+runtime. See `src/Kun.Audit/AGENTS.md` and `src/Kun.Sandbox/AGENTS.md` for
+concrete backend choices.
+
 ---
 
 ## Endpoints

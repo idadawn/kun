@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsAotCandidate>true</IsAotCandidate>
+    <IsPackable>true</IsPackable>
+    <HasPublicApi>false</HasPublicApi>
+    <Description>Kun Framework identity facade: IJwtValidator (external Bearer validation with JWKS), IJwtIssuer (S2S token minting), IOidcClient (OIDC discovery + code exchange), and AddKunIdentity fluent DI. Unifies the Authentik/JWT/OIDC configuration that consumer services had been hand-rolling per repo.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Kun.Core\Kun.Core.csproj" />
+    <ProjectReference Include="..\Kun.Caching\Kun.Caching.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
+    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" />
+    <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Kun.Identity.Tests" />
+  </ItemGroup>
+
+</Project>

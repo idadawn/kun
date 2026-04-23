@@ -583,9 +583,12 @@ but the new capabilities below require explicit opt-in:
 - Gateway 可观测性：OTel 包达到 AOT parity 后追加
 - NuGet 发布仪式（手动，TBD）
 
-## [0.1.0] - TBD
+## [0.1.0-phase1] - 2026-04-23
 
-首个开发预览版本。
+Phase 1 首个可对 NeuroAgent 集成发版。10 个新模块落地（Storage / Identity /
+MultiTenancy / Audit / RateLimit / Caching / Observability / Security / Configuration /
+Sandbox），全仓 AOT 一致性通过审计，Directory.Build.props 统一 AOT 策略，CI 新增
+`aot-audit` 矩阵 job 与 `sample-aot-integration` job。
 
-[Unreleased]: https://github.com/idadawn/kun/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/idadawn/kun/releases/tag/v0.1.0
+[Unreleased]: https://github.com/idadawn/kun/compare/v0.1.0-phase1...HEAD
+[0.1.0-phase1]: https://github.com/idadawn/kun/releases/tag/v0.1.0-phase1
