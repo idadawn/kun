@@ -18,6 +18,71 @@
 
 Kun Framework 的名字源自《庄子》。"鲲"寓意框架从轻量级单体（深渊之鲲）能无缝演化为支撑海量并发的分布式微服务架构（云端之鹏）——这正是本框架追求的演进能力。
 
+---
+
+## 🏁 Phase 1 Status: ✅ Ready for NeuroAgent Phase 1 integration
+
+`0.1.0-phase1`（2026-04-23）首次对外发版，向下游的 NeuroAgent 平台（`neuroagent-csharp`）提供完整的
+Phase 1 能力集。消费方只需锚定 `0.1.0-phase1` 的 `Kun.*` NuGet 即可得到：
+
+| 能力 | 模块 | 入口 API |
+|---|---|---|
+| 沙箱执行 | `Kun.Sandbox` | `AddKunSandbox(opts => opts.UseSupervisor(...) / .UseE2BCloud(...) / .UseInMemory())` |
+| 操作审计 | `Kun.Audit` | `AddKunAudit().UseEventBus()` |
+| 零信任认证 | `Kun.Security` | `AddKunServiceAuthentication(...)` + `AddKunSecurity()` |
+| 外部 IdP 客户端 | `Kun.Identity` | `AddKunIdentity(...)` |
+| 多租户隔离 | `Kun.MultiTenancy` | `AddKunMultiTenancy()` + `UseKunMultiTenancy()` |
+| 按租户限流 | `Kun.RateLimit` | `AddKunRateLimit(...)` |
+| 统一缓存 | `Kun.Caching` | `AddKunCaching(c => c.UseMemory() / .UseRedis(...))` |
+| 工件存储 | `Kun.Storage` | `AddKunStorage().UseLocal(...) / .UseS3(...)` |
+| 统一可观测性 | `Kun.Observability` | `AddKunObservability("service-name")` |
+| 强类型配置 | `Kun.Configuration` | `AddKunOptions<T>()` |
+
+完整模块清单、ADR 索引与 AOT 状态请见 [**docs/whitepaper.md §13 Phase 1 Deliverables**](docs/whitepaper.md)
+与 [**docs/architecture/module-map.md**](docs/architecture/module-map.md)。消费侧对接注意事项请见
+`neuroagent/CLAUDE.md §路由边界铁律` —— **不要**在 `neuroagent-csharp` 仓库内 fork `Kun.*` 抽象，有需求走 `claude-kun` pane 走派单。
+
+### 最小集成示例（Kun.Sandbox + Kun.Audit + Kun.Security + Kun.Observability）
+
+```csharp
+using Kun.Audit.DependencyInjection;
+using Kun.Observability;
+using Kun.Sandbox.Extensions;
+using Kun.Security.Authentication;
+using Kun.Security.DependencyInjection;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// 统一 OTel（traces + metrics + logs），预注册 Kun.* 全部 ActivitySource
+builder.Services.AddKunObservability("neuroagent-agent");
+
+// 零信任：校验网关签发的 60 秒 S2S JWT，注入 ITenantContext + ICurrentUser
+builder.Services
+    .AddAuthentication()
+    .AddKunServiceAuthentication(o =>
+    {
+        o.Audience = "kun-internal";
+        o.JwksUri = new Uri("https://gateway.internal/.well-known/jwks.json");
+    });
+builder.Services.AddKunSecurity();
+
+// 审计：通过 Outbox 异步发出 AuditLog 集成事件（NullAuditWriter 是默认 fallback）
+builder.Services.AddKunAudit().UseEventBus();
+
+// Sandbox：NeuroAgent 常用配置 —— 调用内部 Supervisor 起沙箱执行 agent 产出的代码
+builder.Services.AddKunSandbox(opts => opts.UseSupervisor(
+    baseUrl: new Uri("https://sandbox-supervisor.internal:8443/")));
+
+var app = builder.Build();
+app.UseAuthentication();
+app.UseAuthorization();
+app.Run();
+```
+
+> Phase 1 跟踪发版历史请查 [`CHANGELOG.md`](CHANGELOG.md) 的 `[0.1.0-phase1]` 段。
+
+---
+
 ## ✨ 核心特性
 
 - 🚀 **AOT-Ready 分层策略** —— 网关、gRPC、CQRS 调度器严格 AOT 兼容；数据层 trimming-safe。定位诚实、落地可行。
@@ -63,20 +128,30 @@ Kun Framework 的名字源自《庄子》。"鲲"寓意框架从轻量级单体�
 
 ## 📦 模块矩阵
 
+Phase 1 顶层速览（完整矩阵请见 [`docs/architecture/module-map.md`](docs/architecture/module-map.md)）：
+
 | 模块 | 职责 | 是否 AOT |
 | :--- | :--- | :---: |
 | `Kun.Core` | 领域抽象、CQRS 接口、Result、`ITenantContext` | ✅ |
 | `Kun.Mediator` | `FrozenDictionary` 无反射调度、Pipeline Behaviors | ✅ |
 | `Kun.Infrastructure` | 仓储/UoW/规约接口、`IProcessedMessageStore` | ✅ |
 | `Kun.EntityFrameworkCore` | 写侧 EF Core 实现、Outbox 落库、租户过滤器 | ⚠️ trim-safe |
-| `Kun.Dapper` | 读侧 Dapper AOT 封装 | ✅ |
+| `Kun.Dapper` | 读侧 Dapper AOT 封装 | ⚠️ trim-safe |
 | `Kun.EventBus` | 领域/集成事件抽象、Outbox 发布器 | ✅ |
 | `Kun.EventBus.RabbitMQ` | RabbitMQ 传输、消费端幂等 | ✅ |
-| `Kun.Saga` | Saga Orchestration 编排器 | ✅ |
+| `Kun.Saga` | Saga Orchestration 编排器 | ⚠️ trim-safe（Phase 2 拆 EF 子模块） |
 | `Kun.Security` | S2S JWT 签发/校验、租户上下文注入 | ✅ |
-| `Kun.Validation` | SourceGen 验证器 | ✅ |
+| `Kun.Identity` | 外部 OIDC 客户端 + JWT validator/issuer | ✅ |
+| `Kun.MultiTenancy` | `ITenantContext` + EF 查询过滤器 | ✅ |
+| `Kun.Audit` | 审计写入器抽象 + `EventBusAuditWriter` | ✅ |
+| `Kun.RateLimit` | 按租户 / IP 分区限流 | ✅ |
+| `Kun.Caching` | `IKunCache` + Memory / Redis 后端 | ✅ |
+| `Kun.Storage` | 7-method `IFileStorage` + Local / S3 | ✅ |
 | `Kun.Observability` | 统一 OpenTelemetry 装配：`AddKunObservability` 一键接入 Kun 全套 ActivitySource + HTTP/EF/Runtime 指令 | ✅ |
-| `Kun.AspNetCore` | Minimal API 扩展、Pipeline Behaviors | ✅ |
+| `Kun.Configuration` | 强类型 Options + fail-fast 校验 | ✅ |
+| `Kun.Sandbox` | E2B v2 兼容 sandbox + Supervisor / E2B Cloud / InMemory 后端 | ✅ |
+| `Kun.Validation` | SourceGen 验证器 | ✅ |
+| `Kun.AspNetCore` | Minimal API 扩展、Pipeline Behaviors | ⚠️ trim-safe |
 | `Kun.Grpc` | gRPC 拦截器、Result→RpcException 映射 | ✅ |
 | `Kun.Gateway` | YARP 扩展、S2S 签发、限流 | ✅ |
 
@@ -144,7 +219,8 @@ for the span catalog.
 | M3 — RabbitMQ event bus, Outbox publisher, consumer idempotency | `0.3.0-alpha.1` | Done |
 | M4 — Saga orchestrator, step executor, timeout detector | `0.5.0-beta.1` | Done |
 | M5 — ASP.NET Core host, gRPC, Gateway, S2S JWT | `1.0.0-rc.1` | Done |
-| M6 — Sample apps, OpenTelemetry, documentation | `1.0.0` | In progress |
+| M6 — Sample apps, OpenTelemetry, documentation | `1.0.0` | Done |
+| **Phase 1** — Storage / Identity / MultiTenancy / Audit / RateLimit / Caching / Observability / Configuration / Sandbox + AOT audit | **`0.1.0-phase1`** | **✅ Released** |
 
 ## 🚀 快速开始
 
