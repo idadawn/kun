@@ -6,18 +6,109 @@
 
 ## [Unreleased]
 
+（尚无新变更。）
+
+## [0.1.0-phase1] - 2026-04-23
+
+> Phase 1 首个可对 NeuroAgent 集成发版。10 个新模块落地（Storage / Identity /
+> MultiTenancy / Audit / RateLimit / Caching / Observability / Security / Configuration /
+> Sandbox），全仓 AOT 一致性通过审计，Directory.Build.props 统一 AOT 策略，CI 新增
+> `aot-audit` 矩阵 job 与 `sample-aot-integration` job。
+
+### Added
+
+- **Kun.Storage**: 7-method `IFileStorage` 契约 + `LocalFileStorage` + `S3FileStorage`
+  实现 + `AddKunStorage().UseLocal(...) / .UseS3(...)` 构建器（23 个测试）。
+  Commits `80b2983`、`55193f2`。
+- **Kun.Identity**: 外部 OIDC 客户端抽象 + JWT validator/issuer；**不**自建用户存储
+  （见 [ADR-001](docs/architecture/ADR-001-Kun.Identity-module-decision.md)、
+  [ADR-008](docs/architecture/ADR-008-Kun.Identity-module.md)）。11 个测试。
+  Commits `527bab1`、`9d89bf2`、`ad620c0`。
+- **Kun.MultiTenancy**: `ITenantContext` 注入中间件 + EF 查询过滤器 + SaveChanges 拦截器；
+  配套 `Kun.MultiTenancy.EntityFrameworkCore` 子模块。12 个测试。
+  见 [ADR-007](docs/architecture/ADR-007-Kun.MultiTenancy-module.md)。
+  Commit `27f3f8b`。
+- **Kun.Audit**: 审计写入器抽象 + `NullAuditWriter` + `EventBusAuditWriter`（经 Outbox 异步发布）；
+  可选 `Kun.Audit.EntityFrameworkCore` 本地持久化后端。13 个测试。
+  见 [ADR-003](docs/architecture/ADR-003-Kun.Audit-module.md)。
+  Commit `b7fb1e5`。
+- **Kun.RateLimit**: 基于 `.NET 10 RateLimiter` 的按租户 / IP 分区限流。6 个测试。
+  见 [ADR-006](docs/architecture/ADR-006-Kun.RateLimit-module.md)。
+  Commit `b17d2b0`。
+- **Kun.Caching**: 统一 `IKunCache` 抽象 + `MemoryCache` / `StackExchange.Redis` 后端 +
+  `AddKunCaching(c => c.UseMemory() / .UseRedis(…))`。12 个测试。
+  见 [ADR-005](docs/architecture/ADR-005-Kun.Caching-module.md)。
+  Commit `f6e6052`。
+- **Kun.Observability**: `AddKunObservability(name)` 一行装配 OTel traces + metrics + logs，
+  预注册所有 Kun ActivitySource（`Kun.Mediator` / `Kun.EventBus.Outbox` / `Kun.Grpc` /
+  `Kun.Saga`）以及 ASP.NET Core / HttpClient / EF Core / Runtime instrumentation。5 个测试。
+  见 [ADR-004](docs/architecture/ADR-004-Kun.Observability-module.md)。
+  Commit `6bb9c2e`。
+- **Kun.Configuration**: 强类型 Options + DataAnnotations + fail-fast 启动校验。13 个测试。
+  见 [ADR-009](docs/architecture/ADR-009-Kun.Configuration-module.md)。
+  Commit `d2a2840`。
+- **Kun.Sandbox**: E2B v2 兼容 sandbox 抽象 + `SupervisorSandboxProvider`（自研 Supervisor
+  HTTP 后端）+ `E2BCloudSandboxProvider`（Phase 2+ 占位，构造即成功，调用抛
+  `NotImplementedException`）+ `InMemorySandboxProvider`（测试伪实现）+
+  `AddKunSandbox(o => o.UseSupervisor / .UseE2BCloud / .UseInMemory)` 单一 backend selector。
+  27 个测试。见 [ADR-S02](docs/architecture/ADR-S02-Kun.Sandbox-module.md)。
+  Commits `f2e4253`、`58d025e`、`08022a2`、`cea0af1`、`16156db`、`b9bbf99`、`94ef9d4`、`3714721`。
+- **Kun.Security** 增补：`ITracedCurrentUser` 扩展 + `trace_id` claim 传播 +
+  `IOutboxWriter` 适配。Commits `4564278`、`4f5aa62`。
+- **Kun.Gateway** 增补：P0 gap-audit 修复（自动生成 RSA key pair、YARP provider 装配、
+  非 Development 环境下的签名密钥安全守卫）。Commits `f9c4406`、`989a58c`、`155e840`。
+- **Kun.EventBus** 增补：`IOutboxWriter` 非聚合根场景的 Outbox 写入原语（P0-4）。
+  Commit `e25be27`。
+- **docs/architecture/AOT-audit-2026-04-23.md**: Kun Phase 1 全模块 AOT 一致性审计报告 +
+  18 个 AOT 候选模块 ILC 矩阵 + 2 个 RED/YELLOW 修复记录。Commit `458e797`。
+- **docs/whitepaper.md** §13: Phase 1 Deliverables 章节（模块清单 + 最小组合示例 +
+  ADR 索引 + 消费侧对接清单）。Commit `f1de9e3`。
+- **docs/architecture/module-map.md**: 24 个 `src/Kun.*` 模块的 Phase 1 消费矩阵。
+  Commit `d95eb5a`。
+- **samples/Kun.Sample.Catalog**: 在组合根演示 `AddKunAudit()` + `AddKunSandbox(opts => opts.UseInMemory())`
+  以作为 Phase 1 最小示例。Commit `0ffb4fa`。
+- **tests/Kun.Integration.AotTests**: 新增 AOT publish canary 集成测试项目（2 个 Fact：
+  构建时 analyzer 零 warning 保证 + native 执行冒烟）。Commit `3092943`。
+- **CI**：
+  - `aot-audit` 矩阵 job — 对 18 个 `IsAotCandidate=true` 模块分别 `dotnet publish -p:PublishAot=true -p:TreatWarningsAsErrors=true`，任一失败即 fail CI。
+  - `sample-aot-integration` job — Ubuntu + clang + zlib1g-dev，跑新的 `Kun.Integration.AotTests`。
+  - 自动化发版（release workflow + drafter + checklist）。
+  Commits `68c87ba`、`946380c`。
+
+### Changed
+
+- **Directory.Build.props** 重写 AOT 策略：csproj 只需声明
+  `<IsAotCandidate>true|false</IsAotCandidate>`，其余
+  `IsAotCompatible` / `IsTrimmable` / `EnableTrimAnalyzer` / `EnableAotAnalyzer` /
+  `EnableSingleFileAnalyzer` / `EnableDynamicLoading` 全部集中继承；`IsAotCandidate=false`
+  路径显式 `IsTrimmable=false` 防止被消费方的 `PublishTrimmed` 误拉。Commit `5e08bd8`。
+- **samples/Kun.Sample.Catalog** 引用 `Kun.Audit` + `Kun.Sandbox`；Program.cs 最小示例更新。
+  Commit `0ffb4fa`。
+- **CI**：旧的 `aot-publish` 线性循环被替换为矩阵 `aot-audit`，并额外 install clang 以进行
+  真正的 native link 验证。Commit `68c87ba`。
+
 ### Fixed
 
-- **Kun.Gateway**: `S2sTokenIssuer` now injects `IHostEnvironment` and throws `InvalidOperationException` when the signing key file is missing in non-Development environments, preventing silent ephemeral-key self-signing in production.
-- **Kun.Gateway**: `AddKunGateway` without a `reverseProxyConfig` section now registers a startup-time `IHostedService` that fails fast with a user-friendly message if no `IProxyConfigProvider` is registered, instead of deferring the error to the first proxied request.
-- **Kun.Gateway.Tests**: regression tests added for production key-file safety guard, startup config validation, and double-registration behavior.
+- **Kun.Saga**: `IsAotCandidate=true` → `false`。原因：`Persistence/Ef/*.cs` 透传
+  `Kun.EntityFrameworkCore` → ILC 暴露 IL2091 / IL2060 / IL2026 / IL3050。
+  跟进编号 `P2-KN-Saga-EF-Split`（Phase 2 拆出 `Kun.Saga.EntityFrameworkCore`）。
+  Commit `9232c28`。
+- **Kun.Dapper**: 显式 `IsAotCandidate=false`（此前字段缺失 → AOT 审计的 YELLOW）。
+  真正的 AOT 读侧由消费方 `[DapperAot]` query handler 负责。Commit `eb5dcfa`。
+- **Kun.Gateway**: `S2sTokenIssuer` 注入 `IHostEnvironment`，非 Development 环境缺少签名密钥文件时抛
+  `InvalidOperationException`，避免生产环境静默使用临时自签名密钥。
+- **Kun.Gateway**: `AddKunGateway` 没有 `reverseProxyConfig` 时注册启动期
+  `IHostedService` fail-fast，避免把错误推迟到首个代理请求。
+- **Kun.Gateway.Tests**: 生产密钥文件安全守卫 / 启动期配置校验 / 重复注册回归测试。
+- **Kun.Saga**: `AddKunSaga` 注册 `ISystemClock`（`SagaOrchestrator` 依赖）；`SagaStepExecutor`
+  每步落库；正向执行推进 step index；反向补偿回溯到 0；`ISagaOrchestrator` 从 Singleton 改为 Scoped
+  匹配 `ISagaInstanceStore` 的 Scoped 生命周期。
 
-- **Kun.Saga**: registered `ISystemClock` in `AddKunSaga` (required by
-  `SagaOrchestrator`); `SagaStepExecutor` now persists state via
-  `DbContext.SaveChangesAsync` after each entry; forward execution advances
-  step index and marks completed; reverse compensation walks back to 0 and
-  marks compensated; `ISagaOrchestrator` moved from Singleton to Scoped to
-  match its Scoped dependency `ISagaInstanceStore`.
+### Deferred
+
+- `Kun.Saga.EntityFrameworkCore` 拆出（跟进 `P2-KN-Saga-EF-Split`）
+- E2B Cloud 后端的真实调用路径（`E2BCloudSandboxProvider` 目前仅为 Phase 2+ 占位）
+- NuGet.org 正式发版（本 tag 走 GitHub Release prerelease 通道）
 
 ### Added — M1 交付（阶段一：奠基）
 
@@ -231,9 +322,5 @@
 - Gateway 可观测性：OTel 包达到 AOT parity 后追加
 - NuGet 发布仪式（手动，TBD）
 
-## [0.1.0] - TBD
-
-首个开发预览版本。
-
-[Unreleased]: https://github.com/idadawn/kun/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/idadawn/kun/releases/tag/v0.1.0
+[Unreleased]: https://github.com/idadawn/kun/compare/v0.1.0-phase1...HEAD
+[0.1.0-phase1]: https://github.com/idadawn/kun/releases/tag/v0.1.0-phase1
