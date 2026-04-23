@@ -1,11 +1,13 @@
 ---
 id: KN-SELF-001
 title: Result<T> async extension methods + ADR-011
-status: in-flight
-planner_commit: <fill after commit>
-executor_head: <fill after first executor commit>
+status: done
+planner_commit: 951eba8
+executor_head: 48937db
 estimated_commits: 7
+actual_commits: 7
 started: 2026-04-24
+finished: 2026-04-24
 ---
 
 # KN-SELF-001 — `Result<T>` async extension methods + ADR-011
@@ -128,8 +130,15 @@ AOT-quiet Result extensions` — otherwise omit.
 
 ## Progress log
 
-<!-- append as commits land -->
 - 2026-04-24 3a5aa7d bootstrap — BACKLOG + autonomy dir landed (planner pre-step)
+- 2026-04-24 951eba8 planner — pick KN-SELF-001, write active-task.md
+- 2026-04-24 fad70c7 AC-1 — ADR-011 accepted
+- 2026-04-24 8b113df AC-2 — sync Map/Bind/Tap/Ensure/Match landed on Result(<T>); PublicAPI.Unshipped updated in-commit
+- 2026-04-24 02085a1 AC-3 — Task<Result<T>> async extensions landed; RS0026 drove CT-required decision (amendment in AC-6)
+- 2026-04-24 450f278 AC-4 — ValueTask<Result<T>> async extensions landed; mirrors AC-3 on ValueTask rail
+- 2026-04-24 fd80416 AC-5 — 41 new tests (85 total green); Task/ValueTask parity + CT forwarding + null guards
+- 2026-04-24 0ce0cf7 AC-6 — CHANGELOG [Unreleased] section + ADR-011 §CancellationToken amendment recording required-CT rationale
+- 2026-04-24 48937db AC-7 — Results/AGENTS.md usage examples (multi-step handler, Tap side-effect, Match fold)
 
 ## When done
 

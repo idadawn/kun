@@ -30,35 +30,8 @@ worn by kun himself during idle windows picks the next item.
 
 ## Queue (by priority)
 
-### P0 — KN-SELF-001: `Result<T>` async extension methods + ADR-011
+<!-- KN-SELF-001 moved to ## Done on 2026-04-24 (executor head 48937db) -->
 
-- **Status**: in-flight — see `kun/.autonomy/active-task.md`
-- **Size**: M (target 6–8 commits)
-- **Why**: `Kun.Core.Results.Result<T>` today only exposes
-  `Ok` / `Fail` / `EnsureSuccess`. Every downstream handler that composes
-  async operations (`neuroagent-csharp` Edge / Platform are full of
-  `var r = await Foo(); if (r.IsFailure) return r.Error; var s = await Bar(r.Value); …`)
-  reinvents `Map` / `Bind` / `Tap` / `Ensure` ad-hoc, often without
-  honoring the short-circuit semantics `Result<T>` intends. This drift
-  is exactly what ADR-010 warned about at the cookie-session layer —
-  fix it at the core before more consumers copy the pattern.
-- **AC**:
-  1. ADR-011 accepted — naming (`MapAsync` / `BindAsync`, `ThenAsync`
-     vs `BindAsync` decision), `Task<Result<T>>` vs
-     `ValueTask<Result<T>>` policy, cancellation-token propagation,
-     AOT safety.
-  2. Sync extensions: `Map`, `Bind`, `Match`, `Tap`, `Ensure` on both
-     `Result` and `Result<T>`.
-  3. Async extensions: `MapAsync`, `BindAsync`, `TapAsync`,
-     `EnsureAsync` accepting `Task<Result<T>>` / `ValueTask<Result<T>>`
-     sources.
-  4. `Kun.Core.Tests` coverage — success path, failure short-circuit,
-     cancellation-token forwarding, both `Task` and `ValueTask`
-     overloads.
-  5. `PublicAPI.Unshipped.txt` and `CHANGELOG.md [Unreleased]` updated.
-  6. `Kun.Core/Results/AGENTS.md` updated with usage examples.
-  7. AOT publish of `Kun.Core` / `Kun.Mediator` still 0-warning under
-     `/warnaserror`.
 
 ### P1 — KN-SELF-002: `Kun.Testing` fluent assertion helpers
 
@@ -123,4 +96,13 @@ worn by kun himself during idle windows picks the next item.
 
 ## Done
 
-<!-- append completed items here as "KN-SELF-xxx — <title> — <commit SHA> — <date>" -->
+- **KN-SELF-001** — `Result<T>` async extension methods + ADR-011 —
+  executor head `48937db` (ADR-011 + 6 code/doc commits) — 2026-04-24.
+  Seven ACs shipped: ADR accepted, sync Map/Bind/Tap/Ensure/Match on
+  `Result(<T>)`, async on `Task<Result<T>>` and `ValueTask<Result<T>>`
+  sources, 41 new tests (CT forwarding + Task/ValueTask parity),
+  CHANGELOG + PublicAPI.Unshipped + Results/AGENTS.md usage examples.
+  Kun.Core ILC 0-warning; Kun.Mediator regression ILC 0-warning.
+  Deliberate deviation from the ADR sketch: async-delegate CT is
+  required (not `= default`) — RS0026 rationale recorded in the
+  amended ADR §CancellationToken semantics.
