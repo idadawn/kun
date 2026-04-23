@@ -17,7 +17,7 @@ namespace Kun.Identity.Configuration;
 /// <c>Kun.Identity.AspNetCore</c> maps them to the equivalent ASP.NET
 /// Core values at registration time.
 /// </remarks>
-public sealed class KunCookieAuthOptions
+public class KunCookieAuthOptions
 {
     /// <summary>Session cookie name. Default <c>kun.sid</c>.</summary>
     public string CookieName { get; set; } = "kun.sid";

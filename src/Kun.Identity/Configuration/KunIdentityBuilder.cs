@@ -75,5 +75,52 @@ public sealed class KunIdentityBuilder
         return this;
     }
 
+    /// <summary>
+    /// Registers the cookie-session pipeline described in
+    /// <c>ADR-010</c>: a <c>KunCookieAuthOptions</c> options entry, a
+    /// default <see cref="TimeProvider"/>, and the
+    /// <c>ISessionStore</c> backend the caller selects via
+    /// <c>opts.UseInMemoryStore()</c> or <c>opts.UseRedisStore()</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The <c>UseKunCookieAuth()</c> middleware,
+    /// <c>SignInHelper</c>, <c>ChallengeHelper</c>, and
+    /// <c>KunCurrentUser</c> DI entries live in the companion package
+    /// <c>Kun.Identity.AspNetCore</c>; callers wiring a browser-flow
+    /// service must reference that package in addition to calling
+    /// <see cref="AddCookieSession"/>.
+    /// </para>
+    /// <para>
+    /// If neither <c>UseInMemoryStore</c> nor <c>UseRedisStore</c> is
+    /// called within the lambda, resolving <c>ISessionStore</c> from
+    /// DI will throw — the registration is intentionally not defaulted
+    /// because an unintended in-memory store in production would be a
+    /// subtle data-loss / cross-replica-drift bug.
+    /// </para>
+    /// </remarks>
+    public KunIdentityBuilder AddCookieSession(Action<KunCookieSessionBuilder> configure)
+    {
+        ArgumentNullException.ThrowIfNull(configure);
+
+        var builder = new KunCookieSessionBuilder(Services);
+        configure(builder);
+
+        // Mirror the builder's options into the DI options entry.
+        Services.Configure<KunCookieAuthOptions>(opts =>
+        {
+            opts.CookieName = builder.CookieName;
+            opts.Domain = builder.Domain;
+            opts.Path = builder.Path;
+            opts.HttpOnly = builder.HttpOnly;
+            opts.SameSite = builder.SameSite;
+            opts.Secure = builder.Secure;
+            opts.SessionTtl = builder.SessionTtl;
+            opts.SlidingExpiration = builder.SlidingExpiration;
+        });
+        Services.TryAddSingleton(TimeProvider.System);
+        return this;
+    }
+
     internal static string OidcHttpClientName(string name) => $"Kun.Identity.Oidc:{name}";
 }
