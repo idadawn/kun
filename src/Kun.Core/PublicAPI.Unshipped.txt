@@ -16,5 +16,16 @@ Kun.Core.MultiTenancy.TenantIsolationStrategy
 Kun.Core.MultiTenancy.TenantIsolationStrategy.DatabasePerTenant = 2 -> Kun.Core.MultiTenancy.TenantIsolationStrategy
 Kun.Core.MultiTenancy.TenantIsolationStrategy.SchemaPerTenant = 1 -> Kun.Core.MultiTenancy.TenantIsolationStrategy
 Kun.Core.MultiTenancy.TenantIsolationStrategy.Shared = 0 -> Kun.Core.MultiTenancy.TenantIsolationStrategy
+Kun.Core.Results.ResultExtensions
 Kun.Core.Security.ITracedCurrentUser
 Kun.Core.Security.ITracedCurrentUser.TraceId.get -> string?
+static Kun.Core.Results.ResultExtensions.Bind(this Kun.Core.Results.Result result, System.Func<Kun.Core.Results.Result>! next) -> Kun.Core.Results.Result
+static Kun.Core.Results.ResultExtensions.Bind<T, TOut>(this Kun.Core.Results.Result<T> result, System.Func<T, Kun.Core.Results.Result<TOut>>! bind) -> Kun.Core.Results.Result<TOut>
+static Kun.Core.Results.ResultExtensions.Bind<T>(this Kun.Core.Results.Result<T> result, System.Func<T, Kun.Core.Results.Result>! bind) -> Kun.Core.Results.Result
+static Kun.Core.Results.ResultExtensions.Ensure(this Kun.Core.Results.Result result, System.Func<bool>! predicate, Kun.Core.Results.Error! error) -> Kun.Core.Results.Result
+static Kun.Core.Results.ResultExtensions.Ensure<T>(this Kun.Core.Results.Result<T> result, System.Func<T, bool>! predicate, Kun.Core.Results.Error! error) -> Kun.Core.Results.Result<T>
+static Kun.Core.Results.ResultExtensions.Map<T, TOut>(this Kun.Core.Results.Result<T> result, System.Func<T, TOut>! map) -> Kun.Core.Results.Result<TOut>
+static Kun.Core.Results.ResultExtensions.Match<T, TOut>(this Kun.Core.Results.Result<T> result, System.Func<T, TOut>! onSuccess, System.Func<Kun.Core.Results.Error!, TOut>! onFailure) -> TOut
+static Kun.Core.Results.ResultExtensions.Match<TOut>(this Kun.Core.Results.Result result, System.Func<TOut>! onSuccess, System.Func<Kun.Core.Results.Error!, TOut>! onFailure) -> TOut
+static Kun.Core.Results.ResultExtensions.Tap(this Kun.Core.Results.Result result, System.Action! onSuccess) -> Kun.Core.Results.Result
+static Kun.Core.Results.ResultExtensions.Tap<T>(this Kun.Core.Results.Result<T> result, System.Action<T>! onSuccess) -> Kun.Core.Results.Result<T>
