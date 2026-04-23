@@ -32,6 +32,7 @@ worn by kun himself during idle windows picks the next item.
 
 ### P0 — KN-SELF-001: `Result<T>` async extension methods + ADR-011
 
+- **Status**: in-flight — see `kun/.autonomy/active-task.md`
 - **Size**: M (target 6–8 commits)
 - **Why**: `Kun.Core.Results.Result<T>` today only exposes
   `Ok` / `Fail` / `EnsureSuccess`. Every downstream handler that composes
