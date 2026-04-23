@@ -6,6 +6,24 @@
 
 ## [Unreleased]
 
+### Added — P2-D Part 3 DatabasePerTenant runtime (2026-04-23)
+
+- **Kun.EntityFrameworkCore.MultiTenancy** (additive):
+  - `IDbConnectionResolver` — resolves per-tenant connection strings at runtime.
+  - `TenantsConnectionOptions` — static tenant → connection-string map, bound via
+    `Configure<TenantsConnectionOptions>` from the `Kun:MultiTenancy:Tenants` config
+    section. Suitable for small deployments; larger setups swap in a custom resolver.
+  - `OptionsBasedTenantConnectionResolver` — default resolver reading from
+    `IOptionsMonitor<TenantsConnectionOptions>`; supports on-the-fly reloads.
+  - `DatabasePerTenantProvisioner<TContext>` — `ITenantProvisioner` that runs
+    `Database.MigrateAsync()` against the tenant's database. `DeprovisionAsync` is a
+    no-op by design (dropping a tenant database is an operations concern requiring
+    admin credentials and coordinated cleanup). Both methods are `virtual` for
+    subclassing when the app owns DB lifecycle end-to-end.
+  - `AddKunMultiTenancy<TContext>` DatabasePerTenant branch now registers the default
+    resolver + provisioner (TryAddSingleton, so consumer pre-registrations win).
+- **docs**: ADR status upgraded to Part 3 Accepted; roadmap-p2 Part 3 row updated.
+
 ### Added — P2-D Part 2 SchemaPerTenant runtime (2026-04-23)
 
 - **Kun.EntityFrameworkCore.MultiTenancy** (additive, existing Kun.EntityFrameworkCore is

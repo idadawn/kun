@@ -59,14 +59,18 @@ public sealed class AddKunMultiTenancyTests
     }
 
     [Fact]
-    public void DatabasePerTenantStrategy_ThrowsOnResolution()
+    public void DatabasePerTenantStrategy_RegistersResolverAndProvisioner()
     {
         var services = new ServiceCollection();
+        services.AddOptions();
+        services.Configure<TenantsConnectionOptions>(_ => { });
+        services.AddSingleton<ITenantDbContextFactory<TestDbContext>>(new FakeContextFactory());
+
         services.AddKunMultiTenancy<TestDbContext>(o => o.Strategy = TenantIsolationStrategy.DatabasePerTenant);
 
         using var sp = services.BuildServiceProvider();
-
-        Assert.Throws<NotImplementedException>(() => sp.GetService<ITenantProvisioner>());
+        Assert.IsType<OptionsBasedTenantConnectionResolver>(sp.GetService<IDbConnectionResolver>());
+        Assert.IsType<DatabasePerTenantProvisioner<TestDbContext>>(sp.GetService<ITenantProvisioner>());
     }
 
     private sealed class FakeContextFactory : ITenantDbContextFactory<TestDbContext>

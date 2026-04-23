@@ -1,6 +1,6 @@
 # ADR: P2-D SaaS 多租户 3-策略架构
 
-**Status**: Part 1 Accepted (2026-04-23) · Part 2 Accepted (2026-04-23) · Part 3 Deferred
+**Status**: Part 1 Accepted (2026-04-23) · Part 2 Accepted (2026-04-23) · Part 3 Accepted (2026-04-23)
 **Phase**: 2 （白皮书 §12.2 乘风破浪）
 **Scope**: `Kun.Core.MultiTenancy` + `Kun.EntityFrameworkCore.MultiTenancy`（未来）
 **Supersedes**: 无（增量于 P0-3 schema-per-service、P1-4 `TenantRlsTransactionInterceptor`、既有 `ITenantContext`）

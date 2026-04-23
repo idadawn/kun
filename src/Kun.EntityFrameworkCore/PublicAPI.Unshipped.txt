@@ -70,3 +70,17 @@ Kun.EntityFrameworkCore.MultiTenancy.SchemaPerTenantProvisioner<TContext>.Deprov
 Kun.EntityFrameworkCore.MultiTenancy.TenantAwareModelCacheKeyFactory
 Kun.EntityFrameworkCore.MultiTenancy.TenantAwareModelCacheKeyFactory.TenantAwareModelCacheKeyFactory() -> void
 Kun.EntityFrameworkCore.MultiTenancy.TenantAwareModelCacheKeyFactory.Create(Microsoft.EntityFrameworkCore.DbContext! context, bool designTime) -> object!
+Kun.EntityFrameworkCore.MultiTenancy.IDbConnectionResolver
+Kun.EntityFrameworkCore.MultiTenancy.IDbConnectionResolver.ResolveConnectionString(string! tenantId) -> string!
+Kun.EntityFrameworkCore.MultiTenancy.TenantsConnectionOptions
+Kun.EntityFrameworkCore.MultiTenancy.TenantsConnectionOptions.TenantsConnectionOptions() -> void
+Kun.EntityFrameworkCore.MultiTenancy.TenantsConnectionOptions.ConnectionStrings.get -> System.Collections.Generic.IDictionary<string!, string!>!
+Kun.EntityFrameworkCore.MultiTenancy.TenantsConnectionOptions.ConnectionStrings.set -> void
+const Kun.EntityFrameworkCore.MultiTenancy.TenantsConnectionOptions.SectionName = "Kun:MultiTenancy:Tenants" -> string!
+Kun.EntityFrameworkCore.MultiTenancy.OptionsBasedTenantConnectionResolver
+Kun.EntityFrameworkCore.MultiTenancy.OptionsBasedTenantConnectionResolver.OptionsBasedTenantConnectionResolver(Microsoft.Extensions.Options.IOptionsMonitor<Kun.EntityFrameworkCore.MultiTenancy.TenantsConnectionOptions!>! options) -> void
+Kun.EntityFrameworkCore.MultiTenancy.OptionsBasedTenantConnectionResolver.ResolveConnectionString(string! tenantId) -> string!
+Kun.EntityFrameworkCore.MultiTenancy.DatabasePerTenantProvisioner<TContext>
+Kun.EntityFrameworkCore.MultiTenancy.DatabasePerTenantProvisioner<TContext>.DatabasePerTenantProvisioner(Kun.EntityFrameworkCore.MultiTenancy.ITenantDbContextFactory<TContext!>! factory, Microsoft.Extensions.Logging.ILogger<Kun.EntityFrameworkCore.MultiTenancy.DatabasePerTenantProvisioner<TContext!>!>? logger = null) -> void
+virtual Kun.EntityFrameworkCore.MultiTenancy.DatabasePerTenantProvisioner<TContext>.ProvisionAsync(Kun.Core.MultiTenancy.TenantInfo! tenant, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+virtual Kun.EntityFrameworkCore.MultiTenancy.DatabasePerTenantProvisioner<TContext>.DeprovisionAsync(string! tenantId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!

@@ -173,7 +173,7 @@ ADR: [`docs/architecture/adr-p2d-multitenancy.md`](architecture/adr-p2d-multiten
 |:---:|:---:|:---|
 | **Part 1** | ✅ **已落地** (2026-04-23) | ADR + 前瞻类型：`TenantIsolationStrategy` 枚举、`TenantInfo` 记录、`ITenantProvisioner` 接口 + `NullTenantProvisioner` 默认实现。Shared 策略现有 `AddKunTenantRls()` 保持不变（YAGNI，详见 ADR D1）。|
 | **Part 2** | ✅ **已落地** (2026-04-23) | `SchemaPerTenant` 策略运行时：`ITenantDbContextFactory<TContext>`、`TenantAwareModelCacheKeyFactory`（按 `KunDbContext.TenantIdForModelCacheKey` 拆分模型缓存）、`SchemaPerTenantProvisioner<TContext>`（`CREATE SCHEMA IF NOT EXISTS` + `Database.MigrateAsync`，幂等）、`AddKunMultiTenancy<TContext>` DI 入口（Shared + SchemaPerTenant，DatabasePerTenant 在解析时抛 `NotImplementedException`）。PgBouncer transaction-pool 集成测试仍延后 —— 本机无 Docker；CI 上与 Part 3 一并落。|
-| **Part 3** | ⏳ 待开工 | `DatabasePerTenant` 策略：`IDbConnectionResolver` + `DatabasePerTenantProvisioner` + 跨租户 admin 查询反模式文档 + 每数据库迁移运行手册。|
+| **Part 3** | ✅ **已落地** (2026-04-23) | `DatabasePerTenant` 策略：`IDbConnectionResolver` + `OptionsBasedTenantConnectionResolver` 默认实现（读 `TenantsConnectionOptions`）+ `DatabasePerTenantProvisioner<TContext>`（`ProvisionAsync` 跑 `Database.MigrateAsync`；`DeprovisionAsync` 默认 no-op，下放给运维/cloud provider。数据库创建 CREATE DATABASE 明确下放给运维工作流，框架不负责）。`AddKunMultiTenancy<TContext>` DI 分支替换旧 `NotImplementedException` 为真实注册。|
 | — | ⏳ 跨 Part | `Kun.Sample.SaaS.Shared` / `SchemaPerTenant` / `DatabasePerTenant` 三份样例、`docs/guides/saas-multitenancy.md` 决策树、三套 Testcontainers 红线用例。这些随 Part 2 / Part 3 各自上线。|
 
 ### 下一步

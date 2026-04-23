@@ -40,8 +40,13 @@ public static class KunMultiTenancyServiceCollectionExtensions
     /// </code>
     /// </para>
     /// <para>
-    /// <strong>DatabasePerTenant</strong>: not implemented in Part 2; resolution throws
-    /// <see cref="NotImplementedException"/> pointing at the P2-D Part 3 track.
+    /// <strong>DatabasePerTenant</strong>: registers a default
+    /// <see cref="OptionsBasedTenantConnectionResolver"/> reading from
+    /// <see cref="TenantsConnectionOptions"/> plus a Singleton
+    /// <see cref="DatabasePerTenantProvisioner{TContext}"/>. Consumers are still responsible
+    /// for registering their own <see cref="ITenantDbContextFactory{TContext}"/> that
+    /// resolves the tenant's connection string via <see cref="IDbConnectionResolver"/> and
+    /// constructs a DbContext bound to that connection.
     /// </para>
     /// <para>
     /// <strong>Strategy snapshotting</strong>: the <see cref="KunMultiTenancyOptions.Strategy"/>
@@ -80,12 +85,10 @@ public static class KunMultiTenancyServiceCollectionExtensions
                 break;
 
             case TenantIsolationStrategy.DatabasePerTenant:
-                // TryAddSingleton: consumers who pre-register their own ITenantProvisioner win.
-                // Consistent with the Shared / SchemaPerTenant branches above.
-                services.TryAddSingleton<ITenantProvisioner>(_ =>
-                    throw new NotImplementedException(
-                        "DatabasePerTenant strategy is deferred to P2-D Part 3. See " +
-                        "docs/architecture/adr-p2d-multitenancy.md for status."));
+                // Default connection resolver reads TenantsConnectionOptions. Consumers can
+                // replace it with their own IDbConnectionResolver before/after this call.
+                services.TryAddSingleton<IDbConnectionResolver, OptionsBasedTenantConnectionResolver>();
+                services.TryAddSingleton<ITenantProvisioner, DatabasePerTenantProvisioner<TContext>>();
                 break;
 
             default:
