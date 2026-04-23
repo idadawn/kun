@@ -1,7 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <IsAotCandidate>true</IsAotCandidate>
+    <!--
+      IsAotCandidate=false: Kun.Saga currently bundles EF persistence
+      (Persistence/Ef/*.cs) in the same assembly, which transitively
+      exposes Kun.EntityFrameworkCore's IL2091 / IL2060 / IL2026 /
+      IL3050 through ILC. See docs/architecture/AOT-audit-2026-04-23.md.
+      Tracked follow-up: P2-KN-Saga-EF-Split extracts a dedicated
+      Kun.Saga.EntityFrameworkCore to restore AOT-candidate status.
+    -->
+    <IsAotCandidate>false</IsAotCandidate>
     <IsPackable>true</IsPackable>
     <HasPublicApi>true</HasPublicApi>
     <Description>Saga Orchestration engine for Kun Framework: steps, compensation, timeouts, state persistence.</Description>

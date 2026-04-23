@@ -11,7 +11,7 @@ Saga Orchestration engine — a central coordinator that drives a sequence of `I
 
 | File | Description |
 |------|-------------|
-| `Kun.Saga.csproj` | `IsAotCandidate=true` |
+| `Kun.Saga.csproj` | `IsAotCandidate=false` (transitive EF Core — see `docs/architecture/AOT-audit-2026-04-23.md`; follow-up `P2-KN-Saga-EF-Split` will restore AOT candidacy by extracting `Kun.Saga.EntityFrameworkCore`) |
 
 ## For AI Agents
 
