@@ -19,6 +19,8 @@ single bounded context: the Catalog service manages `Product` aggregates.
 | Stable event IDs | `product.published.v1`, `inventory.changed.v1` registered in `Program.cs` |
 | EF Core entity configuration | `Infrastructure/Configurations/ProductConfiguration.cs` |
 | Dapper read connection factory | `Infrastructure/NpgsqlReadDbConnectionFactory.cs` |
+| **Audit wiring** (`AddKunAudit()` + default `NullAuditWriter`) | `Program.cs` |
+| **Sandbox wiring** (`AddKunSandbox(opts => opts.UseInMemory())`) | `Program.cs` |
 | Composition root | `Program.cs` |
 
 The full write-side pipeline is:
@@ -98,6 +100,25 @@ dotnet run --project samples/Kun.Sample.Catalog \
 
 The service calls `EnsureCreated` at startup, so no migration step is needed. This is suitable
 for development only; a production deployment should use EF Core Migrations.
+
+### Audit & Sandbox wiring
+
+`Program.cs` registers two additional Kun modules to demonstrate the minimal DI ergonomics
+new in Phase 1:
+
+```csharp
+// Kun.Audit — fallback NullAuditWriter; call .UseEventBus() or register
+// Kun.Audit.EntityFrameworkCore to enable persistence.
+builder.Services.AddKunAudit();
+
+// Kun.Sandbox — in-memory backend (no isolation, no egress) for dev-loop smoke tests.
+// Production: UseSupervisor(baseUrl [, mTLS cert]) or UseE2BCloud(apiKey, teamId).
+builder.Services.AddKunSandbox(opts => opts.UseInMemory());
+```
+
+These lines show the API shape; the sample does not exercise the writers/providers at
+runtime. See `src/Kun.Audit/AGENTS.md` and `src/Kun.Sandbox/AGENTS.md` for
+concrete backend choices.
 
 ---
 

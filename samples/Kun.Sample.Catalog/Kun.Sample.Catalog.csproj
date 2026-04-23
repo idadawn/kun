@@ -14,6 +14,8 @@
     <ProjectReference Include="..\..\src\Kun.EntityFrameworkCore\Kun.EntityFrameworkCore.csproj" />
     <ProjectReference Include="..\..\src\Kun.Dapper\Kun.Dapper.csproj" />
     <ProjectReference Include="..\..\src\Kun.AspNetCore\Kun.AspNetCore.csproj" />
+    <ProjectReference Include="..\..\src\Kun.Audit\Kun.Audit.csproj" />
+    <ProjectReference Include="..\..\src\Kun.Sandbox\Kun.Sandbox.csproj" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Npgsql" />
     <PackageReference Include="Grpc.AspNetCore" />
