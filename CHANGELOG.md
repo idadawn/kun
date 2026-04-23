@@ -6,6 +6,26 @@
 
 ## [Unreleased]
 
+### Added — P2-A Part 1 BenchmarkDotNet scaffold (2026-04-24)
+
+- **benchmarks/Kun.Benchmarks.Grpc** — new standalone BenchmarkDotNet console project
+  (intentionally NOT in Kun.sln so routine `dotnet build Kun.sln` ignores it).
+  Builds clean at `dotnet build benchmarks/Kun.Benchmarks.Grpc -c Release`.
+- `ResultToRpcInterceptorBenchmarks` — microbenchmarks the public `Result<T>` pattern
+  (the internal `KunResultToRpcInterceptor` is not benchmarkable from a non-friend
+  assembly; the `Result<T>` paths are the real hot path the translator catches).
+  Compares `Result<T>.Ok` / `Fail` / `EnsureSuccess` / IsFailure+Error.Code against
+  a plain-return baseline. `[MemoryDiagnoser]` attached so allocation deltas are
+  visible.
+- Directory.Packages.props centrally pins `BenchmarkDotNet` to `0.14.0` under a new
+  "Benchmarks" label.
+- **docs/benchmarks/grpc-aot.md** — methodology doc + run command + Part-2-plan
+  (AOT matrix in CI, cold-start target <100ms).
+- **Scope note**: Part 1 is scaffolding. Part 2 adds the AOT publish matrix on CI,
+  JIT-vs-AOT comparison tables, and a `.github/workflows/benchmarks.yml` weekly +
+  PR-label trigger. Kun.sln integration is intentionally deferred — benchmarks are
+  run on-demand, not as part of the regular build matrix.
+
 ### Added — P2-C Part 3 Redis-backed rate-limit store + guide (2026-04-24)
 
 - **Kun.Gateway.RateLimiting.IRedisRateLimitStore** + `RateLimitHitResult` record —
