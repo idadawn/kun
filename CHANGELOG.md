@@ -6,6 +6,32 @@
 
 ## [Unreleased]
 
+### Added — P2-C Part 3 Redis-backed rate-limit store + guide (2026-04-24)
+
+- **Kun.Gateway.RateLimiting.IRedisRateLimitStore** + `RateLimitHitResult` record —
+  low-level primitive for distributed rate limiting across multiple Gateway pods.
+- **RedisFixedWindowRateLimitStore** — default implementation using atomic
+  `INCR` + `EXPIRE`-on-first-hit semantics so counters self-expire when the window
+  elapses (no cleanup job required). Key format `{KeyPrefix}:{partitionKey}`,
+  default prefix `"kun:rl"`.
+- **RedisRateLimitStoreOptions** — `KeyPrefix` knob, bound from
+  `Kun:Gateway:RateLimit:Redis` configuration section.
+- **AddKunRedisRateLimitStore** DI extension — `TryAddSingleton` so consumer
+  pre-registrations win. Requires `IConnectionMultiplexer` to be registered
+  separately by the consumer.
+- **Kun.Gateway** csproj: new `StackExchange.Redis` `PackageReference` (version
+  already centrally pinned to 2.8.16).
+- **Scope note**: this is a primitive, not a full `PartitionedRateLimiter<HttpContext>`
+  integration. Consumers today call `store.HitAsync(...)` from custom middleware
+  and translate rejections to HTTP 429. Framework-level integration with
+  `AddRateLimiter` named policies is tracked as Part 3b (requires a custom
+  `RateLimiter` subclass with 5+ abstract members).
+- Tests: 11 new facts in `tests/Kun.Gateway.Tests` (argument guards, first-hit
+  TTL behavior, subsequent-hit TTL preservation, key-prefix application, DI
+  registration). Gateway test total 48 → 59, all green.
+- **docs**: new `docs/guides/gateway-rate-limit.md` covering the 3×3 resolver ×
+  policy matrix + Redis store recipe + landing checklist.
+
 ### Added — P2-C Part 2 sliding-window + token-bucket rate-limit policies (2026-04-24)
 
 - **Kun.Gateway.RateLimiting.KunSlidingWindowRateLimiterPolicy** (internal) + public
