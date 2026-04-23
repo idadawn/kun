@@ -53,3 +53,20 @@ Kun.EntityFrameworkCore.Interceptors.TenantRlsTransactionInterceptor.TenantRlsTr
 override Kun.EntityFrameworkCore.Interceptors.TenantRlsTransactionInterceptor.TransactionStartedAsync(System.Data.Common.DbConnection! connection, Microsoft.EntityFrameworkCore.Diagnostics.TransactionEndEventData! eventData, System.Data.Common.DbTransaction! result, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Data.Common.DbTransaction!>
 override Kun.EntityFrameworkCore.Interceptors.TenantRlsTransactionInterceptor.TransactionStarted(System.Data.Common.DbConnection! connection, Microsoft.EntityFrameworkCore.Diagnostics.TransactionEndEventData! eventData, System.Data.Common.DbTransaction! result) -> System.Data.Common.DbTransaction!
 static Kun.EntityFrameworkCore.DependencyInjection.KunEntityFrameworkCoreServiceCollectionExtensions.AddKunTenantRls(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Kun.EntityFrameworkCore.MultiTenancy.ITenantDbContextFactory<TContext>
+Kun.EntityFrameworkCore.MultiTenancy.ITenantDbContextFactory<TContext>.CreateForTenant(string! tenantId) -> TContext!
+Kun.EntityFrameworkCore.MultiTenancy.KunMultiTenancyOptions
+Kun.EntityFrameworkCore.MultiTenancy.KunMultiTenancyOptions.KunMultiTenancyOptions() -> void
+Kun.EntityFrameworkCore.MultiTenancy.KunMultiTenancyOptions.AllowDestructiveDeprovision.get -> bool
+Kun.EntityFrameworkCore.MultiTenancy.KunMultiTenancyOptions.AllowDestructiveDeprovision.set -> void
+Kun.EntityFrameworkCore.MultiTenancy.KunMultiTenancyOptions.Strategy.get -> Kun.Core.MultiTenancy.TenantIsolationStrategy
+Kun.EntityFrameworkCore.MultiTenancy.KunMultiTenancyOptions.Strategy.set -> void
+Kun.EntityFrameworkCore.MultiTenancy.KunMultiTenancyServiceCollectionExtensions
+static Kun.EntityFrameworkCore.MultiTenancy.KunMultiTenancyServiceCollectionExtensions.AddKunMultiTenancy<TContext>(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.EntityFrameworkCore.MultiTenancy.KunMultiTenancyOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Kun.EntityFrameworkCore.MultiTenancy.SchemaPerTenantProvisioner<TContext>
+Kun.EntityFrameworkCore.MultiTenancy.SchemaPerTenantProvisioner<TContext>.SchemaPerTenantProvisioner(Kun.EntityFrameworkCore.MultiTenancy.ITenantDbContextFactory<TContext!>! factory, Microsoft.Extensions.Options.IOptions<Kun.EntityFrameworkCore.MultiTenancy.KunMultiTenancyOptions!>! options, Microsoft.Extensions.Logging.ILogger<Kun.EntityFrameworkCore.MultiTenancy.SchemaPerTenantProvisioner<TContext!>!>? logger = null) -> void
+Kun.EntityFrameworkCore.MultiTenancy.SchemaPerTenantProvisioner<TContext>.ProvisionAsync(Kun.Core.MultiTenancy.TenantInfo! tenant, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.EntityFrameworkCore.MultiTenancy.SchemaPerTenantProvisioner<TContext>.DeprovisionAsync(string! tenantId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.EntityFrameworkCore.MultiTenancy.TenantAwareModelCacheKeyFactory
+Kun.EntityFrameworkCore.MultiTenancy.TenantAwareModelCacheKeyFactory.TenantAwareModelCacheKeyFactory() -> void
+Kun.EntityFrameworkCore.MultiTenancy.TenantAwareModelCacheKeyFactory.Create(Microsoft.EntityFrameworkCore.DbContext! context, bool designTime) -> object!

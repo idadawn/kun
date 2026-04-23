@@ -6,6 +6,31 @@
 
 ## [Unreleased]
 
+### Added — P2-D Part 2 SchemaPerTenant runtime (2026-04-23)
+
+- **Kun.EntityFrameworkCore.MultiTenancy** (additive, existing Kun.EntityFrameworkCore is
+  trim-safe / non-AOT; no new external dependencies):
+  - `ITenantDbContextFactory<TContext>` — explicit factory for tenant-scoped DbContext
+    construction, used by provisioning / admin flows that target a specific tenant
+    regardless of the ambient `ITenantContext`.
+  - `TenantAwareModelCacheKeyFactory` — `IModelCacheKeyFactory` implementation that
+    partitions EF Core's compiled-model cache by `KunDbContext.TenantIdForModelCacheKey`
+    in addition to context type + design-time flag.
+  - `SchemaPerTenantProvisioner<TContext>` — `ITenantProvisioner` implementation that
+    runs `CREATE SCHEMA IF NOT EXISTS "{tenantId}"` + `Database.MigrateAsync()` at
+    provisioning time. Deprovisioning is gated behind
+    `KunMultiTenancyOptions.AllowDestructiveDeprovision` (default false); unsafe tenant
+    IDs (anything outside `[A-Za-z_][A-Za-z0-9_-]{0,62}`) are rejected with
+    `ArgumentException` before reaching the database.
+  - `KunMultiTenancyOptions` — `Strategy` + `AllowDestructiveDeprovision` knobs.
+  - `AddKunMultiTenancy<TContext>(options => ...)` DI entry: Shared delegates to
+    the existing `AddKunTenantRls()` + `NullTenantProvisioner`; SchemaPerTenant registers
+    the factory + RLS interceptor (defence-in-depth) + SchemaPerTenantProvisioner;
+    DatabasePerTenant throws `NotImplementedException` at resolution time pointing to
+    the pending Part 3 track.
+- **docs**: `docs/architecture/adr-p2d-multitenancy.md` status upgraded to Part 2 Accepted;
+  `docs/roadmap-p2.md` P2-D table row updated.
+
 ### Added — P2-D Part 1 multi-tenancy foundation types (2026-04-23)
 
 - **Kun.Core.MultiTenancy** (additive, AOT-safe, zero new dependencies):
