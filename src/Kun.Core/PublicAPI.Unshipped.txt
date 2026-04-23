@@ -1,3 +1,20 @@
 #nullable enable
+Kun.Core.MultiTenancy.ITenantProvisioner
+Kun.Core.MultiTenancy.ITenantProvisioner.DeprovisionAsync(string! tenantId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Core.MultiTenancy.ITenantProvisioner.ProvisionAsync(Kun.Core.MultiTenancy.TenantInfo! tenant, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Core.MultiTenancy.NullTenantProvisioner
+Kun.Core.MultiTenancy.NullTenantProvisioner.DeprovisionAsync(string! tenantId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Core.MultiTenancy.NullTenantProvisioner.NullTenantProvisioner() -> void
+Kun.Core.MultiTenancy.NullTenantProvisioner.ProvisionAsync(Kun.Core.MultiTenancy.TenantInfo! tenant, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+static Kun.Core.MultiTenancy.NullTenantProvisioner.Instance.get -> Kun.Core.MultiTenancy.NullTenantProvisioner!
+Kun.Core.MultiTenancy.TenantInfo
+Kun.Core.MultiTenancy.TenantInfo.DisplayName.get -> string?
+Kun.Core.MultiTenancy.TenantInfo.DisplayName.init -> void
+Kun.Core.MultiTenancy.TenantInfo.TenantId.get -> string!
+Kun.Core.MultiTenancy.TenantInfo.TenantInfo(string! tenantId, string? displayName = null) -> void
+Kun.Core.MultiTenancy.TenantIsolationStrategy
+Kun.Core.MultiTenancy.TenantIsolationStrategy.DatabasePerTenant = 2 -> Kun.Core.MultiTenancy.TenantIsolationStrategy
+Kun.Core.MultiTenancy.TenantIsolationStrategy.SchemaPerTenant = 1 -> Kun.Core.MultiTenancy.TenantIsolationStrategy
+Kun.Core.MultiTenancy.TenantIsolationStrategy.Shared = 0 -> Kun.Core.MultiTenancy.TenantIsolationStrategy
 Kun.Core.Security.ITracedCurrentUser
 Kun.Core.Security.ITracedCurrentUser.TraceId.get -> string?

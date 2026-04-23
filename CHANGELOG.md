@@ -6,6 +6,25 @@
 
 ## [Unreleased]
 
+### Added — P2-D Part 1 multi-tenancy foundation types (2026-04-23)
+
+- **Kun.Core.MultiTenancy** (additive, AOT-safe, zero new dependencies):
+  - `TenantIsolationStrategy` enum — `Shared` / `SchemaPerTenant` / `DatabasePerTenant`.
+    Part 1 lands the type; runtime wiring for `SchemaPerTenant` / `DatabasePerTenant`
+    is deferred to P2-D Part 2 / Part 3 (see ADR below).
+  - `TenantInfo` sealed record — `(string TenantId, string? DisplayName)` with a null /
+    empty / whitespace guard on `TenantId`. DTO crossing module boundaries.
+  - `ITenantProvisioner` interface — `ProvisionAsync(TenantInfo)` / `DeprovisionAsync(string)`
+    idempotent tenant lifecycle hook. Non-null implementations land with Part 2 / Part 3.
+  - `NullTenantProvisioner` no-op default (Singleton `.Instance`) for Shared strategy
+    consumers who don't need tenant lifecycle plumbing.
+- **docs**:
+  - `docs/architecture/adr-p2d-multitenancy.md` — ADR for the 3-strategy architecture,
+    including the explicit YAGNI decision that Shared remains on the existing
+    `AddKunTenantRls()` entry point (no wrapper API is added until a second strategy
+    ships).
+  - `docs/roadmap-p2.md` P2-D section updated with the Part 1 / Part 2 / Part 3 split.
+
 ### Added — Sprint 1 gap-closure (2026-04-22)
 
 - **Kun.Storage.Abstractions / Kun.Storage.Local / Kun.Storage.S3** (P0-1): three

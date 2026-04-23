@@ -165,21 +165,20 @@
 
 ### 工作量：**M**（~8–12 eng-days）
 
-### Kickoff PRD 草稿
-```json
-{
-  "task": "P2-D: SaaS 多租户 3-策略完整方案",
-  "stories": [
-    {"id":"US-P2D-1","title":"ITenantIsolationStrategy + AddKunMultiTenancy DI 入口"},
-    {"id":"US-P2D-2","title":"SharedStrategy（TenantId 列 + RLS，含已有能力的打包）"},
-    {"id":"US-P2D-3","title":"SchemaPerTenantStrategy + ITenantDbContextFactory"},
-    {"id":"US-P2D-4","title":"DatabasePerTenantStrategy + IDbConnectionResolver"},
-    {"id":"US-P2D-5","title":"Kun.Sample.SaaS.* 三个样例应用"},
-    {"id":"US-P2D-6","title":"Testcontainers: tenant-isolation 红线用例 ×3"},
-    {"id":"US-P2D-7","title":"docs/guides/saas-multitenancy.md 决策树 + 迁移手册"}
-  ]
-}
-```
+### 拆分为 Part 1 / Part 2 / Part 3
+
+ADR: [`docs/architecture/adr-p2d-multitenancy.md`](architecture/adr-p2d-multitenancy.md)
+
+| Part | 状态 | 范围 |
+|:---:|:---:|:---|
+| **Part 1** | ✅ **已落地** (2026-04-23) | ADR + 前瞻类型：`TenantIsolationStrategy` 枚举、`TenantInfo` 记录、`ITenantProvisioner` 接口 + `NullTenantProvisioner` 默认实现。Shared 策略现有 `AddKunTenantRls()` 保持不变（YAGNI，详见 ADR D1）。|
+| **Part 2** | ⏳ 待开工 | `SchemaPerTenant` 策略：`ITenantDbContextFactory<TContext>` + 自定义 `IModelCacheKeyFactory`（把 `TenantId` 并入缓存键）+ `SchemaPerTenantProvisioner`（在开户时 `CREATE SCHEMA IF NOT EXISTS` + 运行迁移）+ PgBouncer transaction-pool 兼容性集成测试。|
+| **Part 3** | ⏳ 待开工 | `DatabasePerTenant` 策略：`IDbConnectionResolver` + `DatabasePerTenantProvisioner` + 跨租户 admin 查询反模式文档 + 每数据库迁移运行手册。|
+| — | ⏳ 跨 Part | `Kun.Sample.SaaS.Shared` / `SchemaPerTenant` / `DatabasePerTenant` 三份样例、`docs/guides/saas-multitenancy.md` 决策树、三套 Testcontainers 红线用例。这些随 Part 2 / Part 3 各自上线。|
+
+### 下一步
+
+Part 2 kickoff 推荐单独起 ralplan（`IModelCacheKeyFactory` 的模型缓存键 + EF migrations 时序是需要 consensus 的决策），完成后再滚 Part 3。
 
 ---
 
