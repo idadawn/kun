@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Kun.Core\Kun.Core.csproj" />
+    <ProjectReference Include="..\Kun.Caching\Kun.Caching.csproj" />
   </ItemGroup>
 
   <ItemGroup>
