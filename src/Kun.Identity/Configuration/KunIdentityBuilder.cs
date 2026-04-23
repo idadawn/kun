@@ -52,6 +52,18 @@ public sealed class KunIdentityBuilder
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentNullException.ThrowIfNull(configure);
         Services.AddHttpClient(OidcHttpClientName(name));
+
+        // Register the options twice: once as a named options entry so
+        // downstream helpers (e.g. Kun.Identity.AspNetCore.ChallengeHelper)
+        // can resolve the per-client configuration via IOptionsMonitor
+        // without reflection, and once as the IOidcClient singleton used
+        // for discovery + token exchange.
+        Services.Configure<KunOidcClientOptions>(name, opts =>
+        {
+            configure(opts);
+            opts.Name = name;
+        });
+
         Services.AddSingleton<IOidcClient>(sp =>
         {
             var options = new KunOidcClientOptions { Name = name };

@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsAotCandidate>true</IsAotCandidate>
+    <IsPackable>true</IsPackable>
+    <HasPublicApi>false</HasPublicApi>
+    <Description>Kun Framework — ASP.NET Core integration for Kun.Identity cookie sessions: UseKunCookieAuth middleware, SignInHelper, ChallengeHelper (PKCE), and KunCurrentUser (IAuthenticatedUser resolver). AOT-strict by construction — no reflection, no JsonSerializer.Serialize(obj).</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      The FrameworkReference transitively supplies
+      Microsoft.Extensions.DependencyInjection.Abstractions,
+      Microsoft.Extensions.Options, and
+      Microsoft.Extensions.Logging.Abstractions — NU1510 (PackageReferenceNotPruned)
+      errors out if we list them explicitly, so they are omitted here.
+    -->
+    <ProjectReference Include="..\Kun.Core\Kun.Core.csproj" />
+    <ProjectReference Include="..\Kun.Identity\Kun.Identity.csproj" />
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Kun.Identity.Tests" />
+  </ItemGroup>
+
+</Project>
