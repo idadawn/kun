@@ -47,9 +47,11 @@ public sealed partial class S3FileStorage : IFileStorage
             AutoCloseStream = false,
         };
 
-        if (!string.IsNullOrEmpty(options.ContentDisposition))
+        var enforcedDisposition = ContentDispositionPolicy.EnforceAttachment(
+            options.ContentType, options.ContentDisposition, options.FileName);
+        if (!string.IsNullOrEmpty(enforcedDisposition))
         {
-            request.Headers.ContentDisposition = options.ContentDisposition;
+            request.Headers.ContentDisposition = enforcedDisposition;
         }
 
         if (!string.IsNullOrEmpty(options.CacheControl))
@@ -194,13 +196,27 @@ public sealed partial class S3FileStorage : IFileStorage
     }
 
     /// <inheritdoc />
-    public Task<PresignedDownloadUrl> CreatePresignedDownloadUrlAsync(
+    public async Task<PresignedDownloadUrl> CreatePresignedDownloadUrlAsync(
         string path,
         PresignedDownloadRequest request,
         CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(request);
         var expiresAt = DateTimeOffset.UtcNow.Add(request.ExpiresIn);
+
+        var dispositionOverride = request.ResponseContentDisposition;
+        if (dispositionOverride is null)
+        {
+            // Probe the object's stored content-type so we can enforce attachment
+            // disposition on active-web MIME types (HTML/SVG/XML/JS/WASM).
+            var metadata = await HeadObjectAsync(path, ct).ConfigureAwait(false);
+            if (metadata is not null
+                && ContentDispositionPolicy.IsUnsafeForInlineDisplay(metadata.ContentType))
+            {
+                dispositionOverride = ContentDispositionPolicy.EnforceAttachment(
+                    metadata.ContentType, currentDisposition: null, fileName: Path.GetFileName(path));
+            }
+        }
 
         var req = new GetPreSignedUrlRequest
         {
@@ -209,14 +225,14 @@ public sealed partial class S3FileStorage : IFileStorage
             Verb = HttpVerb.GET,
             Expires = expiresAt.UtcDateTime,
         };
-        if (!string.IsNullOrEmpty(request.ResponseContentDisposition))
+        if (!string.IsNullOrEmpty(dispositionOverride))
         {
-            req.ResponseHeaderOverrides.ContentDisposition = request.ResponseContentDisposition;
+            req.ResponseHeaderOverrides.ContentDisposition = dispositionOverride;
         }
 
         var url = _s3.GetPreSignedURL(req);
         Log.PresignedDownloadUrlGenerated(_logger, _options.BucketName, path);
-        return Task.FromResult(new PresignedDownloadUrl(new Uri(url), expiresAt));
+        return new PresignedDownloadUrl(new Uri(url), expiresAt);
     }
 
     private static ObjectMetadata BuildMetadata(
