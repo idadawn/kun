@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsAotCandidate>true</IsAotCandidate>
+    <IsPackable>true</IsPackable>
+    <HasPublicApi>true</HasPublicApi>
+    <Description>Kun Framework audit log: tamper-evident hash-chained operation audit for CQRS commands via a Mediator pipeline behaviour, with pluggable sinks. Implements the SAD v3.0 §15.5 audit.operations contract.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Kun.Core\Kun.Core.csproj" />
+  </ItemGroup>
+
+</Project>
