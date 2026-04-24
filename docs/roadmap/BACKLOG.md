@@ -39,17 +39,8 @@ worn by kun himself during idle windows picks the next item.
 <!-- KN-SELF-003 moved to ## Done on 2026-04-24 (executor head 12cf37c) -->
 
 
-### P2 — KN-SELF-004: `Kun.Dapper` AOT intent cleanup
+<!-- KN-SELF-004 moved to ## Done on 2026-04-24 (executor head 674a323) -->
 
-- **Status**: in-flight — see `kun/.autonomy/active-task.md`
-- **Size**: S (target ≤3 commits, reduced to 2 after planning —
-  csproj flag already shipped in a prior cycle)
-- **Why**: AOT audit 2026-04-23 flagged `Kun.Dapper` YELLOW — no
-  `<IsAotCandidate>` declaration. Set it to `false` explicitly and
-  annotate `AGENTS.md` that per-query AOT is `Dapper.AOT` source
-  generator's job, not `Kun.Dapper` itself.
-- **AC**: csproj flag explicit, AGENTS note added, audit report TL;DR
-  updated, CI AOT matrix unchanged.
 
 ### P2 — KN-SELF-005: Naming-consistency sweep on `IAuthenticatedUser`
 
@@ -75,6 +66,15 @@ worn by kun himself during idle windows picks the next item.
 
 ## Done
 
+- **KN-SELF-004** — `Kun.Dapper` AOT intent cleanup —
+  executor head `674a323` (2 doc commits) — 2026-04-24.
+  Two ACs shipped: `src/Kun.Dapper/AGENTS.md` gains the AOT-intent
+  bullet pinning down why `IsAotCandidate=false` is deliberate and
+  warning future agents not to flip; `docs/architecture/AOT-audit-2026-04-23.md`
+  gains four resolution markers (TL;DR, matrix row, §YELLOW
+  detail, §后续建议) turning the prior YELLOW into a dated
+  green resolved. No csproj changes — the flag had already
+  shipped in a prior cycle; this task closed the documentation gap.
 - **KN-SELF-003** — `Kun.Observability` baggage activity enricher + ADR-013 —
   executor head `12cf37c` (ADR-013 + 5 code/test/doc commits) — 2026-04-24.
   Six ACs shipped (final plan hit 6 commits, 1 under estimate): ADR

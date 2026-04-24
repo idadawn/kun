@@ -1,11 +1,13 @@
 ---
 id: KN-SELF-004
 title: Kun.Dapper AOT intent cleanup (AGENTS note + audit follow-up)
-status: in-flight
-planner_commit: <fill after commit>
-executor_head: <fill after first executor commit>
+status: done
+planner_commit: b314e69
+executor_head: 674a323
 estimated_commits: 2
+actual_commits: 2
 started: 2026-04-24
+finished: 2026-04-24
 ---
 
 # KN-SELF-004 — `Kun.Dapper` AOT intent cleanup
