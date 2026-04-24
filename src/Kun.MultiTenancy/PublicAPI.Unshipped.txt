@@ -1,0 +1,26 @@
+#nullable enable
+Kun.MultiTenancy.Abstractions.ITenantResolver
+Kun.MultiTenancy.Abstractions.ITenantResolver.ResolveTenantIdAsync(Microsoft.AspNetCore.Http.HttpContext! httpContext) -> System.Threading.Tasks.ValueTask<string?>
+Kun.MultiTenancy.AsyncLocalTenantContext
+Kun.MultiTenancy.AsyncLocalTenantContext.AsyncLocalTenantContext() -> void
+Kun.MultiTenancy.AsyncLocalTenantContext.BeginScope(string? tenantId) -> System.IDisposable!
+Kun.MultiTenancy.AsyncLocalTenantContext.IsMultiTenant.get -> bool
+Kun.MultiTenancy.AsyncLocalTenantContext.TenantId.get -> string?
+Kun.MultiTenancy.Configuration.KunMultiTenancyOptions
+Kun.MultiTenancy.Configuration.KunMultiTenancyOptions.FallbackTenantId.get -> string?
+Kun.MultiTenancy.Configuration.KunMultiTenancyOptions.FallbackTenantId.set -> void
+Kun.MultiTenancy.Configuration.KunMultiTenancyOptions.HttpHeaderNames.get -> System.Collections.Generic.List<string!>!
+Kun.MultiTenancy.Configuration.KunMultiTenancyOptions.JwtClaimNames.get -> System.Collections.Generic.List<string!>!
+Kun.MultiTenancy.Configuration.KunMultiTenancyOptions.KunMultiTenancyOptions() -> void
+Kun.MultiTenancy.Configuration.KunMultiTenancyOptions.UseHttpHeader(string! headerName) -> Kun.MultiTenancy.Configuration.KunMultiTenancyOptions!
+Kun.MultiTenancy.Configuration.KunMultiTenancyOptions.UseJwtClaim(string! claimName) -> Kun.MultiTenancy.Configuration.KunMultiTenancyOptions!
+Kun.MultiTenancy.DefaultTenantResolver
+Kun.MultiTenancy.DefaultTenantResolver.DefaultTenantResolver(Microsoft.Extensions.Options.IOptions<Kun.MultiTenancy.Configuration.KunMultiTenancyOptions!>! options) -> void
+Kun.MultiTenancy.DefaultTenantResolver.ResolveTenantIdAsync(Microsoft.AspNetCore.Http.HttpContext! httpContext) -> System.Threading.Tasks.ValueTask<string?>
+Kun.MultiTenancy.DependencyInjection.KunMultiTenancyServiceCollectionExtensions
+Kun.MultiTenancy.Middleware.KunMultiTenancyApplicationBuilderExtensions
+Kun.MultiTenancy.Middleware.TenantContextMiddleware
+Kun.MultiTenancy.Middleware.TenantContextMiddleware.InvokeAsync(Microsoft.AspNetCore.Http.HttpContext! httpContext, Kun.MultiTenancy.Abstractions.ITenantResolver! resolver, Kun.MultiTenancy.AsyncLocalTenantContext! tenantContext) -> System.Threading.Tasks.Task!
+Kun.MultiTenancy.Middleware.TenantContextMiddleware.TenantContextMiddleware(Microsoft.AspNetCore.Http.RequestDelegate! next) -> void
+static Kun.MultiTenancy.DependencyInjection.KunMultiTenancyServiceCollectionExtensions.AddKunMultiTenancy(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.MultiTenancy.Configuration.KunMultiTenancyOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Kun.MultiTenancy.Middleware.KunMultiTenancyApplicationBuilderExtensions.UseKunMultiTenancy(this Microsoft.AspNetCore.Builder.IApplicationBuilder! app) -> Microsoft.AspNetCore.Builder.IApplicationBuilder!

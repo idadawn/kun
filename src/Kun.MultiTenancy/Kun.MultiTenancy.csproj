@@ -3,7 +3,7 @@
   <PropertyGroup>
     <IsAotCandidate>true</IsAotCandidate>
     <IsPackable>true</IsPackable>
-    <HasPublicApi>false</HasPublicApi>
+    <HasPublicApi>true</HasPublicApi>
     <Description>Kun Framework multi-tenancy: ITenantResolver (JWT claim / HTTP header / fallback), AsyncLocal-backed ITenantContext, and the UseKunMultiTenancy middleware that scopes tenant identity across the request pipeline. EF Core query-filter + SaveChanges interceptor live in Kun.MultiTenancy.EntityFrameworkCore.</Description>
   </PropertyGroup>
 

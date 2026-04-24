@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <IsAotCandidate>true</IsAotCandidate>
-    <HasPublicApi>false</HasPublicApi>
+    <HasPublicApi>true</HasPublicApi>
     <IsPackable>true</IsPackable>
     <Description>Kun Framework — zero-trust internal auth: S2S JWT validation, JWKS, tenant/user context from claims.</Description>
   </PropertyGroup>

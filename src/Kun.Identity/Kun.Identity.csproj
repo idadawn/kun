@@ -3,7 +3,7 @@
   <PropertyGroup>
     <IsAotCandidate>true</IsAotCandidate>
     <IsPackable>true</IsPackable>
-    <HasPublicApi>false</HasPublicApi>
+    <HasPublicApi>true</HasPublicApi>
     <Description>Kun Framework identity facade: IJwtValidator (external Bearer validation with JWKS), IJwtIssuer (S2S token minting), IOidcClient (OIDC discovery + code exchange), and AddKunIdentity fluent DI. Unifies the Authentik/JWT/OIDC configuration that consumer services had been hand-rolling per repo.</Description>
   </PropertyGroup>
 
