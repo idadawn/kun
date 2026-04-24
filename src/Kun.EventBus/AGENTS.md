@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-04-18 | Updated: 2026-04-18 -->
+<!-- Generated: 2026-04-18 | Updated: 2026-04-24 -->
 
 # Kun.EventBus
 
@@ -26,6 +26,8 @@ Event-bus abstractions: integration event base (`IIntegrationEvent`), event-type
 ### Testing Requirements
 
 Publisher correctness (trace context propagation, retry on transient failure) is covered by `tests/Kun.IntegrationTests`. Unit tests of `IEventTypeRegistry` registration and lookup belong close to this module.
+
+For tests that assert EF-persisted `OutboxMessage` state (e.g. "did the command handler stage the right integration event inside its transaction?"), use [`Kun.Testing.EntityFrameworkCore`](../Kun.Testing.EntityFrameworkCore/)'s `OutboxAssertions` — `ShouldHaveOutboxMessage` / `ShouldHaveExactlyOneOutboxMessage` / `ShouldNotHaveOutboxMessage` on both `DbContext` and `IEnumerable<OutboxMessage>`. Closes ADR-015 §F3.
 
 ### Common Patterns
 

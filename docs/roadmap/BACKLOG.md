@@ -73,11 +73,7 @@ worn by kun himself during idle windows picks the next item.
 
 <!-- KN-SELF-015 (NU1902 / GHSA-g94r-2vxg-569j) moved to ## Done on 2026-04-24 -->
 
-### P2 — KN-SELF-016: complete `Kun.Testing.EntityFrameworkCore` tests + docs (ADR-015 §F3)
-
-- **Status**: in-flight — see `kun/.autonomy/active-task.md`
-- **Promoted**: P3 → P2 after KN-SELF-015 unblocked the
-  solution build; this task can now run the full test gate.
+<!-- KN-SELF-016 moved to ## Done on 2026-04-24 (executor head 5ceffdc + this closeout) -->
 - **Size**: S (target 2 commits: tests project + CHANGELOG /
   ADR-015 §F3 resolution marker).
 - **Why**: KN-SELF-014 was rescoped mid-execution. The
@@ -107,6 +103,27 @@ worn by kun himself during idle windows picks the next item.
 ---
 
 ## Done
+
+- **KN-SELF-016** — complete
+  `Kun.Testing.EntityFrameworkCore` tests + docs (ADR-015 §F3
+  closed) — executor head `5ceffdc` (1 test commit by kun + 1
+  doc closeout commit) — 2026-04-24. Two ACs shipped: new
+  `tests/Kun.Testing.EntityFrameworkCore.Tests/` project
+  (xUnit.v3 + FluentAssertions + coverlet +
+  `Microsoft.EntityFrameworkCore.InMemory`) wired into
+  `Kun.sln` under tests folder, with
+  `OutboxAssertionsTests.cs` covering every helper × overload
+  × pass/fail path (11 tests; `UseInMemoryDatabase(Guid.NewGuid())`
+  per test for hermetic `DbContext`-overload fixtures; all
+  698ms). CHANGELOG [Unreleased] "Added" entry + ADR-015 §F3
+  bullet annotated "Resolved 2026-04-24 (KN-SELF-014 +
+  KN-SELF-016)" + `Kun.EventBus/AGENTS.md` §Testing
+  Requirements cross-link to `OutboxAssertions` +
+  `Kun.Testing/AGENTS.md` sibling-module guidance bullet.
+  Together with KN-SELF-014's scaffold (`829ea5f`) +
+  `OutboxAssertions` class (`9999f63`), the module is now
+  fully consumer-ready and ADR-015 §F3 is closed as a
+  deferred follow-up.
 
 - **KN-SELF-015** — resolve NU1902 advisory on
   `OpenTelemetry.Api 1.12.0`

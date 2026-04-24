@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-04-24 | Updated: 2026-04-24 -->
+<!-- Generated: 2026-04-24 | Updated: 2026-04-24 (+EF sibling cross-link) -->
 
 # Kun.Testing
 
@@ -36,6 +36,13 @@ for the module rationale and boundary.
 - **AOT strict.** No reflection, no `MakeGenericMethod`, no
   `Expression` trees. Use generic type parameters + LINQ
   (`OfType<T>()`) for type-directed assertions.
+- **Sibling module for EF-persisted assertions.** Assertions
+  that need a `DbContext` or `Microsoft.EntityFrameworkCore`
+  surface live in the sibling [`Kun.Testing.EntityFrameworkCore`](../Kun.Testing.EntityFrameworkCore/)
+  module (`IsAotCandidate=false`, matches the Kun.EntityFrameworkCore
+  dependency stance). Today that surface is `OutboxAssertions`
+  for EF-persisted `OutboxMessage` state. Do not back-port
+  any EF-Core-aware helper into `Kun.Testing` itself.
 - **Every mismatch message must include the helper name, the expected
   value, and the actual observed value.** Test-runner output is the
   whole UX; a bare "assertion failed" without context fails the ADR

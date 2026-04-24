@@ -6,6 +6,47 @@
 
 ## [Unreleased]
 
+### Added — Kun.Testing.EntityFrameworkCore module with OutboxAssertions (2026-04-24)
+
+- **KN-SELF-014 (scaffold) + KN-SELF-016 (tests + docs) together
+  close ADR-015 §F3**. Ships the sibling module to
+  `Kun.Testing` for EF-persisted Outbox assertion helpers.
+- **New `src/Kun.Testing.EntityFrameworkCore/` module** —
+  `IsAotCandidate=false` (matches `Kun.EntityFrameworkCore`),
+  `IsPackable=true`, `HasPublicApi=true`. ProjectReferences
+  `Kun.Testing` (reuses `KunAssertionException`) +
+  `Kun.EventBus` (the `OutboxMessage` type under test).
+  PackageReference `Microsoft.EntityFrameworkCore`.
+- **`OutboxAssertions` class** — six extension methods, 3
+  helpers × 2 overload families:
+  - `IEnumerable<OutboxMessage>` overloads (primary, no
+    `DbContext` dep required): `ShouldHaveOutboxMessage(eventTypeId)`,
+    `ShouldHaveExactlyOneOutboxMessage(eventTypeId)` (returns
+    the matched `OutboxMessage`), `ShouldNotHaveOutboxMessage(eventTypeId)`.
+  - `DbContext` overloads (one-liner convenience — delegate
+    to `db.Set<OutboxMessage>().AsEnumerable().ShouldXxx(...)`):
+    same three helpers.
+- **Mismatch-message shape**: helper name + expected
+  `EventTypeId` + observed match count + distinct
+  `EventTypeId`s actually present (sorted, comma-joined).
+  That last field tells the consumer what WAS staged on
+  failure — dramatically shorter round-trip when the test
+  was set up wrong.
+- **Tests** (`tests/Kun.Testing.EntityFrameworkCore.Tests/`):
+  11 tests covering every helper × overload × pass/fail path;
+  `UseInMemoryDatabase(Guid.NewGuid().ToString())` per test
+  keeps the `DbContext` overload fixtures hermetic.
+- **Cross-links**: `Kun.EventBus/AGENTS.md` §Testing
+  Requirements now points at the new module as the canonical
+  Outbox test-helper surface; `Kun.Testing/AGENTS.md`
+  sibling-module note links to the EntityFrameworkCore
+  variant for tests that need an EF-Core dependency.
+- **Consumer usage**:
+  ```csharp
+  await _mediator.Send(new PlaceOrderCommand(...), ct);
+  _dbContext.ShouldHaveExactlyOneOutboxMessage("order.placed.v1");
+  ```
+
 ### Security — Resolve NU1902 / GHSA-g94r-2vxg-569j on OpenTelemetry.Api 1.12.0 (2026-04-24)
 
 - **KN-SELF-015** closes the NU1902 advisory

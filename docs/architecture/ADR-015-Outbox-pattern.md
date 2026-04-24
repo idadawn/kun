@@ -209,4 +209,22 @@ this ADR land as part of KN-SELF-011 AC-2.
   sits outside the current `ReadPendingBatchAsync`.
 - **F3**: Outbox-specific test helpers in
   `Kun.Testing.EntityFrameworkCore` (ADR-012 §F1 referenced this
-  as a companion module).
+  as a companion module). **Resolved 2026-04-24 (KN-SELF-014
+  + KN-SELF-016)** — shipped as a sibling module to
+  `Kun.Testing` with `IsAotCandidate=false` (matches
+  `Kun.EntityFrameworkCore`). Public surface is
+  `OutboxAssertions` with three helpers —
+  `ShouldHaveOutboxMessage` / `ShouldHaveExactlyOneOutboxMessage` /
+  `ShouldNotHaveOutboxMessage` — each offered as both an
+  extension on `IEnumerable<OutboxMessage>` (for tests that
+  pre-query a snapshot) and `DbContext` (for one-liner
+  assertions after `SaveChangesAsync`). All helpers throw
+  `KunAssertionException` with a mismatch message that includes
+  the helper name, expected `EventTypeId`, observed match
+  count, and the distinct `EventTypeId`s actually present.
+  Tests cover every helper × overload × pass/fail path
+  (11 tests; `UseInMemoryDatabase` for the `DbContext`
+  overload fixture). See also
+  [docs/guides/validating-commands.md](../guides/validating-commands.md)
+  for the validation-side sibling guide that KN-SELF-013
+  shipped.

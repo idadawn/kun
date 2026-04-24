@@ -1,11 +1,28 @@
 ---
 id: KN-SELF-016
 title: Complete Kun.Testing.EntityFrameworkCore tests + docs (ADR-015 §F3)
-status: in-flight
-planner_commit: <fill after commit>
-executor_head: <fill after first executor commit>
+status: done
+planner_commit: <to be filled at closeout>
+executor_head: <to be filled at closeout>
 estimated_commits: 2
 started: 2026-04-24
+finished: 2026-04-24
+ship_log: |
+  AC-1 shipped in 5ceffdc: tests project scaffold
+    (Kun.Testing.EntityFrameworkCore.Tests.csproj, AGENTS.md)
+    + OutboxAssertionsTests (11 tests, 698ms, all pass) +
+    Kun.sln wire-up (B5F0DB14-… + NestedProjects under tests
+    folder). Build 0 warnings / 0 errors.
+  AC-2 shipped in (this closeout commit): CHANGELOG
+    [Unreleased] "Added" entry; ADR-015 §F3 bullet annotated
+    "Resolved 2026-04-24 (KN-SELF-014 + KN-SELF-016)";
+    src/Kun.EventBus/AGENTS.md §Testing Requirements picked
+    up the OutboxAssertions cross-link + front-matter bump;
+    src/Kun.Testing/AGENTS.md picked up the sibling-module
+    guidance bullet under §Working In This Directory +
+    front-matter-comment annotation.
+  ADR-015 §F3 now fully closed. Kun.Testing.EntityFrameworkCore
+  is consumer-ready.
 ---
 
 # KN-SELF-016 — complete `Kun.Testing.EntityFrameworkCore` tests + docs
