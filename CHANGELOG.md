@@ -6,6 +6,14 @@
 
 ## [Unreleased]
 
+### Added — Kun.EventBus attribute-driven registration (Phase 1 P1-KN-003)
+
+- New `[IntegrationEventId("bounded-context.event.v1")]` attribute so the stable token lives next to the event record instead of being repeated in DI wiring.
+- `IEventTypeRegistrar.Register<TEvent>()` no-arg overload reads the attribute at DI-registration time. Marked `[RequiresUnreferencedCode]`; AOT-strict consumers can keep calling `Register<TEvent>(string)` to stay reflection-free. The resulting runtime registry is still the zero-reflection `FrozenDictionary`-backed `EventTypeRegistry`.
+- Missing attribute yields an actionable `InvalidOperationException` pointing the caller at either decorating the type or using the explicit string overload.
+- Samples (`Kun.Sample.Catalog.Contracts`, `Kun.Sample.Order.Contracts`) migrated to the attribute so the pattern is visible to framework users.
+- 7 new xunit cases in `Kun.EventBus.Tests/IntegrationEventIdAttributeTests.cs` cover attribute validation, presence/absence, attribute-vs-string equivalence, and fluent chaining.
+
 ### Changed — Kun.Security.S2SJwt (Phase 1 P1-KN-002)
 
 - `IS2SJwtIssuer.IssueAsync` now takes a single `S2SJwtIssueRequest` record. The prior 5-positional-parameter signature is removed (API was in `PublicAPI.Unshipped.txt` with no in-repo consumers besides tests).

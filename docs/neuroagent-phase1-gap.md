@@ -151,7 +151,7 @@ TaskPlan 原文提到"RSA 签名 + publish JWKS 端点"，已全部实现。下�
 
 Sample 项目 `Kun.Sample.Order` 已展示完整 Outbox 使用模式（EfOutboxMessageStore）。
 
-**建议**：确认 `IEventTypeRegistry` 是否支持 `[IntegrationEventId("xxx.v1")]` 标记模式（如未支持，只需小幅增强注册方式）。
+**状态（2026-04-24 更新）**：`[IntegrationEventId("xxx.v1")]` 标记模式**已落地**。新增 `Kun.EventBus.IntegrationEventIdAttribute` 属性 + `IEventTypeRegistrar.Register<TEvent>()` 无参重载；属性标 `[RequiresUnreferencedCode]` 告知 trim 含义，AOT 严格消费方仍可用 `Register<TEvent>(string)` 字符串路径。样例 `Kun.Sample.Catalog.Contracts`/`Kun.Sample.Order.Contracts` 的 3 个集成事件已迁移至属性模式作参考。
 
 ---
 
