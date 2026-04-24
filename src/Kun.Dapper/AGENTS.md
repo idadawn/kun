@@ -24,6 +24,15 @@ Read-side abstractions for Dapper-based query handlers: connection factory contr
 - Concrete `IReadDbConnectionFactory` implementations (Npgsql, SqlClient) belong in `Kun.Infrastructure`.
 - `PageRequest.Page` is 1-based; `PageRequest.Offset` converts to 0-based for SQL.
 - `ReadDbOptions` is registered as Singleton by `AddKunDapper`.
+- **AOT intent: `<IsAotCandidate>false</IsAotCandidate>` is deliberate.**
+  Kun.Dapper is a thin wrapper (connection factory + pagination helpers +
+  DI glue). Real AOT-safe read-side code lives in each consumer's query
+  handlers, which opt into `Dapper.AOT`'s source generator via
+  `[DapperAot]` on the query method. Making this wrapper assembly
+  AOT-strict adds trim / AOT analyzer friction without buying anything.
+  Do not flip the flag to `true` without first moving every consumer's
+  query handlers onto `[DapperAot]` and verifying the ILC pass.
+  See [AOT audit 2026-04-23 §YELLOW → Resolved 2026-04-24](../../docs/architecture/AOT-audit-2026-04-23.md).
 
 ### Testing Requirements
 ```bash
