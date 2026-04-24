@@ -73,10 +73,11 @@ worn by kun himself during idle windows picks the next item.
 
 <!-- KN-SELF-015 (NU1902 / GHSA-g94r-2vxg-569j) moved to ## Done on 2026-04-24 -->
 
-### P3 — follow-up: complete `Kun.Testing.EntityFrameworkCore` tests + docs
+### P2 — KN-SELF-016: complete `Kun.Testing.EntityFrameworkCore` tests + docs (ADR-015 §F3)
 
-- **Status**: partial-shipped (scaffold `9999f63`..., awaiting
-  tests + docs). Next KN-SELF cycle picks this up.
+- **Status**: in-flight — see `kun/.autonomy/active-task.md`
+- **Promoted**: P3 → P2 after KN-SELF-015 unblocked the
+  solution build; this task can now run the full test gate.
 - **Size**: S (target 2 commits: tests project + CHANGELOG /
   ADR-015 §F3 resolution marker).
 - **Why**: KN-SELF-014 was rescoped mid-execution. The

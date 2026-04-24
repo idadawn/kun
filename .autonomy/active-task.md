@@ -1,127 +1,149 @@
 ---
-id: KN-SELF-015
-title: Resolve NU1902 advisory on OpenTelemetry.Api 1.12.0 (unblock sample builds)
-status: done
-planner_commit: 3429965
-executor_head: <fill at closeout>
+id: KN-SELF-016
+title: Complete Kun.Testing.EntityFrameworkCore tests + docs (ADR-015 §F3)
+status: in-flight
+planner_commit: <fill after commit>
+executor_head: <fill after first executor commit>
 estimated_commits: 2
 started: 2026-04-24
-finished: 2026-04-24
-ship_log: |
-  AC-1 shipped in ce910a4 (main controller, direct commit):
-    Directory.Packages.props OpenTelemetry group bumped;
-    OpenTelemetry.Api explicitly pinned to 1.15.3 (patched),
-    companion pins on OpenTelemetry / Extensions.Hosting /
-    Exporter.* raised to 1.12.0 for group coherence. CPM now
-    force-resolves the transitive graph above the NU1902 CVE
-    line.
-  AC-2 shipped in <this closeout commit>: CHANGELOG.md
-    [Unreleased] "Security" entry documents the advisory,
-    the fix commit hash, the patched version, and downstream
-    consumer guidance (align OpenTelemetry.Api on 1.15.3).
-  Gate: `dotnet build Kun.sln -c Release
-    -p:TreatWarningsAsErrors=true` now 0 errors (8 CS1591
-    warnings in Aspire-generated AppHost code, pre-existing,
-    excluded from TreatWarningsAsErrors per repo convention).
 ---
 
-# KN-SELF-015 — resolve NU1902 on `OpenTelemetry.Api 1.12.0`
+# KN-SELF-016 — complete `Kun.Testing.EntityFrameworkCore` tests + docs
 
 ## Why
 
-NuGet advisory refresh on 2026-04-24 (afternoon) flagged
-`OpenTelemetry.Api 1.12.0` for
-[GHSA-g94r-2vxg-569j](https://github.com/advisories/GHSA-g94r-2vxg-569j)
-(moderate severity). Under `TreatWarningsAsErrors=true` (Release
-build default), NuGetAudit promotes NU1902 to an error — breaking
-`dotnet build Kun.sln -c Release` against both
-`Kun.Sample.Catalog` and `Kun.Sample.Tests`. KN-SELF-014-rescoped
-confirmed the failure is not regressed by any recent change — the
-advisory itself is new — but it blocks every AOT / integration
-verification path until resolved.
+During the KN-SELF-014 rescope sequence, two commits for the
+`Kun.Testing.EntityFrameworkCore` module landed on develop
+and remain orphaned:
 
-`OpenTelemetry.Api` is not pinned directly in
-`Directory.Packages.props`; it enters transitively through:
+- `829ea5f feat(testing.efcore): scaffold Kun.Testing.EntityFrameworkCore module`
+  — csproj (`IsAotCandidate=false`, EF Core + Kun.EventBus +
+  Kun.Testing deps), AGENTS.md, PublicAPI stubs, Kun.sln
+  wire-up.
+- `9999f63 feat(testing.efcore): OutboxAssertions with Have/ExactlyOne/None helpers`
+  — 6 extension methods (3 helpers × 2 overloads:
+  `IEnumerable<OutboxMessage>` + `DbContext`) + populated
+  `PublicAPI.Unshipped.txt`.
 
-- `OpenTelemetry 1.11.2`
-- `OpenTelemetry.Instrumentation.EntityFrameworkCore 1.12.0-beta.1`
-
-The beta-EF-Core instrumentation is what drags in the vulnerable
-1.12.0 version. Fix by adding an explicit `OpenTelemetry.Api`
-CPM entry pinned to a patched version (preferred), or by adding
-a scoped `<NoWarn>NU1902</NoWarn>` to the two affected samples
-with a justification comment pointing at the advisory URL
-(fallback).
+Both build 0-warning but have no consumer and no test coverage.
+The `CHANGELOG.md [Unreleased]` "Added" entry and the
+`docs/architecture/ADR-015-Outbox-pattern.md` §F3 resolution
+marker are also missing. KN-SELF-016 ships the remaining
+pieces so the module is consumer-ready and ADR-015 §F3 closes.
 
 ## Specs to read first (non-negotiable)
 
-1. `kun/CLAUDE.md` — §csproj / dependency rules (CPM is central
-   package management; no per-csproj `<Version=>`).
-2. `kun/Directory.Packages.props` — OpenTelemetry group,
-   currently lines 86–95.
-3. `kun/Directory.Build.props` — whether `<NoWarn>` is the
-   right pattern at repo level or per-project.
-4. `samples/Kun.Sample.Catalog/Kun.Sample.Catalog.csproj`
-   + `samples/Kun.Sample.Tests/Kun.Sample.Tests.csproj` — the
-   two concrete sites that fail.
-5. GHSA-g94r-2vxg-569j advisory page (consult for the fixed
-   version range before committing a pin).
+1. `kun/CLAUDE.md` §Specs-first + §Architectural constraints.
+2. `kun/src/Kun.Testing.EntityFrameworkCore/AGENTS.md` — the
+   scoping conventions laid down at 829ea5f (non-AOT, throw
+   `KunAssertionException`, synchronous enumeration, mismatch-
+   message shape).
+3. `kun/src/Kun.Testing.EntityFrameworkCore/Outbox/OutboxAssertions.cs`
+   — the public surface to test. Grep for each helper name +
+   message shape so test assertions anchor on the actual
+   output, not guesses.
+4. `kun/docs/architecture/ADR-015-Outbox-pattern.md` §F3
+   (deferred follow-up to annotate resolved).
+5. `kun/tests/Kun.Testing.Tests/` — sibling test project
+   layout pattern (csproj, xUnit.v3 + FluentAssertions, test
+   file per assertion class).
+6. `kun/Directory.Packages.props` — `Microsoft.EntityFrameworkCore.InMemory`
+   is pinned (line 35) for the DbContext overload tests.
 
 ## Acceptance criteria
 
-- **AC-1**: Build gate — `dotnet build Kun.sln -c Release
-  -p:TreatWarningsAsErrors=true` returns 0 errors. Either
-  the patched `OpenTelemetry.Api` pin in CPM resolves the
-  transitive graph, or a scoped NoWarn is in place.
-- **AC-2**: If the pin route is chosen, note the patched
-  version + advisory URL in a CPM comment adjacent to the
-  entry. If NoWarn fallback is chosen, every NoWarn
-  occurrence carries an inline `<!-- GHSA-g94r-2vxg-569j ... -->`
-  justification linking the advisory. Either way, the
-  `CHANGELOG.md [Unreleased]` gets a one-line "Fixed" /
-  "Security" entry referencing the advisory + resolution.
+- **AC-1**: Test project `tests/Kun.Testing.EntityFrameworkCore.Tests/`:
+  - `.csproj` mirrors `tests/Kun.Testing.Tests/Kun.Testing.Tests.csproj`
+    (xUnit.v3, test SDK, vs-runner, FluentAssertions,
+    coverlet). ProjectReference to
+    `..\..\src\Kun.Testing.EntityFrameworkCore\…`.
+    PackageReference `Microsoft.EntityFrameworkCore.InMemory`
+    for the DbContext overload fixture.
+  - `AGENTS.md` parent-linked, brief (testing scope lives
+    under the module's own AGENTS).
+  - Added to `Kun.sln` (Project declaration + configuration
+    entries for Debug/Release × Any CPU/x64/x86 + NestedProjects
+    under the tests folder `{22222222-…}`).
+  - `OutboxAssertionsTests.cs` covering every helper's pass
+    + fail paths for both overload families. Minimum coverage:
+    - `ShouldHaveOutboxMessage(IEnumerable)` — match present /
+      match absent / multiple matches (all count as success for
+      "at least one")
+    - `ShouldHaveExactlyOneOutboxMessage(IEnumerable)` — exactly
+      one / zero / two
+    - `ShouldNotHaveOutboxMessage(IEnumerable)` — zero / present
+    - DbContext overload parity — one test per helper confirming
+      the convenience wrapper delegates correctly (uses
+      `UseInMemoryDatabase("name")` + `Add(outboxMessage)` + `SaveChanges`).
+    - Mismatch-message shape: at least one negative-path test
+      per helper anchors on helper name + expected eventTypeId +
+      observed count (per the module's AGENTS.md
+      §mismatch-message contract).
+
+- **AC-2**: Documentation + CHANGELOG:
+  - `CHANGELOG.md [Unreleased]` gains a new "Added" entry
+    above the security entry, referencing KN-SELF-016 +
+    ADR-015 §F3 resolved and listing the 6 public helpers.
+  - `docs/architecture/ADR-015-Outbox-pattern.md` §F3 bullet
+    (if one exists — otherwise in the `## Follow-ups` list)
+    annotated "Resolved 2026-04-24 (KN-SELF-016)" with a
+    short description of what shipped.
+  - `src/Kun.EventBus/AGENTS.md` picks up a one-line cross-
+    link near "Testing Requirements" pointing at
+    `src/Kun.Testing.EntityFrameworkCore` as the canonical
+    Outbox test-helper module.
+  - `src/Kun.Testing/AGENTS.md` picks up a sibling-module
+    note cross-linking to `Kun.Testing.EntityFrameworkCore`
+    (already partially done by module's own AGENTS.md at
+    829ea5f — just the reverse direction).
 
 ## Commit plan
 
 | # | Commit subject | AC |
 |---|----------------|----|
-| 1 | `fix(deps): pin OpenTelemetry.Api to patched version (NU1902 / GHSA-g94r-2vxg-569j)` OR `chore(samples): NoWarn NU1902 with justification (fallback)` | AC-1 |
-| 2 | `docs(changelog): record NU1902 / GHSA-g94r-2vxg-569j resolution` | AC-2 |
+| 1 | `test(testing.efcore): tests project + OutboxAssertions coverage` | AC-1 |
+| 2 | `docs(testing.efcore): CHANGELOG + ADR-015 §F3 resolved + cross-links` | AC-2 |
 
 ## AOT / build gates
 
-- [ ] `dotnet restore Kun.sln` succeeds without version
-      conflict.
-- [ ] `dotnet build Kun.sln -c Release
-      -p:TreatWarningsAsErrors=true` 0 errors.
-- [ ] `dotnet build samples/Kun.Sample.Catalog -c Release
-      -p:TreatWarningsAsErrors=true` 0 errors (specifically
-      confirms the fix applied at the leaf project).
-- [ ] Other modules' AOT publish unchanged — this is a sample/
-      test-project-scope fix, should not affect `Kun.Core`,
-      `Kun.Mediator`, etc.
+- [ ] `dotnet build Kun.sln -c Release -p:TreatWarningsAsErrors=true` 0 errors.
+- [ ] `dotnet test tests/Kun.Testing.EntityFrameworkCore.Tests -c Release --no-build`
+      green (all new tests pass).
+- [ ] `dotnet test Kun.sln -c Release --no-build` — no regressions
+      in sibling test projects.
+- [ ] No AOT publish — `Kun.Testing.EntityFrameworkCore` is
+      deliberately `IsAotCandidate=false` (matches
+      `Kun.EntityFrameworkCore`).
+- [ ] `PublicAPI.Unshipped.txt` unchanged (no new public API
+      in this task — only tests + docs).
+- [ ] `CHANGELOG.md [Unreleased]` updated.
 
 ## Out of scope
 
-- Upgrading the full OpenTelemetry stack (1.11.x → 1.13.x or
-  similar). Stays a targeted minor pin; broad upgrades need a
-  dedicated task.
-- Back-port fix for downstream consumers running against
-  `OpenTelemetry.Instrumentation.EntityFrameworkCore`
-  1.12.0-beta.1 directly — not a Kun framework concern.
+- Outbox **factory** helpers (pre-populating rows in Arrange
+  phase, e.g. `OutboxMessageFactory.Pending<T>(...)`).
+  Tests needing fixtures can hand-roll them locally; do not
+  promote to public API.
+- Async DbContext helper variants
+  (`ShouldHaveOutboxMessageAsync`).
+- Dead-letter assertions (ADR-015 §F1, not yet shipped).
 
 ## Progress log
 
-- 2026-04-24 (pending) close out KN-SELF-014-rescoped →
-  planner hat for KN-SELF-015.
+- 2026-04-24 ce910a4 KN-SELF-015 AC-1 shipped; closeout
+  <pending>. Unblocked solution build → KN-SELF-016 can now
+  verify.
 
 ## When done
 
 1. `status: done` + `executor_head` SHA.
-2. Move KN-SELF-015 to BACKLOG `## Done` + remove the P1
+2. Move KN-SELF-016 to BACKLOG `## Done`; remove the P3
    follow-up entry.
-3. `echo "KN-SELF-015 done (<SHA>) — NU1902 / GHSA-g94r-2vxg-569j resolved." >
-   /home/dawn/project/neuroagent/.omc/state/claude-kun_KN-SELF-015_done.txt`
-4. Planner next pick: complete `Kun.Testing.EntityFrameworkCore`
-   tests + docs (P3 follow-up in BACKLOG), or fresh pain
-   point if the CVE fix surfaces something adjacent.
+3. `echo "KN-SELF-016 done (<SHA>) — Kun.Testing.EntityFrameworkCore
+   tests + docs shipped; ADR-015 §F3 fully closed." >
+   /home/dawn/project/neuroagent/.omc/state/claude-kun_KN-SELF-016_done.txt`
+4. Planner next pick candidates: ADR-013 §F2 metric dimensions
+   (still blocked on no-metrics-pipeline — needs ADR or ralplan),
+   outbox-and-integration-events consumer guide (S, now
+   justifiable as a sibling to the just-closed helpers),
+   or fresh pain point.
