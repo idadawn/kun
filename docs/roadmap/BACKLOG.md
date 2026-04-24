@@ -44,25 +44,8 @@ worn by kun himself during idle windows picks the next item.
 
 <!-- KN-SELF-005 moved to ## Done on 2026-04-24 (executor head d5d9b68) -->
 
-### P2 — KN-SELF-006: `Kun.Observability` log-record enricher (ADR-013 F1)
+<!-- KN-SELF-006 moved to ## Done on 2026-04-24 (executor head c02d190) -->
 
-- **Status**: in-flight — see `kun/.autonomy/active-task.md`
-- **Size**: M (target 5–7 commits)
-- **Why**: ADR-013 landed the span enricher that mirrors baggage
-  (`tenant.id`, `user.id`, `outbox.message_id`) onto Kun-sourced
-  activity tags. The companion work — mirroring the same keys onto
-  `LogRecord.Attributes` — was deferred as ADR-013 §F1. Without it,
-  operators still have to correlate spans ↔ logs by hand: same
-  tenant filter runs over two different attribute surfaces. Close
-  the loop so Aspire log queries can filter by the same keys the
-  trace UI filters on.
-- **AC**: new `KunBaggageLogRecordProcessor` (internal
-  `BaseProcessor<LogRecord>`), new
-  `KunObservabilityOptions.EnrichLogsFromBaggage` flag (default
-  `false`, opt-in), in-memory exporter test asserts
-  tenant.id/user.id/outbox.message_id land as `LogRecord`
-  attributes, AGENTS + CHANGELOG, ADR-013 amendment recording the
-  mirror design (OTel logs processor chain differs from Activity).
 
 ### P3 — KN-SELF-006: `Kun.Saga.EntityFrameworkCore` split (long-parked)
 
@@ -76,6 +59,22 @@ worn by kun himself during idle windows picks the next item.
 
 ## Done
 
+- **KN-SELF-006** — `Kun.Observability` log-record enricher (ADR-013 §F1) —
+  executor head `c02d190` (ADR amendment + 4 code/test/doc commits) —
+  2026-04-24. Five ACs shipped, hit the 5-commit estimate: ADR-013
+  amended with a §F1 resolution section (chose amendment over new
+  ADR — design is a direct mirror of the span enricher),
+  `KunBaggageLogRecordProcessor` (internal `BaseProcessor<LogRecord>`,
+  OnEnd hook, idempotent — never overwrites a caller-set attribute,
+  no-op without `Activity.Current`), `EnrichLogsFromBaggage` opt-in
+  flag + `AddKunObservability` logging-pipeline wiring, 4 new
+  InMemoryExporter tests (happy path + flag-off + caller-attribute-
+  preserved + no-Activity paths), AGENTS + CHANGELOG. Flipping both
+  `EnrichActivitiesFromBaggage` and `EnrichLogsFromBaggage` now
+  closes the spans↔logs correlation loop — same `tenant.id=…`
+  filter works uniformly across Aspire trace UI and log view.
+  Kun.Observability ILC 0-warning; sln build 0 errors; 15/15 tests
+  pass (11 existing + 4 new).
 - **KN-SELF-005** — `IAuthenticatedUser` vs `ICurrentUser` naming-
   consistency sweep — executor head `d5d9b68` (2 doc commits) —
   2026-04-24. Two ACs shipped: new
