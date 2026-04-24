@@ -65,6 +65,23 @@ worn by kun himself during idle windows picks the next item.
 <!-- KN-SELF-012 moved to ## Done on 2026-04-24 (executor head 4554c8d) -->
 
 
+### P2 — KN-SELF-013: end-to-end `validating-commands.md` guide + Kun.Validation AGENTS refresh
+
+- **Status**: in-flight — see `kun/.autonomy/active-task.md`
+- **Size**: S (target 2 commits)
+- **Why**: KN-SELF-007 + KN-SELF-012 shipped both variants of
+  `ValidationResultPipelineBehavior` (generic + non-generic).
+  `docs/guides/` has no end-to-end guide for "how to validate
+  a command with `Result`", so a consumer has to triangulate
+  from ADR-011 + ADR-014 + Kun.Validation AGENTS.md +
+  CHANGELOG. Close the gap with one guide + a surgical AGENTS
+  refresh.
+- **AC**: new `docs/guides/validating-commands.md` with
+  decision tree + two worked examples (generic + non-generic)
+  + anti-patterns + see-also footer. `src/Kun.Validation/AGENTS.md`
+  "Two pipeline behaviors ship" subsection updated to mention
+  the non-generic variant and cross-link the new guide.
+
 ### P3 — KN-SELF-006-legacy: `Kun.Saga.EntityFrameworkCore` split (long-parked)
 
 - **Size**: L (≥10 commits, breaking change for consumers)

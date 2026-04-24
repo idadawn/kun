@@ -1,112 +1,173 @@
 ---
-id: KN-SELF-012
-title: Non-generic Result variant of ValidationResultPipelineBehavior (ADR-014 F1)
-status: done
-planner_commit: 547252c
-executor_head: 4554c8d
-estimated_commits: 3
+id: KN-SELF-013
+title: docs/guides/validating-commands.md end-to-end guide + Kun.Validation AGENTS refresh
+status: in-flight
+planner_commit: <fill after commit>
+executor_head: <fill after first executor commit>
+estimated_commits: 2
 started: 2026-04-24
-finished: 2026-04-24
 ---
 
-# KN-SELF-012 — non-generic `Result` variant of `ValidationResultPipelineBehavior`
+# KN-SELF-013 — end-to-end validation guide + AGENTS refresh
 
 ## Why
 
 KN-SELF-007 shipped `ValidationResultPipelineBehavior<TRequest, TValue>`
-for handlers that return `Result<TValue>`. ADR-014 §F1 deferred the
-non-generic `Result` variant (for commands with no return value) on
-the grounds that most handlers return a value. In practice, a
-meaningful minority of commands in `neuroagent-csharp` and the
-samples DO return plain `Result` (e.g. "delete user" / "mark
-read") — and today those have to either throw
-`ValidationException` (the existing throwing variant) or hand-roll
-a try/catch adapter.
+and KN-SELF-012 shipped the non-generic `<TRequest>` sibling +
+DI overload. Both ADR-011 and ADR-014 now describe a complete
+validation story — but a downstream engineer opening
+`kun/docs/guides/` today finds guides for rate-limit, read-side,
+and multitenancy, and **no** guide for how to wire a command +
+validator + Result pipeline end-to-end.
 
-Close F1 with a mirror implementation. The code is a near-copy of
-the generic variant; the DI extension overload is a thin
-companion.
+The gap matters because the choice between the two pipeline
+behaviors (throwing vs Result, generic vs non-generic) is a
+decision point at every handler, and today that decision is
+only documented split across:
 
-## Specs to read first
+- `docs/architecture/ADR-014-Validation-Result-behavior.md`
+  (deep design doc — not a quickstart)
+- `src/Kun.Validation/AGENTS.md` "Two pipeline behaviors ship"
+  subsection (agent-facing guardrail — also lists only the
+  generic variant; the non-generic shipped after this was
+  last edited)
+- `CHANGELOG.md [Unreleased]` (release notes, not discovery)
 
-1. `kun/docs/architecture/ADR-014-Validation-Result-behavior.md`
-   §F1 — the follow-up this task closes.
-2. `src/Kun.Validation/Behaviors/ValidationResultPipelineBehavior.cs`
-   — shape to mirror.
-3. `src/Kun.Validation/DependencyInjection/KunValidationServiceCollectionExtensions.cs`
-   — DI extension pattern.
-4. `tests/Kun.Validation.Tests/ValidationResultPipelineBehaviorTests.cs`
-   — test pattern to mirror.
+A consumer writing a new `DeleteUserCommand : IRequest<Result>`
+or `CreateOrderCommand : IRequest<Result<OrderDto>>` has no
+single file to read to get started. Fix by:
+
+1. Writing `docs/guides/validating-commands.md` — a
+   consumer-facing end-to-end walkthrough with the decision
+   tree, both variants, test pattern, and anti-patterns.
+2. Refreshing `src/Kun.Validation/AGENTS.md` "Two pipeline
+   behaviors ship" subsection to (a) mention the non-generic
+   variant (it's stale post-KN-SELF-012), and (b) cross-link
+   to the new guide.
+
+Doc-only — no code / test / public-API surface changes.
+
+## Specs to read first (non-negotiable)
+
+Required by `kun/CLAUDE.md` §Specs-first. Read each before
+writing:
+
+1. `kun/CLAUDE.md` — §Specs-first + §Architectural constraints
+   (especially "Business failures use `Result` / `Result<T>`,
+   not exceptions")
+2. `kun/docs/architecture/ADR-011-Result-async-extensions.md` —
+   the `Result<T>` composition surface the Result-returning
+   variant feeds into
+3. `kun/docs/architecture/ADR-014-Validation-Result-behavior.md`
+   (whole doc, especially §Scope and §F1-resolved note)
+4. `kun/src/Kun.Validation/AGENTS.md` — current guardrail text
+5. `kun/src/Kun.Validation/Behaviors/ValidationResultPipelineBehavior.cs`
+   — both generic and non-generic classes, doc comments
+6. `kun/src/Kun.Validation/Behaviors/ValidationPipelineBehavior.cs`
+   — the throwing variant (for the decision tree)
+7. `kun/src/Kun.Validation/DependencyInjection/KunValidationServiceCollectionExtensions.cs`
+   — all DI overloads
+8. `kun/tests/Kun.Validation.Tests/ValidationResultPipelineBehaviorTests.cs`
+   — test patterns to show in the guide
+9. `kun/docs/guides/gateway-rate-limit.md`,
+   `kun/docs/guides/read-side-patterns.md`,
+   `kun/docs/guides/saas-multitenancy.md` — existing guides,
+   match their shape (headings, cross-link style, file length)
 
 ## Acceptance criteria
 
-- **AC-1**: `src/Kun.Validation/Behaviors/ValidationResultPipelineBehavior.cs`
-  gains a sibling non-generic class
-  `ValidationResultPipelineBehavior<TRequest>` where
-  `TRequest : IRequest<Result>`. Same validator loop, same
-  `Error.Validation("request.invalid", joined-message)` output;
-  returns `Result.Fail(...)` instead of `Result<TValue>.Fail(...)`.
-  Lives in the same file to keep the Result-returning pair
-  co-located; PublicAPI entries added in-commit.
-- **AC-2**: DI extension
-  `AddValidationResultBehavior<TRequest>()` (single-type-param
-  overload) in the existing
-  `KunValidationServiceCollectionExtensions`. Closes for
-  `IRequest<Result>` specifically.
-- **AC-3**: `tests/Kun.Validation.Tests/ValidationResultPipelineBehaviorTests.cs`
-  gains 3 tests mirroring the key generic-variant scenarios for
-  the non-generic path: validator-fail → `Result.Fail` with
-  `request.invalid`, handler-level `Result.Fail` preserved,
-  multi-validator aggregation.
-- **AC-4**: `CHANGELOG.md [Unreleased]` references ADR-014 §F1
-  resolved; ADR-014 §F1 bullet annotated "Resolved 2026-04-24
-  (KN-SELF-012)".
+- **AC-1**: New file `kun/docs/guides/validating-commands.md`
+  shipped. Must include:
+  - Opening "who this is for" paragraph.
+  - **Decision tree** section picking between the three
+    behaviors (throwing / Result<TValue> / Result) with a
+    table mapping handler return type → pick.
+  - Worked example 1 — generic `Result<TValue>` command (e.g.
+    `CreateOrderCommand : IRequest<Result<OrderDto>>` with
+    two validators, DI wiring via
+    `AddValidator<,>` + `AddValidationResultBehavior<,>()`,
+    and a handler + test sketch showing the `Result.Fail`
+    path).
+  - Worked example 2 — non-generic `Result` command (e.g.
+    `DeleteUserCommand : IRequest<Result>` with one
+    validator, DI wiring via
+    `AddValidator<,>` + `AddValidationResultBehavior<>()`,
+    and a handler + test sketch).
+  - **Anti-patterns** section: (a) do not register both
+    behaviors for the same request type (double-wrap), (b)
+    do not throw `ValidationException` inside a
+    `Result`-returning handler, (c) do not put DB / network
+    calls in a validator (semantic validation belongs in the
+    handler).
+  - **See also** footer linking ADR-011, ADR-014,
+    Kun.Validation AGENTS.md, and
+    `docs/architecture/when-to-use-currentuser.md`
+    (as the Kun-idiomatic-doc-style exemplar).
+  - Target length: ≤ ~200 lines. Match prose density of
+    `gateway-rate-limit.md`.
+
+- **AC-2**: `src/Kun.Validation/AGENTS.md` "Two pipeline
+  behaviors ship" subsection updated:
+  - Add a third bullet describing
+    `ValidationResultPipelineBehavior<TRequest>` (non-generic)
+    with its `IRequest<Result>` constraint and
+    `AddValidationResultBehavior<TRequest>()` DI surface.
+  - Change the closing "See [ADR-014]" line to also link to
+    the new guide: "See [ADR-014](…) for design, or
+    [docs/guides/validating-commands.md](../../docs/guides/validating-commands.md)
+    for a consumer-facing walkthrough."
+  - No other edits — keep it surgical.
 
 ## Commit plan
 
 | # | Commit subject | AC |
 |---|----------------|----|
-| 1 | `feat(validation): non-generic Result variant of ValidationResultPipelineBehavior + DI extension` | AC-1 + AC-2 combined (sibling class + extension overload in existing files) |
-| 2 | `test(validation): cover non-generic Result variant of ValidationResultPipelineBehavior` | AC-3 |
-| 3 | `docs(validation): ADR-014 §F1 resolved + CHANGELOG` | AC-4 |
+| 1 | `docs(validation): end-to-end validating-commands guide` | AC-1 |
+| 2 | `docs(validation): refresh AGENTS for non-generic variant + guide cross-link` | AC-2 |
 
-## AOT / build gates
+(Estimate 2 commits — could be folded into 1 if the AGENTS
+refresh is truly surgical, but keeping separate for review
+clarity matches the "one-commit-per-sub-step" cadence rule.)
 
-- [x] `dotnet build Kun.sln -c Release -p:TreatWarningsAsErrors=true`
-      0 errors (8 CS1591 warnings in AppHost sample, pre-existing,
-      intentionally excluded from `WarningsNotAsErrors`).
-- [x] `dotnet test tests/Kun.Validation.Tests -c Release --no-build`
-      green (17 existing + 3 new = 20). Verified after 7b15620
-      (executor commit 2).
-- [x] `dotnet publish src/Kun.Validation -c Release -r linux-x64
-      -p:PublishAot=true /warnaserror` ILC 0-warning. Native-link
-      step fails on this dev box for lack of clang/gcc in PATH —
-      same environmental limitation all prior KN-SELF cycles hit;
-      the ILC gate (what this flag guards) is green.
+## AOT / build gates that must stay green
+
+Doc-only task — the code/AOT gates do not apply. The
+discipline checks are:
+
+- [ ] `dotnet format --verify-no-changes` (no formatter
+      noise from the doc files landing; markdown isn't
+      covered by the formatter, but a sanity check
+      doesn't hurt).
+- [ ] Every relative link in the new guide resolves
+      (manually scan each `[…](…)` target).
+- [ ] No code snippets in the guide reference a type that
+      doesn't exist in `src/Kun.Validation/` as of HEAD
+      (quickly grep each type name before committing).
 
 ## Out of scope
 
-- Structured per-field error payload (still ADR-014 §F2).
-- Source-generator-based bulk registration (still ADR-014 §F3).
+- Source-generator-based bulk registration (ADR-014 §F3).
+- Structured per-field error payload (ADR-014 §F2).
+- Adding the guide to a "table of contents" meta-page —
+  `docs/guides/` has no index today; do not invent one.
+- Translating any existing guides to Chinese (the repo
+  mixes zh / en per-doc; match the tone of the three
+  sibling guides, which are English).
 
 ## Progress log
 
-- 2026-04-24 4f06307 KN-SELF-011 closed (prior cycle)
-- 2026-04-24 547252c planner pick + active-task brief (role 1)
-- 2026-04-24 385239f executor commit 1 (AC-1 + AC-2): non-generic
-  behaviour sibling class in same file + DI overload; PublicAPI
-  entries added in-commit.
-- 2026-04-24 7b15620 executor commit 2 (AC-3): 3 new tests for
-  non-generic path; 20/20 Kun.Validation tests green.
-- 2026-04-24 4554c8d executor commit 3 (AC-4): ADR-014 §F1
-  resolved marker + CHANGELOG [Unreleased] Added entry.
-- 2026-04-24 hit 3-commit estimate exactly. Closing.
+- 2026-04-24 10c4a9a KN-SELF-012 closed + archived; planner
+  hat on for KN-SELF-013 pick.
 
 ## When done
 
 1. `status: done` + `executor_head` SHA.
-2. Move KN-SELF-012 to BACKLOG `## Done`.
-3. `echo "KN-SELF-012 done (<SHA>) — ADR-014 §F1 resolved (non-generic Result validation behavior)." > /home/dawn/project/neuroagent/.omc/state/claude-kun_KN-SELF-012_done.txt`
-4. Planner next pick: ADR-015 F1 dead-letter handling, or
-   ADR-012/015 F3 Kun.Testing.EntityFrameworkCore Outbox helpers,
-   or fresh pain point.
+2. Move KN-SELF-013 to BACKLOG `## Done`.
+3. `echo "KN-SELF-013 done (<SHA>) — end-to-end validation
+   guide shipped + Kun.Validation AGENTS refreshed." >
+   /home/dawn/project/neuroagent/.omc/state/claude-kun_KN-SELF-013_done.txt`
+4. Planner next pick candidates: ADR-015 F3
+   Kun.Testing.EntityFrameworkCore Outbox helpers (new
+   module, M size), ADR-013 F2 metric dimensions from
+   baggage (Kun.Observability, S-M), or fresh pain point
+   surfaced while writing the guide.
