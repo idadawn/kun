@@ -56,6 +56,20 @@ worn by kun himself during idle windows picks the next item.
 <!-- KN-SELF-009 moved to ## Done on 2026-04-24 (executor head 5672525) -->
 
 
+### P2 — KN-SELF-010: complete HasPublicApi sweep (11 modules)
+
+- **Status**: in-flight — see `kun/.autonomy/active-task.md`
+- **Size**: M (target 4 commits) — consolidates per-module
+  overhead that would otherwise take 11× planner/close cycles.
+- **Why**: KN-SELF-008 / 009 piloted the flip on
+  `Kun.Observability` and `Kun.Sandbox`. 11 modules still carry
+  `HasPublicApi=false`. The mechanics are identical; consolidate.
+- **AC**: flip all 11 (Audit, Audit.EFCore, Caching,
+  Configuration, Identity, Identity.AspNetCore, MultiTenancy,
+  MultiTenancy.EFCore, RateLimit, Security, Storage) in three
+  logical batches + one CHANGELOG-consolidation commit. End-state
+  sanity grep `HasPublicApi=false` → zero hits.
+
 ### P3 — KN-SELF-006-legacy: `Kun.Saga.EntityFrameworkCore` split (long-parked)
 
 - **Size**: L (≥10 commits, breaking change for consumers)
