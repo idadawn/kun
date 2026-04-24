@@ -6,6 +6,40 @@
 
 ## [Unreleased]
 
+### Added — ADR-012 Kun.Testing module (2026-04-24)
+
+- **docs/architecture/ADR-012-Kun.Testing-module.md** — accepted. New
+  top-level `Kun.Testing` module at the Abstraction layer:
+  AOT-candidate, packable, depends on `Kun.Core` only, takes no
+  third-party runtime `PackageReference`. Framework-agnostic
+  (`KunAssertionException` on mismatch rather than xUnit-coupled
+  throws) so consumers on any test framework consume uniformly.
+- **`src/Kun.Testing`** — new project wired into `Kun.sln` in the
+  `src/` folder. `IsAotCandidate=true`, `IsPackable=true`,
+  `HasPublicApi=true`.
+- **`Kun.Testing.KunAssertionException`** — framework-agnostic
+  assertion failure type.
+- **`Kun.Testing.Results.ResultAssertions`** — fluent extensions on
+  `Result` and `Result<T>`: `ShouldBeSuccess` (returns `T` on
+  generic variant for chaining), `ShouldBeFailure`,
+  `ShouldHaveErrorCode(string)`, `ShouldHaveErrorType(ErrorType)`.
+- **`Kun.Testing.Domain.DomainEventAssertions`** — fluent extensions
+  on `IAggregateRoot`: `ShouldRaise<TEvent>`,
+  `ShouldRaiseExactly<TEvent>(int count)`, `ShouldNotRaise<TEvent>`.
+  AOT-safe via compile-time-known `OfType<TEvent>()` filtering.
+- **30 new tests in `tests/Kun.Testing.Tests`** — every helper on
+  both pass-through and mismatch paths, exception-message shape
+  anchored per ADR-012 §Error-message contract.
+- **Smoke-adoption in `tests/Kun.Core.Tests`** — 4 existing
+  assertions in `Results/ResultTests.cs` converted to Kun.Testing
+  helpers. Validates cross-project consumption before other tests
+  pull it in; 85 Kun.Core.Tests still pass.
+- **Out of scope** (follow-ups F1–F3 in ADR-012): Outbox message
+  assertions (would require a non-AOT companion module
+  `Kun.Testing.EntityFrameworkCore`), Testcontainers fixtures,
+  `WebApplicationFactory<T>` wrappers, repo-wide mass conversion
+  sweep.
+
 ### Added — ADR-011 Result<T> composition extensions (2026-04-24)
 
 - **docs/architecture/ADR-011-Result-async-extensions.md** — accepted.
