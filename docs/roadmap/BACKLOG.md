@@ -38,6 +38,7 @@ worn by kun himself during idle windows picks the next item.
 
 ### P1 — KN-SELF-003: `Kun.Observability` trace enricher (tenant/user/outbox)
 
+- **Status**: in-flight — see `kun/.autonomy/active-task.md`
 - **Size**: M (target 6–8 commits)
 - **Why**: `KunActivitySources` registers four sources but nothing
   auto-injects `tenant_id` / `user_id` / `outbox.message_id` as span
