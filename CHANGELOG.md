@@ -6,6 +6,15 @@
 
 ## [Unreleased]
 
+### Added — Kun.EntityFrameworkCore tenant-RLS interceptor (Phase 1 P1-CS-011)
+
+- New `Kun.EntityFrameworkCore.Interceptors.TenantRlsConnectionInterceptor`: opt-in EF `DbConnectionInterceptor` that pushes `ITenantContext.TenantId` into the PostgreSQL session variable `app.current_tenant_id` on connection open and RESETs it on close. Gives NeuroAgent a second isolation layer behind the existing EF global query filter when paired with RLS policies on the database schema.
+- Activates only on Npgsql connections (nominal FQN check) so `Kun.EntityFrameworkCore` does not need a direct Npgsql package dependency; MySQL / SQL Server / other providers silently no-op.
+- Tenant id is whitelisted against `^[A-Za-z0-9._-]{1,128}$` before inlining into the `SET` command (PostgreSQL `SET` cannot be parameterised); unsafe values throw `InvalidOperationException` rather than being coerced.
+- Registered as Scoped by `AddKunEntityFrameworkCore`; callers opt in per `DbContextOptionsBuilder` via `opts.AddInterceptors(sp.GetRequiredService<TenantRlsConnectionInterceptor>())`.
+- New doc `docs/security/multi-tenancy-rls.md` covers defence-in-depth rationale, policy template (ENABLE + FORCE ROW LEVEL SECURITY + USING + WITH CHECK), wiring, and ops notes.
+- Three xunit integration cases in `tests/Kun.IntegrationTests/MultiTenancy/TenantRlsTests.cs` run against a live Postgres 16 container: RLS isolation proven *without* the EF filter (test entity deliberately omits `IMultiTenant`), cross-tenant write rejection via WITH CHECK, and whitelist rejection of unsafe tenant ids.
+
 ### Added — Kun.EventBus attribute-driven registration (Phase 1 P1-KN-003)
 
 - New `[IntegrationEventId("bounded-context.event.v1")]` attribute so the stable token lives next to the event record instead of being repeated in DI wiring.

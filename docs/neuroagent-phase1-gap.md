@@ -162,7 +162,7 @@ Sample 项目 `Kun.Sample.Order` 已展示完整 Outbox 使用模式（EfOutboxM
 | §3.3 Redis Key 命名 | `NeuroAgent.Contracts.Redis` 定义 | 不在 Kun 范围 | 属于 NeuroAgent 业务层 |
 | §3.3 RabbitMQ 消息 Schema | `NeuroAgent.IntegrationEvents` 定义 | Kun.EventBus 提供框架 | 事件注册 + 序列化框架就绪，具体事件类型在 NeuroAgent 层定义 |
 | §3.3 MinIO Bucket 结构 | Bucket 结构文档化 | 需要 Kun.Storage | 等待 P1-KN-001 |
-| §6.8 RLS + SET LOCAL | PG session 级 tenant 设置 | Kun.EntityFrameworkCore 已有 QueryFilter | EF 侧已通过 QueryFilter 实现；如需 `SET LOCAL app.current_tenant_id` 作为额外防御层，需在 KunDbContext 添加 connection interceptor（**建议**在 P1-CS-011 实现） |
+| §6.8 RLS + SET LOCAL | PG session 级 tenant 设置 | Kun.EntityFrameworkCore 已有 QueryFilter + `TenantRlsConnectionInterceptor` | **已具备** — EF QueryFilter 第一道，新增 `TenantRlsConnectionInterceptor`（2026-04-24 落地）作第二道：`SET app.current_tenant_id` on open / `RESET` on close；opt-in；含白名单防注入。完整 policy 模板见 `docs/security/multi-tenancy-rls.md`。P1-CS-011 完成。 |
 | §14.4 日志规范 | Serilog JSON + trace_id/tenant_id | 不在 Kun 范围 | 由 ServiceDefaults + 各服务配置负责 |
 | §15.5 Audit 哈希链 | audit.operations 的 prev_hash/content_hash | 缺失 | 需新建 Kun.Audit 或在业务层实现 |
 
