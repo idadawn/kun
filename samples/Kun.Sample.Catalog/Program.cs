@@ -8,6 +8,7 @@ using Kun.Dapper;
 using Kun.EntityFrameworkCore;
 using Kun.EntityFrameworkCore.Behaviors;
 using Kun.EntityFrameworkCore.DependencyInjection;
+using Kun.EntityFrameworkCore.Extensions;
 using Kun.EventBus.DependencyInjection;
 using Kun.Grpc.DependencyInjection;
 using Kun.Mediator.DependencyInjection;
@@ -53,7 +54,8 @@ builder.Services.AddSingleton<IDomainEventDispatcher, MediatorDomainEventDispatc
 // ── EF Core (write side) ─────────────────────────────────────────────────────
 // Register CatalogDbContext so it can be injected directly by command handlers.
 builder.Services.AddDbContext<CatalogDbContext>(opt =>
-    opt.UseNpgsql(writeCs));
+    opt.UseNpgsql(writeCs)
+       .UseKunSchema("catalog"));
 
 // EfUnitOfWork resolves KunDbContext, so forward the scoped registration.
 builder.Services.AddScoped<KunDbContext>(sp => sp.GetRequiredService<CatalogDbContext>());

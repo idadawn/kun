@@ -5,8 +5,10 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
 using Kun.Sample.Tests.Fixtures;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace Kun.Sample.Tests;
@@ -49,6 +51,12 @@ public sealed class CatalogWebFactory : IAsyncLifetime
                 });
                 builder.UseSetting("ConnectionStrings:CatalogDb", cs);
                 builder.UseSetting("ConnectionStrings:CatalogDbRead", cs);
+                builder.ConfigureLogging(lb =>
+                {
+                    lb.ClearProviders();
+                    lb.AddProvider(CapturingLoggerProvider.Instance);
+                    lb.SetMinimumLevel(LogLevel.Warning);
+                });
             });
 
         // Trigger app startup eagerly so any startup exception surfaces here.
@@ -114,7 +122,7 @@ public sealed class CatalogApiTests : IClassFixture<CatalogWebFactory>
         var getResponse = await _client.GetAsync($"/products/{productId}", ct);
         var getBody = await getResponse.Content.ReadAsStringAsync(ct);
         getResponse.StatusCode.Should().Be(HttpStatusCode.OK,
-            because: $"GET /products/{{id}} should return the created product; server said: {getBody}");
+            because: $"GET /products/{{id}} should return the created product; server said: {getBody}\n---CAPTURED SERVER ERROR---\n{CapturingLoggerProvider.Instance.LastError}");
 
         getBody.Should().Contain("Test Widget");
     }

@@ -5,6 +5,8 @@ using Kun.EntityFrameworkCore.Extensions;
 using Kun.IntegrationTests.Fixtures;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using Xunit;
 
@@ -88,6 +90,12 @@ public sealed class SchemaPerServiceTests(PostgresFixture fx)
 
         var ct = TestContext.Current.CancellationToken;
 
+        // EF Core's EnsureCreatedAsync on Npgsql does not emit CREATE SCHEMA for the
+        // HasDefaultSchema value (a long-standing gap — callers rely on migrations or
+        // explicit DDL). Issue it up front so the subsequent CREATE TABLE "sch_a"."..."
+        // can resolve the schema.
+        await CreateSchemasAsync(fx.ConnectionString!, ["sch_a", "sch_b"], ct);
+
         var optsA = new DbContextOptionsBuilder<SchemaATestDbContext>()
             .UseNpgsql(fx.ConnectionString)
             .UseKunSchema("sch_a")
@@ -102,14 +110,24 @@ public sealed class SchemaPerServiceTests(PostgresFixture fx)
 
         await using (var ctxA = new SchemaATestDbContext(optsA, new NoopTenantContext()))
         {
-            await ctxA.Database.EnsureCreatedAsync(ct);
+            // CreateTablesAsync (instead of EnsureCreatedAsync) bypasses EF Core's
+            // "DB already has tables → skip" gate. RlsEnforcementTests runs in the
+            // same [Collection("Postgres")] and leaves its rls_orders behind; without
+            // this, ctxA.EnsureCreatedAsync would skip and sch_a.a_items would stay
+            // missing. ctxB uses the same approach for symmetric reasons.
+            await ctxA.GetService<IRelationalDatabaseCreator>().CreateTablesAsync(ct);
             ctxA.Items.Add(SchemaAItem.Create(Guid.NewGuid(), "alpha"));
             await ctxA.SaveChangesAsync(ct);
         }
 
         await using (var ctxB = new SchemaBTestDbContext(optsB, new NoopTenantContext()))
         {
-            await ctxB.Database.EnsureCreatedAsync(ct);
+            // EF Core's EnsureCreatedAsync short-circuits when ANY user table already
+            // exists in the database — regardless of schema. After ctxA created
+            // sch_a.*, ctxB's EnsureCreated would skip and sch_b.* would stay missing.
+            // CreateTablesAsync forces table creation without the "has any tables"
+            // gate, which is what we want for the multi-schema scenario.
+            await ctxB.GetService<IRelationalDatabaseCreator>().CreateTablesAsync(ct);
             ctxB.Items.Add(SchemaBItem.Create(Guid.NewGuid(), "beta"));
             await ctxB.SaveChangesAsync(ct);
         }
@@ -154,6 +172,18 @@ public sealed class SchemaPerServiceTests(PostgresFixture fx)
             async () => await ctx.SaveChangesAsync(ct));
         Assert.Contains("sch_a", ex.Message, StringComparison.Ordinal);
         Assert.Contains("UseKunSchema", ex.Message, StringComparison.Ordinal);
+    }
+
+    private static async Task CreateSchemasAsync(string connectionString, string[] schemas, CancellationToken ct)
+    {
+        await using var conn = new NpgsqlConnection(connectionString);
+        await conn.OpenAsync(ct);
+        foreach (var schema in schemas)
+        {
+            await using var cmd = new NpgsqlCommand(
+                $"CREATE SCHEMA IF NOT EXISTS \"{schema}\"", conn);
+            await cmd.ExecuteNonQueryAsync(ct);
+        }
     }
 
     private static async Task<HashSet<(string Schema, string Table)>> QueryTablesAsync(string connectionString, CancellationToken ct)

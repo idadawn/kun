@@ -91,11 +91,16 @@ public sealed class TenantRlsInterceptorPgBouncerTests(PgBouncerPostgresFixture 
         await SetTenantGucAsync(conn, tx, tenantId, ct);
 
         var results = new List<string>();
-        await using var sel = new NpgsqlCommand("SELECT note FROM pgb_rls_orders", conn, tx);
-        await using var reader = await sel.ExecuteReaderAsync(ct);
-        while (await reader.ReadAsync(ct))
+        // Reader must be disposed before tx.CommitAsync — Npgsql rejects a commit
+        // while a reader still owns the connector. See RlsEnforcementTests for
+        // the same pattern and rationale.
+        await using (var sel = new NpgsqlCommand("SELECT note FROM pgb_rls_orders", conn, tx))
+        await using (var reader = await sel.ExecuteReaderAsync(ct))
         {
-            results.Add(reader.GetString(0));
+            while (await reader.ReadAsync(ct))
+            {
+                results.Add(reader.GetString(0));
+            }
         }
         await tx.CommitAsync(ct);
         return results;
