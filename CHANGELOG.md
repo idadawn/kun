@@ -6,6 +6,35 @@
 
 ## [Unreleased]
 
+### Changed — HasPublicApi sweep complete across all framework modules (2026-04-24)
+
+- **KN-SELF-010** finished the pilot started by KN-SELF-008
+  (Kun.Observability) and KN-SELF-009 (Kun.Sandbox). The remaining
+  11 modules now track strict public API via
+  `PublicApiAnalyzers`:
+  - `Kun.Audit`, `Kun.Audit.EntityFrameworkCore`
+  - `Kun.Caching`, `Kun.Configuration`
+  - `Kun.Identity`, `Kun.Identity.AspNetCore`
+  - `Kun.MultiTenancy`, `Kun.MultiTenancy.EntityFrameworkCore`
+  - `Kun.RateLimit`, `Kun.Security`, `Kun.Storage`
+- Each got its csproj flag flipped to `<HasPublicApi>true</HasPublicApi>`,
+  a seeded empty `PublicAPI.Shipped.txt`, and an auto-populated
+  `PublicAPI.Unshipped.txt` (via `dotnet format analyzers
+  --diagnostics=RS0016` — the Roslyn code fix walks the assembly
+  and writes canonical entries in one pass).
+- **`Kun.Identity.AspNetCore/SignInHelper.cs`** picked up a
+  file-level `#pragma warning disable RS0026` (same
+  shape-distinguished dual overload pattern as
+  `Kun.Sandbox/Abstractions/IProcesses.cs`).
+- **Post-sweep invariant**: `grep -rE
+  "<HasPublicApi>false</HasPublicApi>" src/` now returns zero.
+  Any new framework module must ship with the flag on, matching
+  the convention across the entire `src/Kun.*` tree.
+- **Operator impact**: any future public-symbol change across
+  any Kun module fails the analyzer gate until reviewed and
+  added to the relevant `PublicAPI.Unshipped.txt`. Closes the
+  drift surface that existed before KN-SELF-008.
+
 ### Changed — Kun.Sandbox now tracks public API strictly (2026-04-24)
 
 - **`src/Kun.Sandbox/Kun.Sandbox.csproj`** flipped

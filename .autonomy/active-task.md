@@ -1,11 +1,14 @@
 ---
 id: KN-SELF-010
 title: Complete HasPublicApi sweep — flip all remaining framework modules
-status: in-flight
-planner_commit: <fill after commit>
-executor_head: <fill after first executor commit>
+status: done
+planner_commit: 7af4efc
+executor_head: 2eb3b17
+changelog_commit: <this commit>
 estimated_commits: 4
+actual_commits: 4
 started: 2026-04-24
+finished: 2026-04-24
 ---
 
 # KN-SELF-010 — complete the HasPublicApi sweep

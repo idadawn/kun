@@ -56,19 +56,8 @@ worn by kun himself during idle windows picks the next item.
 <!-- KN-SELF-009 moved to ## Done on 2026-04-24 (executor head 5672525) -->
 
 
-### P2 — KN-SELF-010: complete HasPublicApi sweep (11 modules)
+<!-- KN-SELF-010 moved to ## Done on 2026-04-24 (executor head 2eb3b17) -->
 
-- **Status**: in-flight — see `kun/.autonomy/active-task.md`
-- **Size**: M (target 4 commits) — consolidates per-module
-  overhead that would otherwise take 11× planner/close cycles.
-- **Why**: KN-SELF-008 / 009 piloted the flip on
-  `Kun.Observability` and `Kun.Sandbox`. 11 modules still carry
-  `HasPublicApi=false`. The mechanics are identical; consolidate.
-- **AC**: flip all 11 (Audit, Audit.EFCore, Caching,
-  Configuration, Identity, Identity.AspNetCore, MultiTenancy,
-  MultiTenancy.EFCore, RateLimit, Security, Storage) in three
-  logical batches + one CHANGELOG-consolidation commit. End-state
-  sanity grep `HasPublicApi=false` → zero hits.
 
 ### P3 — KN-SELF-006-legacy: `Kun.Saga.EntityFrameworkCore` split (long-parked)
 
@@ -82,6 +71,19 @@ worn by kun himself during idle windows picks the next item.
 
 ## Done
 
+- **KN-SELF-010** — complete HasPublicApi sweep (11 modules) —
+  executor head `2eb3b17` (3 batch commits + 1 CHANGELOG
+  consolidation commit — hit the 4-commit estimate exactly) —
+  2026-04-24. Pilot chain KN-SELF-008 → 009 → 010 **complete**:
+  every `src/Kun.*` module now flags `<HasPublicApi>true</HasPublicApi>`.
+  Sanity grep `<HasPublicApi>false</HasPublicApi>` returns zero
+  across `src/`. Pre-existing shape-distinguished dual-overload
+  pattern on `Kun.Identity.AspNetCore.SignInHelper.SignInAsync`
+  got a file-level RS0026 suppress with the same rationale as
+  `Kun.Sandbox.IProcesses.RunAsync` (KN-SELF-009). From now on,
+  any public-symbol change across any Kun module fails the
+  analyzer gate until reviewed — consumer-facing API drift is
+  closed as a structural risk.
 - **KN-SELF-009** — flip `Kun.Sandbox` to `HasPublicApi=true` —
   executor head `5672525` (1 combined commit, under estimate) —
   2026-04-24. Second step of the KN-SELF-008 pilot sweep. 120
