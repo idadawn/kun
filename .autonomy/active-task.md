@@ -1,116 +1,110 @@
 ---
-id: KN-SELF-010
-title: Complete HasPublicApi sweep — flip all remaining framework modules
-status: done
-planner_commit: 7af4efc
-executor_head: 2eb3b17
-changelog_commit: <this commit>
-estimated_commits: 4
-actual_commits: 4
+id: KN-SELF-011
+title: ADR-015 Outbox pattern design (retroactive documentation)
+status: in-flight
+planner_commit: <fill after commit>
+executor_head: <fill after first executor commit>
+estimated_commits: 2
 started: 2026-04-24
-finished: 2026-04-24
 ---
 
-# KN-SELF-010 — complete the HasPublicApi sweep
+# KN-SELF-011 — ADR-015 Outbox pattern design
 
 ## Why
 
-KN-SELF-008 and KN-SELF-009 piloted the `HasPublicApi=false` → `true`
-flip on `Kun.Observability` and `Kun.Sandbox`. The mechanics are
-identical across modules: flip the csproj flag, let
-`dotnet format analyzers --diagnostics=RS0016` seed the
-`PublicAPI.Unshipped.txt`, suppress any legacy RS0026 dual-overload
-patterns at file level where they surface.
+The Outbox pattern is implemented and shipped across three modules
+(`Kun.EventBus`, `Kun.EntityFrameworkCore`, consumer services), but
+there is no single ADR walking a reader through the design:
 
-Eleven modules still carry `HasPublicApi=false`:
+- `kun/CLAUDE.md` §Outbox has the normative rules (atomicity,
+  stable event IDs, idempotent consumers, W3C trace propagation)
+  but those are distilled constraints, not design rationale.
+- `docs/architecture/why-outbox.md` exists as a short primer but
+  doesn't enumerate the type surface or the threading/locking
+  model.
+- `docs/architecture/ADR-004-Kun.Observability-module.md` through
+  `ADR-014` each document one crisp decision; the Outbox rollout
+  predates the ADR index and was never retroactively folded in.
 
-- `Kun.Audit`, `Kun.Audit.EntityFrameworkCore`
-- `Kun.Caching`, `Kun.Configuration`
-- `Kun.Identity`, `Kun.Identity.AspNetCore`
-- `Kun.MultiTenancy`, `Kun.MultiTenancy.EntityFrameworkCore`
-- `Kun.RateLimit`, `Kun.Security`, `Kun.Storage`
-
-Per-module standalone tasks would burn ~11× the planner / close
-overhead for what is essentially one command per module. Consolidate
-into one sweep task, split into logical subsets per executor commit
-so each diff remains reviewable.
+KN-SELF-011 ships ADR-015 that captures the design of the
+**existing** surface: why `OutboxMessage` carries
+`TraceParent`/`TraceState`, why `IOutboxLockProvider` has a
+Redis + Null pair, how `OutboxPublisherBackgroundService` pumps,
+and the boundary between `Kun.EventBus` (abstractions) and
+`Kun.EntityFrameworkCore` (where `OutboxAccumulator` actually
+serialises into the write-side transaction).
 
 ## Specs to read first
 
-1. `kun/CLAUDE.md` — §csproj / dependency rules.
-2. `kun/.autonomy/active-task.md` history for KN-SELF-008 and
-   KN-SELF-009 — the working shape.
-3. Each module's existing `PublicAPI.*.txt` files (most are empty);
-   inspect to see if any module already has seed entries that need
-   updating rather than adding.
-4. Per-module `AGENTS.md` — confirm no AOT / layering surprises
-   that would make the flip inappropriate.
+1. `kun/CLAUDE.md` — §Outbox (the five normative rules).
+2. `kun/docs/architecture/why-outbox.md` — primer.
+3. `kun/src/Kun.EventBus/Outbox/OutboxMessage.cs` +
+   `IIntegrationEventOutbox.cs` + `IOutboxWriter.cs` +
+   `OutboxStatus.cs` — public outbox surface.
+4. `kun/src/Kun.EventBus/Background/OutboxPublisherBackgroundService.cs`
+   + `IOutboxMessageStore.cs` + `IOutboxLockProvider.cs` + the
+   Null + Redis lock-provider impls.
+5. `kun/src/Kun.EntityFrameworkCore/IntegrationEventOutboxAccumulator.cs`
+   + `OutboxMessageConfiguration.cs` — where atomicity is
+   enforced (`SaveChangesAsync` transaction).
+6. `kun/src/Kun.EventBus/AGENTS.md`, `kun/src/Kun.EntityFrameworkCore/AGENTS.md`.
 
 ## Acceptance criteria
 
-- **AC-1**: Flip the four "core-ish" modules — `Kun.Audit`,
-  `Kun.Caching`, `Kun.Configuration`, `Kun.Storage`. Each gets its
-  csproj flag flipped, `PublicAPI.Shipped.txt` seeded empty,
-  `PublicAPI.Unshipped.txt` auto-populated via `dotnet format
-  analyzers`. Fix any RS0026 at file level. One commit, one
-  CHANGELOG bullet per module.
-- **AC-2**: Flip the four "security / tenancy" modules —
-  `Kun.Security`, `Kun.MultiTenancy`, `Kun.Identity`, `Kun.RateLimit`.
-  Same mechanics.
-- **AC-3**: Flip the three EF Core + AspNetCore satellites —
-  `Kun.Audit.EntityFrameworkCore`,
-  `Kun.MultiTenancy.EntityFrameworkCore`, `Kun.Identity.AspNetCore`.
-  These are non-AOT modules; the flip is purely about API tracking,
-  not AOT, and is valid regardless.
-- **AC-4**: Single `CHANGELOG [Unreleased]` "### Changed" entry
-  summarising the sweep (all 11 modules in one bullet list) —
-  avoids 11 nearly-identical sections. Close the pilot: no
-  `HasPublicApi=false` module remains (sanity-grep the sln).
+- **AC-1**: `docs/architecture/ADR-015-Outbox-pattern.md` written.
+  Sections:
+  - Context (why Outbox over direct publish).
+  - Type surface (per namespace, brief purpose each).
+  - Atomicity boundary (the `SaveChangesAsync` transaction).
+  - Publisher pump (background service + lock provider + batching).
+  - Consumer idempotency (`IProcessedMessageStore` + decorator —
+    referenced, not re-specified).
+  - W3C trace propagation (`TraceParent`/`TraceState` on the
+    envelope; why baggage is NOT used for trace context here).
+  - Stable event IDs (`{bounded-context}.{name}.v{n}`).
+  - What Outbox does NOT do (read-side projections, saga
+    orchestration — those have their own ADRs / modules).
+  - Alternatives considered (direct publish, CDC, Kafka-source
+    change logs) + why Outbox won.
+- **AC-2**: Cross-link the new ADR from:
+  - `kun/CLAUDE.md` §Outbox (one-line pointer — the constraint
+    list stays; the ADR explains *why*).
+  - `kun/src/Kun.EventBus/AGENTS.md` key-types table.
+  - `kun/docs/architecture/why-outbox.md` (one-line pointer
+    under a "See also" footer so the primer stays beginner-
+    friendly).
 
 ## Commit plan
 
-| # | Commit subject | AC | Notes |
-|---|----------------|----|-------|
-| 1 | `feat(audit,caching,configuration,storage): flip HasPublicApi=true + seed PublicAPI` | AC-1 | 4 modules in one commit; diff is mostly new `PublicAPI.Unshipped.txt` content |
-| 2 | `feat(security,multitenancy,identity,ratelimit): flip HasPublicApi=true + seed PublicAPI` | AC-2 | 4 modules |
-| 3 | `feat(identity.aspnetcore,audit.efcore,multitenancy.efcore): flip HasPublicApi=true + seed PublicAPI` | AC-3 | 3 modules |
-| 4 | `docs(changelog): consolidated HasPublicApi sweep + sanity grep` | AC-4 | single CHANGELOG bullet, sanity-check remaining false |
-
-Optional 5th commit only if a module surfaces unexpected RS0026 or other analyzer pushback that needs its own reasoning.
+| # | Commit subject | AC |
+|---|----------------|----|
+| 1 | `docs(eventbus): ADR-015 Outbox pattern design` | AC-1 |
+| 2 | `docs(eventbus,core): cross-link ADR-015 from CLAUDE.md / AGENTS / primer` | AC-2 |
 
 ## AOT / build gates
 
-- [ ] `dotnet build Kun.sln -c Release -p:TreatWarningsAsErrors=true`
-      0/0 after each executor commit (catch regressions per batch)
-- [ ] `grep -rE "<HasPublicApi>false</HasPublicApi>" src/` returns
-      **zero** results at end-of-task (the sanity grep in AC-4)
-- [ ] No behaviour changes — tests unaffected across all modules
+- [ ] No code changes — `dotnet build` unaffected (sanity run
+      still 0/0).
+- [ ] Markdown-only edits; `dotnet format --verify-no-changes` n/a.
 
 ## Out of scope
 
-- Updating `PublicAPI.Shipped.txt` with the Unshipped entries —
-  those graduate on the next release cut, not during this sweep.
-- Reviewing whether the *contents* of the auto-emitted entries
-  are desirable (i.e. should any currently-public symbol be made
-  internal). That's a separate API-review task; this one is pure
-  tracking-enablement.
-- Hand-writing XML doc comments where they are missing. Tracked
-  as a future cleanup — the sweep surfaces them via CS1591 which
-  is already allow-listed project-wide.
+- Modifying the Outbox types themselves (any design-change ADR
+  would be a separate task).
+- Consumer-side migration guides; `docs/guides/` already covers
+  the outbox-consumer happy path.
+- New Outbox features like dead-letter handling, per-tenant
+  priority queues, batch-size auto-tune — tracked elsewhere.
 
 ## Progress log
 
-- 2026-04-24 34f65d9 KN-SELF-009 closed (prior cycle)
+- 2026-04-24 d6985a7 KN-SELF-010 closed (prior cycle)
 
 ## When done
 
 1. `status: done` + `executor_head` SHA.
-2. Move KN-SELF-010 to BACKLOG `## Done` + mark the pilot chain
-   (KN-SELF-008 → 009 → 010) as **complete** with a
-   framework-wide summary.
-3. `echo "KN-SELF-010 done (<SHA>) — HasPublicApi sweep complete; all framework modules now tracked." > /home/dawn/project/neuroagent/.omc/state/claude-kun_KN-SELF-010_done.txt`
-4. Planner next pick: open-ended — no pending sweep. Consider
-   (a) KN-SELF-007 F1 (non-generic Result variant of validation
-   behavior), (b) Kun.Testing.EntityFrameworkCore Outbox helpers
-   (ADR-012 F1), or (c) a fresh pain point surfaced during the
-   last nine tasks.
+2. Move KN-SELF-011 to BACKLOG `## Done`.
+3. `echo "KN-SELF-011 done (<SHA>) — ADR-015 Outbox pattern documented." > /home/dawn/project/neuroagent/.omc/state/claude-kun_KN-SELF-011_done.txt`
+4. Planner next pick: open — candidates stay from KN-SELF-010
+   close note (KN-SELF-007 F1, Kun.Testing.EntityFrameworkCore,
+   or fresh pain point).

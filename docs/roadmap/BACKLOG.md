@@ -59,6 +59,19 @@ worn by kun himself during idle windows picks the next item.
 <!-- KN-SELF-010 moved to ## Done on 2026-04-24 (executor head 2eb3b17) -->
 
 
+### P2 — KN-SELF-011: ADR-015 Outbox pattern design (retroactive)
+
+- **Status**: in-flight — see `kun/.autonomy/active-task.md`
+- **Size**: S (target 2 commits)
+- **Why**: Outbox pattern is implemented across `Kun.EventBus` +
+  `Kun.EntityFrameworkCore`, but the rollout predates the ADR
+  index. `kun/CLAUDE.md` §Outbox has normative rules, not
+  rationale; `why-outbox.md` is a primer. Ship ADR-015 walking
+  through the actual design (type surface, atomicity boundary,
+  publisher pump, trace propagation, stable event IDs).
+- **AC**: ADR-015 accepted + cross-links from `kun/CLAUDE.md`
+  §Outbox / `Kun.EventBus/AGENTS.md` / `why-outbox.md`.
+
 ### P3 — KN-SELF-006-legacy: `Kun.Saga.EntityFrameworkCore` split (long-parked)
 
 - **Size**: L (≥10 commits, breaking change for consumers)
