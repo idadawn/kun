@@ -74,6 +74,28 @@ worn by kun himself during idle windows picks the next item.
 <!-- KN-SELF-015 (NU1902 / GHSA-g94r-2vxg-569j) moved to ## Done on 2026-04-24 -->
 
 <!-- KN-SELF-016 moved to ## Done on 2026-04-24 (executor head 5ceffdc + this closeout) -->
+
+
+### P2 — KN-SELF-017: end-to-end `outbox-and-integration-events.md` consumer guide
+
+- **Status**: in-flight — see `kun/.autonomy/active-task.md`
+- **Size**: S (target 2 commits).
+- **Why**: KN-SELF-011 (ADR-015 design) + KN-SELF-014
+  (scaffold) + KN-SELF-016 (tests + docs) closed the Outbox
+  story everywhere EXCEPT `docs/guides/`. A downstream
+  engineer wiring their first integration event + consumer
+  still has to triangulate from ADR-015 + why-outbox.md +
+  Kun.EventBus/AGENTS + Kun.EventBus.RabbitMQ/AGENTS +
+  Kun.EntityFrameworkCore/AGENTS + the just-shipped
+  Kun.Testing.EntityFrameworkCore AGENTS. Same gap shape
+  KN-SELF-013 closed for validation; now sized correctly
+  (S) because the test-helper surface it would otherwise
+  stub is already shipped.
+- **AC**: new `docs/guides/outbox-and-integration-events.md`
+  with atomicity-boundary, stable-event-ID, publish / consume
+  / test worked examples, W3C trace note, four anti-patterns,
+  edges footer, see-also; `src/Kun.EventBus/AGENTS.md` picks
+  up a one-line cross-link near Purpose. Doc-only.
 - **Size**: S (target 2 commits: tests project + CHANGELOG /
   ADR-015 §F3 resolution marker).
 - **Why**: KN-SELF-014 was rescoped mid-execution. The

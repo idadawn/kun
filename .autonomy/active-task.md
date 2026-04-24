@@ -1,166 +1,147 @@
 ---
-id: KN-SELF-016
-title: Complete Kun.Testing.EntityFrameworkCore tests + docs (ADR-015 §F3)
-status: done
-planner_commit: <to be filled at closeout>
-executor_head: <to be filled at closeout>
+id: KN-SELF-017
+title: docs/guides/outbox-and-integration-events.md consumer guide
+status: in-flight
+planner_commit: <fill after commit>
+executor_head: <fill after first executor commit>
 estimated_commits: 2
 started: 2026-04-24
-finished: 2026-04-24
-ship_log: |
-  AC-1 shipped in 5ceffdc: tests project scaffold
-    (Kun.Testing.EntityFrameworkCore.Tests.csproj, AGENTS.md)
-    + OutboxAssertionsTests (11 tests, 698ms, all pass) +
-    Kun.sln wire-up (B5F0DB14-… + NestedProjects under tests
-    folder). Build 0 warnings / 0 errors.
-  AC-2 shipped in (this closeout commit): CHANGELOG
-    [Unreleased] "Added" entry; ADR-015 §F3 bullet annotated
-    "Resolved 2026-04-24 (KN-SELF-014 + KN-SELF-016)";
-    src/Kun.EventBus/AGENTS.md §Testing Requirements picked
-    up the OutboxAssertions cross-link + front-matter bump;
-    src/Kun.Testing/AGENTS.md picked up the sibling-module
-    guidance bullet under §Working In This Directory +
-    front-matter-comment annotation.
-  ADR-015 §F3 now fully closed. Kun.Testing.EntityFrameworkCore
-  is consumer-ready.
 ---
 
-# KN-SELF-016 — complete `Kun.Testing.EntityFrameworkCore` tests + docs
+# KN-SELF-017 — end-to-end Outbox + integration-events consumer guide
 
 ## Why
 
-During the KN-SELF-014 rescope sequence, two commits for the
-`Kun.Testing.EntityFrameworkCore` module landed on develop
-and remain orphaned:
+KN-SELF-011 shipped ADR-015 (design), KN-SELF-014 shipped the
+`Kun.Testing.EntityFrameworkCore` scaffold + `OutboxAssertions`,
+and KN-SELF-016 closed the tests + docs loop (ADR-015 §F3
+resolved). The only remaining consumer-facing gap in the
+Outbox story is a `docs/guides/` walkthrough. Today a
+downstream engineer writing their first integration-event
+publisher + consumer has to triangulate across ADR-015
+(design), why-outbox.md (primer), `Kun.EventBus/AGENTS.md`
+(agent guardrails), `Kun.EventBus.RabbitMQ/AGENTS.md`
+(broker wiring), `Kun.EntityFrameworkCore/AGENTS.md` (the
+atomicity boundary), and the fresh `Kun.Testing.EntityFrameworkCore`
+AGENTS (how to test). A single guide parallel to
+KN-SELF-013's `docs/guides/validating-commands.md` closes
+the gap.
 
-- `829ea5f feat(testing.efcore): scaffold Kun.Testing.EntityFrameworkCore module`
-  — csproj (`IsAotCandidate=false`, EF Core + Kun.EventBus +
-  Kun.Testing deps), AGENTS.md, PublicAPI stubs, Kun.sln
-  wire-up.
-- `9999f63 feat(testing.efcore): OutboxAssertions with Have/ExactlyOne/None helpers`
-  — 6 extension methods (3 helpers × 2 overloads:
-  `IEnumerable<OutboxMessage>` + `DbContext`) + populated
-  `PublicAPI.Unshipped.txt`.
+(Note: this was KN-SELF-014's first pick at `c3ad04d` before
+two rescopes; now landable as a well-sized S task because
+the test-helper surface it would otherwise have to stub
+is shipped.)
 
-Both build 0-warning but have no consumer and no test coverage.
-The `CHANGELOG.md [Unreleased]` "Added" entry and the
-`docs/architecture/ADR-015-Outbox-pattern.md` §F3 resolution
-marker are also missing. KN-SELF-016 ships the remaining
-pieces so the module is consumer-ready and ADR-015 §F3 closes.
+## Specs to read first
 
-## Specs to read first (non-negotiable)
-
-1. `kun/CLAUDE.md` §Specs-first + §Architectural constraints.
-2. `kun/src/Kun.Testing.EntityFrameworkCore/AGENTS.md` — the
-   scoping conventions laid down at 829ea5f (non-AOT, throw
-   `KunAssertionException`, synchronous enumeration, mismatch-
-   message shape).
-3. `kun/src/Kun.Testing.EntityFrameworkCore/Outbox/OutboxAssertions.cs`
-   — the public surface to test. Grep for each helper name +
-   message shape so test assertions anchor on the actual
-   output, not guesses.
-4. `kun/docs/architecture/ADR-015-Outbox-pattern.md` §F3
-   (deferred follow-up to annotate resolved).
-5. `kun/tests/Kun.Testing.Tests/` — sibling test project
-   layout pattern (csproj, xUnit.v3 + FluentAssertions, test
-   file per assertion class).
-6. `kun/Directory.Packages.props` — `Microsoft.EntityFrameworkCore.InMemory`
-   is pinned (line 35) for the DbContext overload tests.
+1. `kun/docs/architecture/ADR-015-Outbox-pattern.md` full
+   (including §F3 resolved annotation from KN-SELF-016).
+2. `kun/docs/architecture/why-outbox.md` — prose framing.
+3. `kun/src/Kun.EventBus/AGENTS.md` + `kun/src/Kun.EventBus.RabbitMQ/AGENTS.md`.
+4. `kun/src/Kun.EntityFrameworkCore/AGENTS.md`.
+5. Real API shapes (grep before quoting):
+   `IIntegrationEventBus.Publish<T>`,
+   `IIntegrationEventHandler<TEvent>`,
+   `KunEventBusBuilder.Register<T>(eventType[, typeInfo])`,
+   `AddKunEventBus(builder)`, `AddKunOutboxPublisher`,
+   `MessageContext` properties.
+6. Style reference: `kun/docs/guides/validating-commands.md`
+   (the sibling guide KN-SELF-013 shipped — match its
+   Chinese-prose + English-code density).
 
 ## Acceptance criteria
 
-- **AC-1**: Test project `tests/Kun.Testing.EntityFrameworkCore.Tests/`:
-  - `.csproj` mirrors `tests/Kun.Testing.Tests/Kun.Testing.Tests.csproj`
-    (xUnit.v3, test SDK, vs-runner, FluentAssertions,
-    coverlet). ProjectReference to
-    `..\..\src\Kun.Testing.EntityFrameworkCore\…`.
-    PackageReference `Microsoft.EntityFrameworkCore.InMemory`
-    for the DbContext overload fixture.
-  - `AGENTS.md` parent-linked, brief (testing scope lives
-    under the module's own AGENTS).
-  - Added to `Kun.sln` (Project declaration + configuration
-    entries for Debug/Release × Any CPU/x64/x86 + NestedProjects
-    under the tests folder `{22222222-…}`).
-  - `OutboxAssertionsTests.cs` covering every helper's pass
-    + fail paths for both overload families. Minimum coverage:
-    - `ShouldHaveOutboxMessage(IEnumerable)` — match present /
-      match absent / multiple matches (all count as success for
-      "at least one")
-    - `ShouldHaveExactlyOneOutboxMessage(IEnumerable)` — exactly
-      one / zero / two
-    - `ShouldNotHaveOutboxMessage(IEnumerable)` — zero / present
-    - DbContext overload parity — one test per helper confirming
-      the convenience wrapper delegates correctly (uses
-      `UseInMemoryDatabase("name")` + `Add(outboxMessage)` + `SaveChanges`).
-    - Mismatch-message shape: at least one negative-path test
-      per helper anchors on helper name + expected eventTypeId +
-      observed count (per the module's AGENTS.md
-      §mismatch-message contract).
+- **AC-1**: New `kun/docs/guides/outbox-and-integration-events.md`.
+  Sections:
+  - 适用对象 — who this is for.
+  - **原子性边界** (atomicity boundary) — one-transaction
+    rule; one-line `SaveChangesAsync` walk-through.
+  - **稳定事件 ID** — `{bounded-context}.{name}.v{n}` +
+    `IEventTypeRegistry` registration; one-liner reminder
+    that `AssemblyQualifiedName` is forbidden.
+  - **发布示例** — worked example: define
+    `OrderPlacedIntegrationEvent`, register via
+    `AddKunEventBus(eb => eb.Register<OrderPlacedIntegrationEvent>("order.placed.v1"))`,
+    `IIntegrationEventBus.Publish` inside a command handler
+    / domain-event handler, the background `OutboxPublisher`
+    pumps to RabbitMQ.
+  - **消费示例** — worked example:
+    `OrderPlacedIntegrationEventHandler : IIntegrationEventHandler<OrderPlacedIntegrationEvent>.HandleAsync`,
+    `IdempotentConsumerDecorator` wrapping (handled by DI —
+    consumer writes a plain handler), at-least-once contract
+    (handler must be safe to call repeatedly).
+  - **测试** — brief section showing
+    `dbContext.ShouldHaveExactlyOneOutboxMessage("order.placed.v1")`
+    after the command handler saves, pointing at the
+    KN-SELF-016-shipped assertions.
+  - **W3C trace 传播** — `TraceParent` + `TraceState`
+    captured on enqueue, replayed on publish; cross-service
+    spans stitch. Distinction vs ADR-013 baggage (user-scope
+    vs message-scope trace continuation).
+  - **反模式** section (4 items):
+    (a) direct `IIntegrationEventBus.Publish` from outside a
+        transaction — event never persists atomically;
+    (b) using `Type.AssemblyQualifiedName` as event ID;
+    (c) writing a non-idempotent consumer handler —
+        double-delivery on retry = data corruption;
+    (d) mutating `MessageContext` across handlers — the
+        context is per-message metadata, not a shared bag.
+  - **边界 / 后续** footer linking ADR-015 §F1 (dead-letter,
+    not shipped), §F2 (per-tenant priority, not shipped)
+    so consumers know the edges.
+  - **相关** footer: ADR-015, why-outbox.md,
+    Kun.EventBus AGENTS, Kun.EventBus.RabbitMQ AGENTS,
+    Kun.EntityFrameworkCore AGENTS,
+    Kun.Testing.EntityFrameworkCore (test helpers),
+    validating-commands.md (sibling guide).
+  - Target length: ≤ ~250 lines.
 
-- **AC-2**: Documentation + CHANGELOG:
-  - `CHANGELOG.md [Unreleased]` gains a new "Added" entry
-    above the security entry, referencing KN-SELF-016 +
-    ADR-015 §F3 resolved and listing the 6 public helpers.
-  - `docs/architecture/ADR-015-Outbox-pattern.md` §F3 bullet
-    (if one exists — otherwise in the `## Follow-ups` list)
-    annotated "Resolved 2026-04-24 (KN-SELF-016)" with a
-    short description of what shipped.
-  - `src/Kun.EventBus/AGENTS.md` picks up a one-line cross-
-    link near "Testing Requirements" pointing at
-    `src/Kun.Testing.EntityFrameworkCore` as the canonical
-    Outbox test-helper module.
-  - `src/Kun.Testing/AGENTS.md` picks up a sibling-module
-    note cross-linking to `Kun.Testing.EntityFrameworkCore`
-    (already partially done by module's own AGENTS.md at
-    829ea5f — just the reverse direction).
+- **AC-2**: `src/Kun.EventBus/AGENTS.md` picks up a one-line
+  cross-link near the top (below Purpose) pointing at the new
+  guide as the consumer entry point. Surgical — no other
+  edits (Testing Requirements already picked up the
+  OutboxAssertions cross-link in KN-SELF-016's closeout).
 
 ## Commit plan
 
 | # | Commit subject | AC |
 |---|----------------|----|
-| 1 | `test(testing.efcore): tests project + OutboxAssertions coverage` | AC-1 |
-| 2 | `docs(testing.efcore): CHANGELOG + ADR-015 §F3 resolved + cross-links` | AC-2 |
+| 1 | `docs(eventbus): end-to-end outbox-and-integration-events guide` | AC-1 |
+| 2 | `docs(eventbus): cross-link guide from AGENTS` | AC-2 |
 
-## AOT / build gates
+## Gates
 
-- [ ] `dotnet build Kun.sln -c Release -p:TreatWarningsAsErrors=true` 0 errors.
-- [ ] `dotnet test tests/Kun.Testing.EntityFrameworkCore.Tests -c Release --no-build`
-      green (all new tests pass).
-- [ ] `dotnet test Kun.sln -c Release --no-build` — no regressions
-      in sibling test projects.
-- [ ] No AOT publish — `Kun.Testing.EntityFrameworkCore` is
-      deliberately `IsAotCandidate=false` (matches
-      `Kun.EntityFrameworkCore`).
-- [ ] `PublicAPI.Unshipped.txt` unchanged (no new public API
-      in this task — only tests + docs).
-- [ ] `CHANGELOG.md [Unreleased]` updated.
+- [ ] Every relative link in the new guide resolves (grep
+      each `(…)` target).
+- [ ] No code-snippet references a type / method that does
+      not exist in `src/Kun.EventBus/` or
+      `src/Kun.EntityFrameworkCore/` as of HEAD — grep each
+      name before commit.
+- [ ] `dotnet format --verify-no-changes` (sanity; markdown
+      isn't formatter-scope).
 
 ## Out of scope
 
-- Outbox **factory** helpers (pre-populating rows in Arrange
-  phase, e.g. `OutboxMessageFactory.Pending<T>(...)`).
-  Tests needing fixtures can hand-roll them locally; do not
-  promote to public API.
-- Async DbContext helper variants
-  (`ShouldHaveOutboxMessageAsync`).
-- Dead-letter assertions (ADR-015 §F1, not yet shipped).
+- Dead-letter handling (ADR-015 §F1).
+- Per-tenant batch priority (ADR-015 §F2).
+- Saga-side guide — that's a larger sibling task for a later
+  cycle.
+- Chinese translation of ADR-015 itself — stays English;
+  the guide is Chinese prose + English code, matching
+  validating-commands.md.
 
 ## Progress log
 
-- 2026-04-24 ce910a4 KN-SELF-015 AC-1 shipped; closeout
-  <pending>. Unblocked solution build → KN-SELF-016 can now
-  verify.
+- 2026-04-24 68dcd09 KN-SELF-016 closed (ADR-015 §F3
+  resolved). Planner hat on for KN-SELF-017.
 
 ## When done
 
 1. `status: done` + `executor_head` SHA.
-2. Move KN-SELF-016 to BACKLOG `## Done`; remove the P3
-   follow-up entry.
-3. `echo "KN-SELF-016 done (<SHA>) — Kun.Testing.EntityFrameworkCore
-   tests + docs shipped; ADR-015 §F3 fully closed." >
-   /home/dawn/project/neuroagent/.omc/state/claude-kun_KN-SELF-016_done.txt`
-4. Planner next pick candidates: ADR-013 §F2 metric dimensions
-   (still blocked on no-metrics-pipeline — needs ADR or ralplan),
-   outbox-and-integration-events consumer guide (S, now
-   justifiable as a sibling to the just-closed helpers),
-   or fresh pain point.
+2. Move KN-SELF-017 to BACKLOG `## Done`.
+3. `echo "KN-SELF-017 done (<SHA>) — end-to-end
+   outbox-and-integration-events consumer guide shipped." >
+   /home/dawn/project/neuroagent/.omc/state/claude-kun_KN-SELF-017_done.txt`
+4. Next pick candidate: Saga consumer guide (sibling S task),
+   or a deeper dive into one of the deferred §F2/§F1 items
+   with a ralplan, or fresh pain point.
