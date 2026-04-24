@@ -23,6 +23,13 @@ namespace Kun.Identity.Abstractions;
 /// choice of injected interface is purely about the fields the caller
 /// needs.
 /// </para>
+/// <para>
+/// See <c>docs/architecture/when-to-use-currentuser.md</c> for the
+/// full decision table across consumer scenarios and the anti-patterns
+/// that should never show up in a PR (no <c>ICurrentUserEx</c>, no
+/// per-service subinterface, no <see cref="ClaimsPrincipal"/>
+/// injection as a first-class service).
+/// </para>
 /// </remarks>
 public interface IAuthenticatedUser : ICurrentUser
 {
