@@ -1,1 +1,8 @@
 #nullable enable
+Kun.Testing.EntityFrameworkCore.Outbox.OutboxAssertions
+static Kun.Testing.EntityFrameworkCore.Outbox.OutboxAssertions.ShouldHaveOutboxMessage(this System.Collections.Generic.IEnumerable<Kun.EventBus.Outbox.OutboxMessage!>! outbox, string! eventTypeId) -> void
+static Kun.Testing.EntityFrameworkCore.Outbox.OutboxAssertions.ShouldHaveExactlyOneOutboxMessage(this System.Collections.Generic.IEnumerable<Kun.EventBus.Outbox.OutboxMessage!>! outbox, string! eventTypeId) -> Kun.EventBus.Outbox.OutboxMessage!
+static Kun.Testing.EntityFrameworkCore.Outbox.OutboxAssertions.ShouldNotHaveOutboxMessage(this System.Collections.Generic.IEnumerable<Kun.EventBus.Outbox.OutboxMessage!>! outbox, string! eventTypeId) -> void
+static Kun.Testing.EntityFrameworkCore.Outbox.OutboxAssertions.ShouldHaveOutboxMessage(this Microsoft.EntityFrameworkCore.DbContext! db, string! eventTypeId) -> void
+static Kun.Testing.EntityFrameworkCore.Outbox.OutboxAssertions.ShouldHaveExactlyOneOutboxMessage(this Microsoft.EntityFrameworkCore.DbContext! db, string! eventTypeId) -> Kun.EventBus.Outbox.OutboxMessage!
+static Kun.Testing.EntityFrameworkCore.Outbox.OutboxAssertions.ShouldNotHaveOutboxMessage(this Microsoft.EntityFrameworkCore.DbContext! db, string! eventTypeId) -> void
