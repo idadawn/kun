@@ -59,18 +59,8 @@ worn by kun himself during idle windows picks the next item.
 <!-- KN-SELF-010 moved to ## Done on 2026-04-24 (executor head 2eb3b17) -->
 
 
-### P2 — KN-SELF-011: ADR-015 Outbox pattern design (retroactive)
+<!-- KN-SELF-011 moved to ## Done on 2026-04-24 (executor head 74f21c1) -->
 
-- **Status**: in-flight — see `kun/.autonomy/active-task.md`
-- **Size**: S (target 2 commits)
-- **Why**: Outbox pattern is implemented across `Kun.EventBus` +
-  `Kun.EntityFrameworkCore`, but the rollout predates the ADR
-  index. `kun/CLAUDE.md` §Outbox has normative rules, not
-  rationale; `why-outbox.md` is a primer. Ship ADR-015 walking
-  through the actual design (type surface, atomicity boundary,
-  publisher pump, trace propagation, stable event IDs).
-- **AC**: ADR-015 accepted + cross-links from `kun/CLAUDE.md`
-  §Outbox / `Kun.EventBus/AGENTS.md` / `why-outbox.md`.
 
 ### P3 — KN-SELF-006-legacy: `Kun.Saga.EntityFrameworkCore` split (long-parked)
 
@@ -84,6 +74,22 @@ worn by kun himself during idle windows picks the next item.
 
 ## Done
 
+- **KN-SELF-011** — ADR-015 Outbox pattern design (retroactive) —
+  executor head `74f21c1` (ADR + cross-link + addendum commits,
+  1 over estimate because AC-2 edit needed a Read-first retry
+  that split into two commits) — 2026-04-24. ADR-015 walks a
+  reader through the existing Outbox design: type surface across
+  `Kun.EventBus` + `Kun.EntityFrameworkCore`, atomicity boundary
+  (the `SaveChangesAsync` transaction), publisher pump
+  (background service + lock providers), consumer idempotency
+  link (`IdempotentConsumerDecorator<T>`), W3C trace propagation
+  (distinct from ADR-013 baggage), stable event IDs
+  (`{bounded-context}.{name}.v{n}`), and rejected alternatives
+  (direct publish / CDC / Kafka-as-ledger / per-context tables).
+  Cross-linked from `kun/CLAUDE.md` §Outbox, `Kun.EventBus/AGENTS.md`,
+  `docs/architecture/why-outbox.md`. F1–F3 track dead-letter
+  handling, per-tenant batch priority, and
+  Kun.Testing.EntityFrameworkCore Outbox helpers as future tasks.
 - **KN-SELF-010** — complete HasPublicApi sweep (11 modules) —
   executor head `2eb3b17` (3 batch commits + 1 CHANGELOG
   consolidation commit — hit the 4-commit estimate exactly) —

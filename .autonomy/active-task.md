@@ -1,11 +1,13 @@
 ---
 id: KN-SELF-011
 title: ADR-015 Outbox pattern design (retroactive documentation)
-status: in-flight
-planner_commit: <fill after commit>
-executor_head: <fill after first executor commit>
+status: done
+planner_commit: 126f11c
+executor_head: 74f21c1
 estimated_commits: 2
+actual_commits: 3
 started: 2026-04-24
+finished: 2026-04-24
 ---
 
 # KN-SELF-011 — ADR-015 Outbox pattern design
