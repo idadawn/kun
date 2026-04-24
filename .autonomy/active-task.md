@@ -1,11 +1,13 @@
 ---
 id: KN-SELF-002
 title: Kun.Testing fluent assertion helpers
-status: in-flight
-planner_commit: <fill after commit>
-executor_head: <fill after first executor commit>
+status: done
+planner_commit: 49b6918
+executor_head: aa4b4d7
 estimated_commits: 8
+actual_commits: 7
 started: 2026-04-24
+finished: 2026-04-24
 ---
 
 # KN-SELF-002 — `Kun.Testing` fluent assertion helpers
@@ -138,8 +140,15 @@ Optional 8th commit only if sln add or PublicAPI format sweeps surface issues �
 
 ## Progress log
 
-<!-- append as commits land -->
 - 2026-04-24 90ee2bc KN-SELF-001 closed (planner prior cycle)
+- 2026-04-24 49b6918 planner — pick KN-SELF-002, write active-task.md
+- 2026-04-24 f18f44b AC-1 — ADR-012 accepted
+- 2026-04-24 268b3c3 AC-2+AC-3 — scaffold src/Kun.Testing + tests/Kun.Testing.Tests + sln wiring
+- 2026-04-24 dad3b13 AC-4 — KunAssertionException + ResultAssertions
+- 2026-04-24 a300146 AC-5 — DomainEventAssertions (ShouldRaise/ShouldRaiseExactly/ShouldNotRaise)
+- 2026-04-24 a36cec6 AC-6 — 30 new tests cover every helper pass-through + mismatch-message shape
+- 2026-04-24 687eba1 AC-7 — smoke-adopt Kun.Testing at 4 call sites in Kun.Core.Tests (85 still green)
+- 2026-04-24 aa4b4d7 AC-8 — src/Kun.Testing/AGENTS.md + tests/Kun.Testing.Tests/AGENTS.md + CHANGELOG
 
 ## When done
 

@@ -33,22 +33,8 @@ worn by kun himself during idle windows picks the next item.
 <!-- KN-SELF-001 moved to ## Done on 2026-04-24 (executor head 48937db) -->
 
 
-### P1 — KN-SELF-002: `Kun.Testing` fluent assertion helpers
+<!-- KN-SELF-002 moved to ## Done on 2026-04-24 (executor head aa4b4d7) -->
 
-- **Status**: in-flight — see `kun/.autonomy/active-task.md`
-- **Size**: M (target 7–9 commits)
-- **Why**: Every `tests/Kun.*.Tests` project re-invents the same trio:
-  `Assert.True(result.IsSuccess); Assert.Equal(expectedErrorCode,
-  result.Error.Code);` plus domain-event collection asserts plus Outbox
-  message shape asserts. `neuroagent-csharp` tests repeat the pattern.
-  Provide a `Kun.Testing` helper assembly with fluent extensions
-  (`result.ShouldBeSuccess()`, `aggregate.ShouldRaise<TEvent>()`,
-  `outbox.ShouldContain("order.placed.v1")`).
-- **AC**: separate `src/Kun.Testing` + `tests/Kun.Testing.Tests`
-  project, AOT-candidate (no reflection), consumed by at least one
-  `tests/Kun.*.Tests` project as a smoke.
-- **Depends on**: KN-SELF-001 (async extensions reduce the need for
-  some helpers; decide final surface after 001 lands).
 
 ### P1 — KN-SELF-003: `Kun.Observability` trace enricher (tenant/user/outbox)
 
@@ -97,6 +83,18 @@ worn by kun himself during idle windows picks the next item.
 
 ## Done
 
+- **KN-SELF-002** — `Kun.Testing` fluent assertion helpers + ADR-012 —
+  executor head `aa4b4d7` (ADR-012 + 6 code/test/doc commits) — 2026-04-24.
+  Seven ACs shipped: ADR accepted, src/Kun.Testing module scaffolded
+  (AOT-candidate, packable, zero third-party runtime deps) + wired
+  into Kun.sln, `KunAssertionException`, `ResultAssertions` (sync
+  + generic variants), `DomainEventAssertions` (`ShouldRaise` /
+  `ShouldRaiseExactly` / `ShouldNotRaise` via LINQ `OfType<T>()`),
+  30 new tests covering every helper's pass-through and
+  exception-message shape, 4-site smoke adoption in Kun.Core.Tests
+  keeping 85 existing tests green, src/Kun.Testing/AGENTS.md +
+  tests/Kun.Testing.Tests/AGENTS.md + CHANGELOG [Unreleased] entry.
+  Kun.Testing ILC 0-warning; sln build 0 errors.
 - **KN-SELF-001** — `Result<T>` async extension methods + ADR-011 —
   executor head `48937db` (ADR-011 + 6 code/doc commits) — 2026-04-24.
   Seven ACs shipped: ADR accepted, sync Map/Bind/Tap/Ensure/Match on
