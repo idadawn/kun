@@ -6,6 +6,27 @@
 
 ## [Unreleased]
 
+### Changed — Kun.Observability now tracks public API strictly (2026-04-24)
+
+- **`src/Kun.Observability/Kun.Observability.csproj`** flipped
+  `<HasPublicApi>false</HasPublicApi>` → `true`.
+- **Seeded `PublicAPI.Shipped.txt`** (empty — convention for a new
+  tracking file) and **`PublicAPI.Unshipped.txt`** enumerating the
+  current public surface: `KunObservabilityOptions` + every
+  property, `KunObservabilityServiceCollectionExtensions.AddKunObservability`,
+  `Enrichment.KunBaggageKeys` + `TenantId` / `UserId` /
+  `OutboxMessageId` constants + `All` array.
+- **Operator impact**: any future public-symbol change in
+  `Kun.Observability` now fails the `PublicApiAnalyzers` check
+  until the diff is reviewed and added to the `.Unshipped.txt`,
+  matching the discipline in place on `Kun.Core`, `Kun.Mediator`,
+  `Kun.Validation`, and other user-facing modules. No runtime
+  behaviour changes.
+- **Scope note**: pilot for the remaining
+  `HasPublicApi=false` modules (e.g. `Kun.Sandbox`). Those flips
+  will land as separate KN-SELF-xxx tasks — one module at a time
+  to keep each `PublicAPI.Unshipped.txt` review small.
+
 ### Added — ADR-014 Result-returning validation behavior (2026-04-24)
 
 - **docs/architecture/ADR-014-Validation-Result-behavior.md** —

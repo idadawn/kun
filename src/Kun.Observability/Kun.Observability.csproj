@@ -3,7 +3,7 @@
   <PropertyGroup>
     <IsAotCandidate>true</IsAotCandidate>
     <IsPackable>true</IsPackable>
-    <HasPublicApi>false</HasPublicApi>
+    <HasPublicApi>true</HasPublicApi>
     <Description>Kun Framework unified OpenTelemetry wiring: AddKunObservability hooks up traces, metrics, and logs with OTLP export and pre-registers all Kun ActivitySources (Mediator, EventBus.Outbox, Grpc, Saga).</Description>
   </PropertyGroup>
 
