@@ -10,6 +10,8 @@ using Kun.EntityFrameworkCore.DependencyInjection;
 using Kun.EventBus.DependencyInjection;
 using Kun.Grpc.DependencyInjection;
 using Kun.Mediator.DependencyInjection;
+using System.Diagnostics;
+using Kun.Observability.Enrichment;
 using Kun.Observability.Extensions;
 using Kun.Sample.Catalog;
 using Kun.Sample.Catalog.Application.Commands;
@@ -154,7 +156,15 @@ app.MapGet("/products/{id:guid}", async (Guid id, Kun.Mediator.ISender sender, C
     return dto is null ? Results.NotFound() : Results.Ok(dto);
 });
 
-app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
+// Demo: set tenant.id + user.id baggage so Kun.Observability's activity enricher
+// mirrors them onto span tags — visible in the Aspire Dashboard trace view.
+// Real services populate these from the S2S JWT claims in a middleware.
+app.MapGet("/health", () =>
+{
+    Activity.Current?.SetBaggage(KunBaggageKeys.TenantId, "demo-tenant-0001");
+    Activity.Current?.SetBaggage(KunBaggageKeys.UserId, "demo-user-0001");
+    return Results.Ok(new { status = "healthy" });
+});
 
 app.MapGrpcService<CatalogGrpcService>();
 
