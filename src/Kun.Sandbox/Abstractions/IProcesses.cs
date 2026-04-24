@@ -1,3 +1,11 @@
+// RS0026 flags "multiple overloads with optional parameters" as a
+// binary-compat risk. Here the two RunAsync overloads differ in the
+// first parameter type (string[] vs string) — overload resolution is
+// unambiguous on the call site, and these shipped together from day
+// one so there is no binary-compat staircase. Suppressing at file
+// level keeps the E2B-shaped dual-signature intact.
+#pragma warning disable RS0026
+
 namespace Kun.Sandbox.Abstractions;
 
 /// <summary>

@@ -3,7 +3,7 @@
   <PropertyGroup>
     <IsAotCandidate>true</IsAotCandidate>
     <IsPackable>true</IsPackable>
-    <HasPublicApi>false</HasPublicApi>
+    <HasPublicApi>true</HasPublicApi>
     <Description>Kun Framework sandbox abstraction for C# business services: ISandboxProvider whose shape mirrors the E2B v2 REST API (templateId / cpuCount / memoryMB / timeoutMs / envs / metadata / neuroagent extension), with pluggable backends — InMemory (test), Supervisor (neuroagent-python /v2/sandboxes/*), and E2B Cloud (skeleton for Phase 2+). Abstraction + client only; the runtime lives in neuroagent-python/sandbox_supervisor.</Description>
   </PropertyGroup>
 

@@ -6,6 +6,36 @@
 
 ## [Unreleased]
 
+### Changed — Kun.Sandbox now tracks public API strictly (2026-04-24)
+
+- **`src/Kun.Sandbox/Kun.Sandbox.csproj`** flipped
+  `<HasPublicApi>false</HasPublicApi>` → `true`.
+- **Seeded `PublicAPI.Shipped.txt`** (empty) and
+  **`PublicAPI.Unshipped.txt`** enumerating the ≈15 public types
+  and their members — `ISandboxProvider` / `ISandboxHandle` /
+  `IProcesses` / `IFiles` / `SandboxState`, the three
+  implementations (`SupervisorSandboxProvider`,
+  `E2BCloudSandboxProvider`, `InMemorySandboxProvider`), the
+  E2B-shaped DTOs (`SandboxCreateOptions`,
+  `NeuroagentSandboxExtension`, `SecretScopeConfig`,
+  `BrowserSessionConfig`, `FileEntry`, `ProcessRunOptions`,
+  `ProcessResult`), `KunSandboxOptions`, and the
+  `AddKunSandbox` extension. 120 entries; auto-emitted by
+  `dotnet format analyzers --diagnostics=RS0016` (the Roslyn
+  code fix) rather than hand-written.
+- **`IProcesses.RunAsync` pre-existing dual-overload**
+  (`string[]` vs `string` first param) suppressed with a
+  file-level `#pragma warning disable RS0026` and an explanatory
+  comment — overload resolution is unambiguous on parameter
+  shape, not optional-param count, so the analyzer's
+  backcompat rule does not apply.
+- **Operator impact**: any future public-symbol change in
+  `Kun.Sandbox` now fails the `PublicApiAnalyzers` check until
+  reviewed and added. No runtime behaviour changes.
+- Second module in the KN-SELF-008 pilot sweep. Remaining
+  `HasPublicApi=false` modules are the `*.EntityFrameworkCore`
+  family + `Kun.AspNetCore`; next cycle evaluates per-module.
+
 ### Changed — Kun.Observability now tracks public API strictly (2026-04-24)
 
 - **`src/Kun.Observability/Kun.Observability.csproj`** flipped
