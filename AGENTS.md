@@ -40,6 +40,7 @@ A .NET 10 cloud-native microservice framework with an AOT-first lean: strict DDD
 - **Skeleton stage**: expect to create types from scratch rather than modify existing code. Follow naming tables in CLAUDE.md / `kun-framework-conventions`.
 - **Do not edit `Directory.Build.props` or `Directory.Packages.props` without reason** — target framework, nullable, analyzer settings, package versions are centralized there. Never duplicate them in individual csproj files.
 - Commits follow Conventional Commits with `scope` = module name minus `Kun.` prefix (e.g. `feat(saga): ...`).
+- **Branch rule (hard)**: never commit or push to `main`. All work flows through `develop` via PR. If a session starts on `main`, run `git checkout develop && git checkout -b <type>/<task>` before any `git commit`. See `CLAUDE.md` §Branch workflow.
 
 ### Testing Requirements
 
