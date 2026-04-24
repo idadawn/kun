@@ -142,7 +142,7 @@
 
 TaskPlan 原文提到"RSA 签名 + publish JWKS 端点"，已全部实现。下游服务通过 `AddKunServiceAuthentication()` 扩展方法接入。
 
-**建议**：确认 S2S JWT claims 是否包含 SAD v3.0 §12 要求的完整字段（sub, tenant_id, roles, trace_id, membership_id, 15 分钟过期），如有差异只需微调 `S2sTokenOptions`。
+**状态（2026-04-24 更新）**：SAD §12 claim 矩阵对齐**已落地**于 NeuroAgent 专属路径 `Kun.Security.S2SJwt`：`IS2SJwtIssuer.IssueAsync(S2SJwtIssueRequest)` emit `sub`/`jti`/`tenant_id`/`aud`/可选 `roles`/`scope`/`session_id`/`membership_id`/`trace_id`；`S2SJwtOptions.DefaultLifetimeSeconds` 默认 900 秒（15 分钟）。Kun.Gateway 的 Set A 实现（RS256、60s、零信任）保持不变——两套并存，理由见 `docs/security/s2s-jwt.md` 末节。
 
 ### P1-KN-003 Outbox Pattern 补齐
 

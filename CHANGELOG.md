@@ -6,6 +6,14 @@
 
 ## [Unreleased]
 
+### Changed — Kun.Security.S2SJwt (Phase 1 P1-KN-002)
+
+- `IS2SJwtIssuer.IssueAsync` now takes a single `S2SJwtIssueRequest` record. The prior 5-positional-parameter signature is removed (API was in `PublicAPI.Unshipped.txt` with no in-repo consumers besides tests).
+- New claim emission, aligned with SAD v3.0 §12: `roles` (multi-valued), `membership_id`, `trace_id` — all optional via the request record. Pre-existing `sub`, `jti`, `tenant_id`, `scope`, `session_id` remain.
+- Multi-audience tokens now fold `aud` into the payload as a JSON array (previously, multi-audience tokens leaked `aud` into the JWT *header* — correctness bug, now fixed).
+- `S2SJwtOptions.DefaultLifetimeSeconds` default bumped from 300 → **900** (15 minutes) per SAD §12; individual calls can still override via `S2SJwtIssueRequest.Lifetime`.
+- `docs/security/s2s-jwt.md` extended with a NeuroAgent Set B section explaining why both `Kun.Gateway.S2sTokenIssuer` (RS256, 60s) and `Kun.Security.S2SJwt.S2SJwtIssuer` (ES256, 15min) coexist and when to use each.
+
 ### Added — Kun.Storage (Phase 1 P1-KN-001)
 
 - **Kun.Storage** module (trim-safe, `IsAotCandidate=false` due to AWSSDK.S3 reflection):
