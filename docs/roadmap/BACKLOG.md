@@ -62,6 +62,17 @@ worn by kun himself during idle windows picks the next item.
 <!-- KN-SELF-011 moved to ## Done on 2026-04-24 (executor head 74f21c1) -->
 
 
+### P2 — KN-SELF-012: non-generic Result variant of ValidationResultPipelineBehavior (ADR-014 F1)
+
+- **Status**: in-flight — see `kun/.autonomy/active-task.md`
+- **Size**: S (target 3 commits)
+- **Why**: KN-SELF-007 shipped the `Result<TValue>` variant; ADR-014
+  §F1 deferred the non-generic `Result` variant (for void-returning
+  commands). Close F1 — mirror implementation in the same file.
+- **AC**: `ValidationResultPipelineBehavior<TRequest>` sibling
+  class + `AddValidationResultBehavior<TRequest>()` DI overload +
+  3 mirrored tests + CHANGELOG + ADR-014 §F1 resolution marker.
+
 ### P3 — KN-SELF-006-legacy: `Kun.Saga.EntityFrameworkCore` split (long-parked)
 
 - **Size**: L (≥10 commits, breaking change for consumers)
