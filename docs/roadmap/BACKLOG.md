@@ -77,6 +77,32 @@ worn by kun himself during idle windows picks the next item.
 
 
 <!-- KN-SELF-017 moved to ## Done on 2026-04-24 (executor head e9ad7b9 + this closeout) -->
+
+
+### P2 — KN-SELF-018: end-to-end `orchestrating-sagas.md` consumer guide
+
+- **Status**: in-flight — see `kun/.autonomy/active-task.md`
+- **Size**: S (target 2 commits).
+- **Why**: Validation (KN-SELF-013), Outbox (KN-SELF-017)
+  each have a consumer-facing walkthrough under
+  `docs/guides/`. Saga has only `why-saga.md` (primer) +
+  `src/Kun.Saga/AGENTS.md` (agent guardrails) + abstraction
+  interfaces. A downstream engineer writing their first
+  `ISaga<TContext>` + ordered steps + compensation still
+  has to triangulate. Close the same gap shape for the
+  Saga subsystem.
+- **AC**: new `docs/guides/orchestrating-sagas.md` with
+  orchestration-vs-choreography framing, the 4 interface
+  members engineers implement (ISaga Name/Steps/DefaultStepTimeout
+  + ISagaStep Name/Timeout/ExecuteAsync/CompensateAsync),
+  atomic-start boundary, context JsonTypeInfo registration,
+  a 3-step OrderCreationSaga worked example, compensation
+  + timeout lifecycle, idempotency rules, four anti-patterns
+  (cross-step mutable state / compensation throwing on
+  nothing-to-undo / CLR-name step IDs / choreography
+  infiltration), edges footer (P2-KN-Saga-EF-Split +
+  testing-helpers-not-yet), see-also; `src/Kun.Saga/AGENTS.md`
+  cross-link near Purpose.
 - **Size**: S (target 2 commits: tests project + CHANGELOG /
   ADR-015 §F3 resolution marker).
 - **Why**: KN-SELF-014 was rescoped mid-execution. The

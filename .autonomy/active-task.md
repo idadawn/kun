@@ -1,164 +1,172 @@
 ---
-id: KN-SELF-017
-title: docs/guides/outbox-and-integration-events.md consumer guide
-status: done
-planner_commit: 97e4847
-executor_head: <this closeout commit>
+id: KN-SELF-018
+title: docs/guides/orchestrating-sagas.md consumer guide
+status: in-flight
+planner_commit: <fill after commit>
+executor_head: <fill after first executor commit>
 estimated_commits: 2
 started: 2026-04-24
-finished: 2026-04-24
-ship_log: |
-  AC-1 shipped in e9ad7b9: new docs/guides/outbox-and-
-    integration-events.md (~260 lines, Chinese prose +
-    English code, matching validating-commands.md density).
-    Atomicity boundary + stable event ID + publish + consume +
-    testing + W3C trace + 4 anti-patterns + edges footer +
-    see-also. Every type / method name verified against HEAD
-    (IntegrationEventBuffer, UseInMemoryIdempotency,
-    AddKunOutboxPublisher, AddRabbitMq,
-    IIntegrationEventPublisher.PublishAsync, MessageContext,
-    IEventTypeRegistry methods).
-  AC-2 shipped in (this closeout commit): one-line cross-link
-    added near Kun.EventBus/AGENTS.md Purpose section pointing
-    consumers at the new guide as the starter-entry-point
-    ("for consumers wiring their first integration event:
-    read [guide] first").
 ---
 
-# KN-SELF-017 — end-to-end Outbox + integration-events consumer guide
+# KN-SELF-018 — end-to-end Saga orchestration consumer guide
 
 ## Why
 
-KN-SELF-011 shipped ADR-015 (design), KN-SELF-014 shipped the
-`Kun.Testing.EntityFrameworkCore` scaffold + `OutboxAssertions`,
-and KN-SELF-016 closed the tests + docs loop (ADR-015 §F3
-resolved). The only remaining consumer-facing gap in the
-Outbox story is a `docs/guides/` walkthrough. Today a
-downstream engineer writing their first integration-event
-publisher + consumer has to triangulate across ADR-015
-(design), why-outbox.md (primer), `Kun.EventBus/AGENTS.md`
-(agent guardrails), `Kun.EventBus.RabbitMQ/AGENTS.md`
-(broker wiring), `Kun.EntityFrameworkCore/AGENTS.md` (the
-atomicity boundary), and the fresh `Kun.Testing.EntityFrameworkCore`
-AGENTS (how to test). A single guide parallel to
-KN-SELF-013's `docs/guides/validating-commands.md` closes
-the gap.
+Three consumer-facing `docs/guides/` entries have been shipped
+across KN-SELF-013 (validation), KN-SELF-017 (outbox). The
+Saga subsystem has an architecture primer (`why-saga.md`) and
+detailed agent-facing guardrails (`src/Kun.Saga/AGENTS.md`)
+but no consumer-facing walkthrough — a downstream engineer
+writing their first `ISaga<TContext>` + ordered steps +
+compensation has to triangulate across:
 
-(Note: this was KN-SELF-014's first pick at `c3ad04d` before
-two rescopes; now landable as a well-sized S task because
-the test-helper surface it would otherwise have to stub
-is shipped.)
+- `docs/architecture/why-saga.md` (why orchestration over
+  choreography)
+- `src/Kun.Saga/AGENTS.md` (orchestration-only rule, atomic
+  start, compensation idempotency, timeout, context
+  serialization, stable step IDs)
+- `src/Kun.Saga/Abstractions/ISaga.cs` +
+  `ISagaStep.cs` + `ISagaOrchestrator.cs` + `ISagaContext.cs`
+  (the interface contracts)
+- `src/Kun.Saga/DependencyInjection/KunSagaServiceCollectionExtensions.cs`
+  (registration shape)
+
+Close the gap with one guide in the same style as
+`validating-commands.md` / `outbox-and-integration-events.md`.
 
 ## Specs to read first
 
-1. `kun/docs/architecture/ADR-015-Outbox-pattern.md` full
-   (including §F3 resolved annotation from KN-SELF-016).
-2. `kun/docs/architecture/why-outbox.md` — prose framing.
-3. `kun/src/Kun.EventBus/AGENTS.md` + `kun/src/Kun.EventBus.RabbitMQ/AGENTS.md`.
-4. `kun/src/Kun.EntityFrameworkCore/AGENTS.md`.
-5. Real API shapes (grep before quoting):
-   `IIntegrationEventBus.Publish<T>`,
-   `IIntegrationEventHandler<TEvent>`,
-   `KunEventBusBuilder.Register<T>(eventType[, typeInfo])`,
-   `AddKunEventBus(builder)`, `AddKunOutboxPublisher`,
-   `MessageContext` properties.
-6. Style reference: `kun/docs/guides/validating-commands.md`
-   (the sibling guide KN-SELF-013 shipped — match its
-   Chinese-prose + English-code density).
+1. `kun/docs/architecture/why-saga.md` — prose framing to
+   match.
+2. `kun/src/Kun.Saga/AGENTS.md` — all the normative rules
+   (orchestration only, atomic start, compensation
+   idempotency, timeout + compensation order, context
+   serialization via `KunJsonContext`, stable step IDs).
+3. Real API shapes (already verified via grep — confirm
+   before quoting):
+   - `ISaga<TContext>`: `Name`, `DefaultStepTimeout`, `Steps`
+   - `ISagaStep<TContext>`: `Name`, `Timeout`,
+     `ExecuteAsync`, `CompensateAsync`
+   - `ISagaOrchestrator.StartAsync<TSaga, TContext>(TContext,
+     CancellationToken)` → `Task<Guid>`
+   - `ISagaContext` base + consumer-defined context record
+   - `KunSagaBuilder.AddSaga<TSaga, TContext>(JsonTypeInfo<TContext>)`
+   - `AddKunSaga(services, Action<KunSagaBuilder>)`
+   - `SagaState` enum values (Pending / Compensating /
+     Compensated / Completed)
+4. `kun/docs/guides/outbox-and-integration-events.md` +
+   `kun/docs/guides/validating-commands.md` — style + length
+   target (≤ 250 lines).
 
 ## Acceptance criteria
 
-- **AC-1**: New `kun/docs/guides/outbox-and-integration-events.md`.
+- **AC-1**: New `kun/docs/guides/orchestrating-sagas.md`.
   Sections:
-  - 适用对象 — who this is for.
-  - **原子性边界** (atomicity boundary) — one-transaction
-    rule; one-line `SaveChangesAsync` walk-through.
-  - **稳定事件 ID** — `{bounded-context}.{name}.v{n}` +
-    `IEventTypeRegistry` registration; one-liner reminder
-    that `AssemblyQualifiedName` is forbidden.
-  - **发布示例** — worked example: define
-    `OrderPlacedIntegrationEvent`, register via
-    `AddKunEventBus(eb => eb.Register<OrderPlacedIntegrationEvent>("order.placed.v1"))`,
-    `IIntegrationEventBus.Publish` inside a command handler
-    / domain-event handler, the background `OutboxPublisher`
-    pumps to RabbitMQ.
-  - **消费示例** — worked example:
-    `OrderPlacedIntegrationEventHandler : IIntegrationEventHandler<OrderPlacedIntegrationEvent>.HandleAsync`,
-    `IdempotentConsumerDecorator` wrapping (handled by DI —
-    consumer writes a plain handler), at-least-once contract
-    (handler must be safe to call repeatedly).
-  - **测试** — brief section showing
-    `dbContext.ShouldHaveExactlyOneOutboxMessage("order.placed.v1")`
-    after the command handler saves, pointing at the
-    KN-SELF-016-shipped assertions.
-  - **W3C trace 传播** — `TraceParent` + `TraceState`
-    captured on enqueue, replayed on publish; cross-service
-    spans stitch. Distinction vs ADR-013 baggage (user-scope
-    vs message-scope trace continuation).
-  - **反模式** section (4 items):
-    (a) direct `IIntegrationEventBus.Publish` from outside a
-        transaction — event never persists atomically;
-    (b) using `Type.AssemblyQualifiedName` as event ID;
-    (c) writing a non-idempotent consumer handler —
-        double-delivery on retry = data corruption;
-    (d) mutating `MessageContext` across handlers — the
-        context is per-message metadata, not a shared bag.
-  - **边界 / 后续** footer linking ADR-015 §F1 (dead-letter,
-    not shipped), §F2 (per-tenant priority, not shipped)
-    so consumers know the edges.
-  - **相关** footer: ADR-015, why-outbox.md,
-    Kun.EventBus AGENTS, Kun.EventBus.RabbitMQ AGENTS,
-    Kun.EntityFrameworkCore AGENTS,
-    Kun.Testing.EntityFrameworkCore (test helpers),
-    validating-commands.md (sibling guide).
-  - Target length: ≤ ~250 lines.
+  - **适用对象** — who this is for.
+  - **Orchestration vs Choreography** — one-paragraph
+    framing (why Kun chose Orchestration — central
+    coordinator, compensation explicit, resumable across
+    crashes).
+  - **Saga + Step 接口** — concise reference for the four
+    interface members engineers implement (`ISaga.Name`,
+    `Steps`, `DefaultStepTimeout`; `ISagaStep.Name`,
+    `Timeout`, `ExecuteAsync`, `CompensateAsync`).
+  - **原子启动边界** — how `ISagaOrchestrator.StartAsync`
+    persists the `SagaInstance` row + enqueues the first
+    step Outbox message in the same `DbContext` transaction
+    as the triggering command. ASCII/walk-through paralleling
+    the KN-SELF-017 guide's SaveChangesAsync ladder.
+  - **Context + JsonTypeInfo** — every `TContext` must be
+    registered in `KunJsonContext` + passed at
+    `AddSaga<TSaga, TContext>(JsonTypeInfo<TContext>)`
+    registration. AOT-safe.
+  - **Worked example** — 3-step `OrderCreationSaga`:
+    reserve inventory → process payment → mark shipped;
+    full `ISaga<OrderCreationContext>` + three
+    `ISagaStep<OrderCreationContext>` classes with
+    `ExecuteAsync` + `CompensateAsync` + stable `Name`
+    strings + a `Timeout`. Registration via
+    `services.AddKunSaga(b => b.AddSaga<OrderCreationSaga,
+    OrderCreationContext>(OrderJsonContext.Default.OrderCreationContext));`.
+    Command handler `StartAsync` call.
+  - **Compensation + Timeout 生命周期** — what happens on
+    step failure / timeout: reverse-order `CompensateAsync`
+    runs through `SagaStepExecutor` (at-least-once, driven
+    by Outbox), `SagaInstance.State` transitions
+    `Pending → Compensating → Compensated` on rollback
+    or `Pending → Completed` on success.
+  - **幂等** — both `ExecuteAsync` AND `CompensateAsync`
+    must be idempotent; "nothing to undo" is a normal
+    compensation path (not an error).
+  - **反模式** (4 items):
+    (a) 跨 step 共享可变单例状态 — context is the only
+        carrier, steps are transient by design;
+    (b) 在 `CompensateAsync` 里抛异常兜不住 "nothing to
+        undo" — block the compensation chain + leave saga
+        stuck;
+    (c) 用 CLR 类名当 step/saga ID — refactor-renames
+        break persisted `SagaInstance` rows;
+    (d) 往 Saga 里掺进 Choreography 元素 — step 发自己的
+        integration event 让其他 step 订阅，散失中心可见性。
+  - **边界 / 后续** — explicit links to
+    `why-saga.md` + `P2-KN-Saga-EF-Split` (planned follow-up
+    to restore `IsAotCandidate=true` by extracting
+    `Kun.Saga.EntityFrameworkCore`) per the module's AGENTS
+    note + `docs/architecture/AOT-audit-2026-04-23.md`.
+  - **相关** footer: `why-saga.md`, `src/Kun.Saga/AGENTS.md`,
+    sibling guides
+    `outbox-and-integration-events.md` (Saga uses the Outbox
+    for step execution) + `validating-commands.md`.
+  - Target length ≤ 260 lines.
 
-- **AC-2**: `src/Kun.EventBus/AGENTS.md` picks up a one-line
-  cross-link near the top (below Purpose) pointing at the new
-  guide as the consumer entry point. Surgical — no other
-  edits (Testing Requirements already picked up the
-  OutboxAssertions cross-link in KN-SELF-016's closeout).
+- **AC-2**: `src/Kun.Saga/AGENTS.md` picks up a one-line
+  cross-link near Purpose pointing at the new guide as the
+  consumer entry point. Surgical. Front-matter `Updated`
+  bumped to 2026-04-24.
 
 ## Commit plan
 
 | # | Commit subject | AC |
 |---|----------------|----|
-| 1 | `docs(eventbus): end-to-end outbox-and-integration-events guide` | AC-1 |
-| 2 | `docs(eventbus): cross-link guide from AGENTS` | AC-2 |
+| 1 | `docs(saga): end-to-end orchestrating-sagas consumer guide` | AC-1 |
+| 2 | `docs(saga): cross-link guide from AGENTS` | AC-2 |
 
 ## Gates
 
-- [ ] Every relative link in the new guide resolves (grep
-      each `(…)` target).
-- [ ] No code-snippet references a type / method that does
-      not exist in `src/Kun.EventBus/` or
-      `src/Kun.EntityFrameworkCore/` as of HEAD — grep each
-      name before commit.
-- [ ] `dotnet format --verify-no-changes` (sanity; markdown
-      isn't formatter-scope).
+- [ ] Every relative link in the guide resolves (grep each
+      target).
+- [ ] No code-snippet references a type / method / property
+      that does not exist in `src/Kun.Saga/` as of HEAD
+      (already verified: `ISaga`, `ISagaStep`,
+      `ISagaOrchestrator`, `KunSagaBuilder`, `SagaState`,
+      `ISagaContext`).
 
 ## Out of scope
 
-- Dead-letter handling (ADR-015 §F1).
-- Per-tenant batch priority (ADR-015 §F2).
-- Saga-side guide — that's a larger sibling task for a later
-  cycle.
-- Chinese translation of ADR-015 itself — stays English;
-  the guide is Chinese prose + English code, matching
-  validating-commands.md.
+- Saga-specific test helpers (no
+  `Kun.Testing.Saga` sibling yet — future work,
+  note in edges footer).
+- The `P2-KN-Saga-EF-Split` refactor itself (restoring
+  AOT candidacy); only referenced.
+- Distributed-transaction / 2PC comparison essay — the
+  primer `why-saga.md` already covers that.
+- Saga versioning / schema evolution deep dive.
 
 ## Progress log
 
-- 2026-04-24 68dcd09 KN-SELF-016 closed (ADR-015 §F3
-  resolved). Planner hat on for KN-SELF-017.
+- 2026-04-24 8ef076b KN-SELF-017 closed (Outbox consumer
+  guide shipped). Planner hat on for KN-SELF-018.
 
 ## When done
 
 1. `status: done` + `executor_head` SHA.
-2. Move KN-SELF-017 to BACKLOG `## Done`.
-3. `echo "KN-SELF-017 done (<SHA>) — end-to-end
-   outbox-and-integration-events consumer guide shipped." >
-   /home/dawn/project/neuroagent/.omc/state/claude-kun_KN-SELF-017_done.txt`
-4. Next pick candidate: Saga consumer guide (sibling S task),
-   or a deeper dive into one of the deferred §F2/§F1 items
-   with a ralplan, or fresh pain point.
+2. Move KN-SELF-018 to BACKLOG `## Done`.
+3. `echo "KN-SELF-018 done (<SHA>) — end-to-end
+   orchestrating-sagas consumer guide shipped; Saga story
+   fully documented." >
+   /home/dawn/project/neuroagent/.omc/state/claude-kun_KN-SELF-018_done.txt`
+4. Next pick candidates: saas-multitenancy guide refresh
+   (existing guide, may be stale vs recent ADRs), a
+   `Kun.Testing.Saga` helper-ship if a concrete consumer
+   need surfaces, ADR-013 §F2 with a small design ADR
+   first, or fresh pain point.
