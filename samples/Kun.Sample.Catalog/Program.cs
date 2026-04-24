@@ -60,8 +60,8 @@ builder.Services.AddSingleton<IReadDbConnectionFactory, NpgsqlReadDbConnectionFa
 // ── Event bus + Outbox ────────────────────────────────────────────────────────
 builder.Services.AddKunEventBus(eb =>
 {
-    eb.Register<ProductPublishedIntegrationEvent>("product.published.v1");
-    eb.Register<InventoryChangedIntegrationEvent>("inventory.changed.v1");
+    eb.Register<ProductPublishedIntegrationEvent>();
+    eb.Register<InventoryChangedIntegrationEvent>();
     eb.UseInMemoryIdempotency();
 });
 

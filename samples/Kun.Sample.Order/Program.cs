@@ -47,7 +47,7 @@ builder.Services.AddKunEntityFrameworkCore();
 // ── Event Bus + Outbox Publisher ──────────────────────────────────────────────
 builder.Services.AddKunEventBus(eb =>
 {
-    eb.Register<Kun.Sample.Order.Contracts.OrderCompletedIntegrationEvent>("order.completed.v1");
+    eb.Register<Kun.Sample.Order.Contracts.OrderCompletedIntegrationEvent>();
     eb.UseInMemoryIdempotency();
 });
 
