@@ -46,6 +46,7 @@ worn by kun himself during idle windows picks the next item.
 
 ### P2 — KN-SELF-006: `Kun.Observability` log-record enricher (ADR-013 F1)
 
+- **Status**: in-flight — see `kun/.autonomy/active-task.md`
 - **Size**: M (target 5–7 commits)
 - **Why**: ADR-013 landed the span enricher that mirrors baggage
   (`tenant.id`, `user.id`, `outbox.message_id`) onto Kun-sourced
