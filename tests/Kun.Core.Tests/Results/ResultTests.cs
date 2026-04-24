@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Kun.Core.Results;
+using Kun.Testing.Results;
 using Xunit;
 
 namespace Kun.Core.Tests.Results;
@@ -14,8 +15,8 @@ public class ResultTests
         // Act
         var result = Result.Ok();
 
-        // Assert
-        result.IsSuccess.Should().BeTrue();
+        // Assert — smoke-adopting Kun.Testing.Results.ResultAssertions (ADR-012 AC-7)
+        result.ShouldBeSuccess();
         result.Error.Should().Be(Error.None);
     }
 
@@ -28,9 +29,8 @@ public class ResultTests
         // Act
         var result = Result.Fail(error);
 
-        // Assert
-        result.IsSuccess.Should().BeFalse();
-        result.Error.Should().Be(error);
+        // Assert — smoke-adopting Kun.Testing.Results.ResultAssertions (ADR-012 AC-7)
+        result.ShouldHaveErrorCode("test.fail").Should().Be(error);
     }
 
     [Fact]
@@ -51,9 +51,8 @@ public class ResultTests
         // Act
         var result = Result<int>.Ok(42);
 
-        // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().Be(42);
+        // Assert — ShouldBeSuccess<T> returns the value so chaining is terse
+        result.ShouldBeSuccess().Should().Be(42);
     }
 
     [Fact]
@@ -65,9 +64,8 @@ public class ResultTests
         // Act
         var result = Result<int>.Fail(error);
 
-        // Assert
-        result.IsSuccess.Should().BeFalse();
-        result.Error.Should().Be(error);
+        // Assert — ErrorType assert documents the expected shape in one line
+        result.ShouldHaveErrorType(ErrorType.NotFound).Should().Be(error);
     }
 
     [Fact]
