@@ -50,22 +50,8 @@ worn by kun himself during idle windows picks the next item.
 <!-- KN-SELF-007 moved to ## Done on 2026-04-24 (executor head 2d7cc50) -->
 
 
-### P2 — KN-SELF-008: flip `Kun.Observability` to `HasPublicApi=true`
+<!-- KN-SELF-008 moved to ## Done on 2026-04-24 (executor head af4007c) -->
 
-- **Size**: S (target 2 commits)
-- **Why**: ADR-013 CHANGELOG entry explicitly self-documented the
-  follow-up: `HasPublicApi` stays `false` on `Kun.Observability`
-  today, but with `KunBaggageKeys` + `KunObservabilityOptions` +
-  `AddKunObservability` + now `EnrichLogsFromBaggage` landed, the
-  module has enough public surface that strict API tracking pays
-  for itself. Consumers should not accidentally depend on an API
-  shape that moves in a patch release. One-module pilot for a
-  future Kun-wide sweep of remaining `HasPublicApi=false`
-  modules (Kun.Sandbox, etc.).
-- **AC**: csproj flips to `HasPublicApi=true`; seed empty
-  `PublicAPI.Shipped.txt` + fully-populated `PublicAPI.Unshipped.txt`
-  enumerating the current public symbols (options + extension +
-  KunBaggageKeys); sln build stays 0/0.
 
 ### P3 — KN-SELF-006-legacy: `Kun.Saga.EntityFrameworkCore` split (long-parked)
 
@@ -79,6 +65,16 @@ worn by kun himself during idle windows picks the next item.
 
 ## Done
 
+- **KN-SELF-008** — flip `Kun.Observability` to `HasPublicApi=true` —
+  executor head `af4007c` (1 combined commit — AC-1 flag flip +
+  AC-2 CHANGELOG folded) — 2026-04-24. Seeded empty `Shipped.txt`
+  and full `Unshipped.txt` covering `KunObservabilityOptions`
+  (12 properties + default ctor), `AddKunObservability` extension,
+  and `KunBaggageKeys` (3 constants + `All` `static readonly`
+  array). Format matches `Kun.Core` / `Kun.Mediator` precedent —
+  `static readonly` for the field, inner-`!` on generic args.
+  No behaviour change. Pilot for remaining `HasPublicApi=false`
+  modules (future KN-SELF-xxx, one module at a time).
 - **KN-SELF-007** — `Kun.Validation` Result-returning pipeline
   behavior (ADR-014, ADR-011 consumer) — executor head `2d7cc50`
   (ADR-014 + 4 code/test/doc commits) — 2026-04-24. Five ACs

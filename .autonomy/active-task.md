@@ -1,11 +1,13 @@
 ---
 id: KN-SELF-008
 title: Flip Kun.Observability to HasPublicApi=true
-status: in-flight
-planner_commit: <fill after commit>
-executor_head: <fill after first executor commit>
+status: done
+planner_commit: bdc8001
+executor_head: af4007c
 estimated_commits: 2
+actual_commits: 1
 started: 2026-04-24
+finished: 2026-04-24
 ---
 
 # KN-SELF-008 — flip `Kun.Observability` to `HasPublicApi=true`
