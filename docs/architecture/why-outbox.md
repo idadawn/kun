@@ -106,3 +106,13 @@ an operational process to inspect, correct, and republish them.
 The Outbox pattern adds operational surface area in exchange for a guarantee that the dual-write
 problem cannot silently corrupt your system state. That trade is almost always worth making in a
 distributed system where correctness matters.
+
+---
+
+## See also
+
+- [ADR-015 Outbox pattern design](./ADR-015-Outbox-pattern.md) — full design walk-through: type
+  surface, atomicity boundary, publisher pump, consumer idempotency, rejected alternatives.
+- `kun/CLAUDE.md` §Outbox — normative rules (atomicity, stable event IDs, idempotent consumers,
+  W3C trace propagation). The rules constrain; this primer explains the problem; the ADR explains
+  the design.
