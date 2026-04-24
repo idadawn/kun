@@ -3,7 +3,7 @@
   <PropertyGroup>
     <IsAotCandidate>true</IsAotCandidate>
     <IsPackable>true</IsPackable>
-    <HasPublicApi>false</HasPublicApi>
+    <HasPublicApi>true</HasPublicApi>
     <Description>Kun Framework object-storage abstraction (IFileStorage) with S3/MinIO and local-filesystem implementations. Active-web MIME types are stored with Content-Disposition: attachment as an anti-XSS defense.</Description>
   </PropertyGroup>
 

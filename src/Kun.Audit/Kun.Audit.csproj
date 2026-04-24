@@ -3,7 +3,7 @@
   <PropertyGroup>
     <IsAotCandidate>true</IsAotCandidate>
     <IsPackable>true</IsPackable>
-    <HasPublicApi>false</HasPublicApi>
+    <HasPublicApi>true</HasPublicApi>
     <Description>Kun Framework audit-log abstractions: IAuditWriter / IAuditReader / AuditableAttribute, plus a no-op default writer and an optional integration-event fan-out writer. EF Core adapter lives in Kun.Audit.EntityFrameworkCore.</Description>
   </PropertyGroup>
 

@@ -1,0 +1,16 @@
+#nullable enable
+Kun.Configuration.Abstractions.IKunConfigurationValidator<TOptions>
+Kun.Configuration.Abstractions.IKunConfigurationValidator<TOptions>.Validate(string? name, TOptions! options) -> Microsoft.Extensions.Options.ValidateOptionsResult!
+Kun.Configuration.Attributes.NonEmptyStringConfigAttribute
+Kun.Configuration.Attributes.NonEmptyStringConfigAttribute.NonEmptyStringConfigAttribute() -> void
+Kun.Configuration.Attributes.RequiredConfigAttribute
+Kun.Configuration.Attributes.RequiredConfigAttribute.RequiredConfigAttribute() -> void
+Kun.Configuration.Attributes.UrlConfigAttribute
+Kun.Configuration.Attributes.UrlConfigAttribute.UrlConfigAttribute() -> void
+Kun.Configuration.Extensions.KunConfigurationServiceCollectionExtensions
+override Kun.Configuration.Attributes.NonEmptyStringConfigAttribute.FormatErrorMessage(string! name) -> string!
+override Kun.Configuration.Attributes.NonEmptyStringConfigAttribute.IsValid(object? value) -> bool
+override Kun.Configuration.Attributes.RequiredConfigAttribute.FormatErrorMessage(string! name) -> string!
+override Kun.Configuration.Attributes.UrlConfigAttribute.FormatErrorMessage(string! name) -> string!
+override Kun.Configuration.Attributes.UrlConfigAttribute.IsValid(object? value) -> bool
+static Kun.Configuration.Extensions.KunConfigurationServiceCollectionExtensions.AddKunOptions<TOptions>(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! section) -> Microsoft.Extensions.Options.OptionsBuilder<TOptions!>!

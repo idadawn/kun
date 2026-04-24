@@ -1,0 +1,47 @@
+#nullable enable
+Kun.Caching.Abstractions.IKunCache
+Kun.Caching.Abstractions.IKunCache.GetAsync<T>(string! key, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<T?>!
+Kun.Caching.Abstractions.IKunCache.GetBytesAsync(string! key, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<byte[]?>!
+Kun.Caching.Abstractions.IKunCache.GetOrSetAsync<T>(string! key, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<T>!>! factory, System.TimeSpan? ttl = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<T>!
+Kun.Caching.Abstractions.IKunCache.RemoveAsync(string! key, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Caching.Abstractions.IKunCache.SetAsync<T>(string! key, T value, System.TimeSpan? ttl = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Caching.Abstractions.IKunCache.SetBytesAsync(string! key, byte[]! value, System.TimeSpan? ttl = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Caching.Abstractions.IKunCacheSerializer
+Kun.Caching.Abstractions.IKunCacheSerializer.Deserialize<T>(byte[]! data) -> T?
+Kun.Caching.Abstractions.IKunCacheSerializer.Serialize<T>(T value) -> byte[]!
+Kun.Caching.Configuration.KunCachingOptions
+Kun.Caching.Configuration.KunCachingOptions.DefaultTtl.get -> System.TimeSpan?
+Kun.Caching.Configuration.KunCachingOptions.DefaultTtl.set -> void
+Kun.Caching.Configuration.KunCachingOptions.FallbackToMemoryOnRedisFailure.get -> bool
+Kun.Caching.Configuration.KunCachingOptions.FallbackToMemoryOnRedisFailure.set -> void
+Kun.Caching.Configuration.KunCachingOptions.KeyPrefix.get -> string?
+Kun.Caching.Configuration.KunCachingOptions.KeyPrefix.set -> void
+Kun.Caching.Configuration.KunCachingOptions.KunCachingOptions() -> void
+Kun.Caching.DependencyInjection.KunCachingBuilder
+Kun.Caching.DependencyInjection.KunCachingBuilder.KunCachingBuilder(Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> void
+Kun.Caching.DependencyInjection.KunCachingBuilder.Services.get -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Kun.Caching.DependencyInjection.KunCachingServiceCollectionExtensions
+Kun.Caching.Implementations.MemoryKunCache
+Kun.Caching.Implementations.MemoryKunCache.GetAsync<T>(string! key, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<T?>!
+Kun.Caching.Implementations.MemoryKunCache.GetBytesAsync(string! key, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<byte[]?>!
+Kun.Caching.Implementations.MemoryKunCache.GetOrSetAsync<T>(string! key, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<T>!>! factory, System.TimeSpan? ttl = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<T>!
+Kun.Caching.Implementations.MemoryKunCache.MemoryKunCache(Microsoft.Extensions.Caching.Memory.IMemoryCache! cache, Microsoft.Extensions.Options.IOptions<Kun.Caching.Configuration.KunCachingOptions!>! options) -> void
+Kun.Caching.Implementations.MemoryKunCache.RemoveAsync(string! key, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Caching.Implementations.MemoryKunCache.SetAsync<T>(string! key, T value, System.TimeSpan? ttl = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Caching.Implementations.MemoryKunCache.SetBytesAsync(string! key, byte[]! value, System.TimeSpan? ttl = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Caching.Implementations.RedisKunCache
+Kun.Caching.Implementations.RedisKunCache.GetAsync<T>(string! key, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<T?>!
+Kun.Caching.Implementations.RedisKunCache.GetBytesAsync(string! key, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<byte[]?>!
+Kun.Caching.Implementations.RedisKunCache.GetOrSetAsync<T>(string! key, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<T>!>! factory, System.TimeSpan? ttl = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<T>!
+Kun.Caching.Implementations.RedisKunCache.RedisKunCache(Microsoft.Extensions.Caching.Distributed.IDistributedCache! distributed, Kun.Caching.Abstractions.IKunCacheSerializer! serializer, Microsoft.Extensions.Options.IOptions<Kun.Caching.Configuration.KunCachingOptions!>! options, Microsoft.Extensions.Logging.ILogger<Kun.Caching.Implementations.RedisKunCache!>! logger, Kun.Caching.Implementations.MemoryKunCache? fallback = null) -> void
+Kun.Caching.Implementations.RedisKunCache.RemoveAsync(string! key, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Caching.Implementations.RedisKunCache.SetAsync<T>(string! key, T value, System.TimeSpan? ttl = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Caching.Implementations.RedisKunCache.SetBytesAsync(string! key, byte[]! value, System.TimeSpan? ttl = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Caching.Implementations.SystemTextJsonCacheSerializer
+Kun.Caching.Implementations.SystemTextJsonCacheSerializer.Deserialize<T>(byte[]! data) -> T?
+Kun.Caching.Implementations.SystemTextJsonCacheSerializer.Serialize<T>(T value) -> byte[]!
+Kun.Caching.Implementations.SystemTextJsonCacheSerializer.SystemTextJsonCacheSerializer() -> void
+Kun.Caching.Implementations.SystemTextJsonCacheSerializer.SystemTextJsonCacheSerializer(System.Text.Json.JsonSerializerOptions! options) -> void
+static Kun.Caching.DependencyInjection.KunCachingServiceCollectionExtensions.AddKunCaching(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.Caching.Configuration.KunCachingOptions!>? configure = null) -> Kun.Caching.DependencyInjection.KunCachingBuilder!
+static Kun.Caching.DependencyInjection.KunCachingServiceCollectionExtensions.UseMemory(this Kun.Caching.DependencyInjection.KunCachingBuilder! builder) -> Kun.Caching.DependencyInjection.KunCachingBuilder!
+static Kun.Caching.DependencyInjection.KunCachingServiceCollectionExtensions.UseRedis(this Kun.Caching.DependencyInjection.KunCachingBuilder! builder, string! connectionString) -> Kun.Caching.DependencyInjection.KunCachingBuilder!
