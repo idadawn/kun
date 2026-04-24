@@ -41,7 +41,9 @@ worn by kun himself during idle windows picks the next item.
 
 ### P2 — KN-SELF-004: `Kun.Dapper` AOT intent cleanup
 
-- **Size**: S (target ≤3 commits)
+- **Status**: in-flight — see `kun/.autonomy/active-task.md`
+- **Size**: S (target ≤3 commits, reduced to 2 after planning —
+  csproj flag already shipped in a prior cycle)
 - **Why**: AOT audit 2026-04-23 flagged `Kun.Dapper` YELLOW — no
   `<IsAotCandidate>` declaration. Set it to `false` explicitly and
   annotate `AGENTS.md` that per-query AOT is `Dapper.AOT` source

@@ -1,131 +1,80 @@
 ---
-id: KN-SELF-003
-title: Kun.Observability baggage-driven activity enricher
-status: done
-planner_commit: 014250b
-executor_head: 12cf37c
-estimated_commits: 7
-actual_commits: 6
+id: KN-SELF-004
+title: Kun.Dapper AOT intent cleanup (AGENTS note + audit follow-up)
+status: in-flight
+planner_commit: <fill after commit>
+executor_head: <fill after first executor commit>
+estimated_commits: 2
 started: 2026-04-24
-finished: 2026-04-24
 ---
 
-# KN-SELF-003 — `Kun.Observability` baggage-driven activity enricher
+# KN-SELF-004 — `Kun.Dapper` AOT intent cleanup
 
 ## Why
 
-`KunActivitySources` already pre-registers the four framework sources
-(`Kun.Mediator`, `Kun.EventBus.Outbox`, `Kun.Grpc`, `Kun.Saga`), but
-nothing auto-tags `tenant_id` / `user_id` / `outbox.message_id` onto
-the spans those sources emit. Operators reading Aspire / Jaeger end up
-correlating spans to logs by hand whenever they need to filter by
-tenant or user.
+The AOT audit dated 2026-04-23 flagged `Kun.Dapper` YELLOW: no
+explicit `<IsAotCandidate>` declaration. The csproj has since been
+patched (**`<IsAotCandidate>false</IsAotCandidate>`** with a comment
+pointing at the audit), but:
 
-Add a baggage-driven enricher: consumer code pushes keys into
-OpenTelemetry **baggage** (which is W3C-standard and auto-propagates
-across HTTP / gRPC / async), and the framework mirrors a whitelisted
-subset of baggage keys into span tags at `Activity.Start` time.
-Baggage rides on the async-local context so we don't need to reach
-into DI scopes from a singleton processor — that's the key design
-simplification.
+- `src/Kun.Dapper/AGENTS.md` "For AI Agents" section does not record
+  the AOT intent, so a future agent modifying the file would not know
+  why the flag is deliberately `false`.
+- `docs/architecture/AOT-audit-2026-04-23.md` still lists Kun.Dapper
+  as YELLOW in its TL;DR + module matrix + detail section + §后续建议
+  — the stale status creates false signal during audits or when a
+  new agent greps for "YELLOW" before picking up follow-ups.
 
-## Specs to read first (non-negotiable)
+Tiny cleanup to close the audit finding cleanly.
 
-Required by `kun/CLAUDE.md` §Specs-first:
+## Specs to read first
 
-1. `kun/CLAUDE.md` — §Architectural constraints (Infrastructure
-   layer + AOT strict)
-2. `kun/AGENTS.md`
-3. `kun/src/Kun.Observability/AGENTS.md` — "stop-gate AOT
-   regressions on OTel upgrade"
-4. `kun/src/Kun.Observability/KunActivitySources.cs` — canonical
-   source list
-5. `kun/src/Kun.Observability/Abstractions/KunObservabilityOptions.cs`
-6. `kun/src/Kun.Observability/Extensions/ServiceCollectionExtensions.cs`
-7. `kun/tests/Kun.Observability.Tests/AGENTS.md` (if present) or
-   `AddKunObservabilityTests.cs` for conventions
-8. `kun/docs/architecture/ADR-004-Kun.Observability-module.md` —
-   prior module ADR for voice/structure
-9. `kun/Directory.Packages.props` — confirm
-   `OpenTelemetry.Exporter.InMemory` is available for tests (✅ seen
-   during planning)
+1. `kun/CLAUDE.md` — §Four-layer dependency flow (confirms
+   `Kun.Dapper` sits above `Kun.EntityFrameworkCore` in the read
+   split and is deliberately out of the AOT-candidate set because
+   Dapper.AOT does its AOT-compat via source generator in consumer
+   query handlers, not in the wrapper module)
+2. `kun/docs/architecture/AOT-audit-2026-04-23.md` — the stale §YELLOW
+   text needs a resolution marker
+3. `kun/src/Kun.Dapper/Kun.Dapper.csproj` — already has the explicit
+   flag + comment (sanity check)
+4. `kun/src/Kun.Dapper/AGENTS.md` — target for the new AOT-intent
+   note
 
 ## Acceptance criteria
 
-- **AC-1**: `docs/architecture/ADR-013-Kun.Observability-enricher.md`
-  accepted. Records: baggage-to-tags design choice over
-  DI-scope-spelunking, canonical baggage key names
-  (`tenant.id`, `user.id`, `outbox.message_id`), why a
-  `BaseProcessor<Activity>` + `OnStart` hook is the right place,
-  AOT constraints, what is deliberately out of scope
-  (Kun-log-enricher, metric-dimension enricher).
-- **AC-2**: `src/Kun.Observability/Enrichment/KunBaggageKeys.cs` —
-  public static class exposing the canonical baggage keys as string
-  constants so consumers and tests reference the same names.
-- **AC-3**: `src/Kun.Observability/Enrichment/KunBaggageActivityProcessor.cs`
-  — `BaseProcessor<Activity>` that on `OnStart` checks the
-  activity's `Source.Name` against `KunActivitySources.All`, reads
-  the whitelisted baggage keys via `Activity.Baggage`, and copies
-  each present key to a span tag (same name).
-- **AC-4**: `KunObservabilityOptions.EnrichActivitiesFromBaggage`
-  (default `false` — opt-in per ADR-013 §Default posture) + wire it
-  into `AddKunObservability` so setting the flag registers the
-  processor into the `TracerProviderBuilder`.
-- **AC-5**: `tests/Kun.Observability.Tests` gain coverage via
-  `OpenTelemetry.Exporter.InMemory`:
-  - baggage `tenant.id` → span tag `tenant.id` on a Kun-sourced
-    activity (positive path)
-  - non-whitelisted baggage key ignored
-  - activity from a non-Kun `ActivitySource` is not tagged
-  - feature disabled → no tags added
-- **AC-6**: Make `Kun.Observability.Enrichment` public surface —
-  csproj flips `HasPublicApi` to `true` if not already, seeds
-  `PublicAPI.Shipped.txt` / `PublicAPI.Unshipped.txt` listing every
-  new symbol. (Check current state in commit 1; may be a no-op.)
-- **AC-7**: `src/Kun.Observability/AGENTS.md` + `CHANGELOG.md
-  [Unreleased] ### Added` entry.
+- **AC-1**: `src/Kun.Dapper/AGENTS.md` "For AI Agents" section gains
+  a bullet recording the AOT intent — `<IsAotCandidate>false</IsAotCandidate>`
+  is deliberate; AOT coverage for read-side query handlers is each
+  consumer's responsibility via `[DapperAot]`-annotated query
+  methods, not this wrapper module's.
+- **AC-2**: `docs/architecture/AOT-audit-2026-04-23.md` amended
+  with a post-audit resolution marker. Keep the original YELLOW
+  text as-is (history preservation) but add a clear "Resolved
+  2026-04-24 in KN-SELF-004" line at each relevant spot (TL;DR,
+  module matrix row, §YELLOW detail, §后续建议).
 
 ## Commit plan
 
 | # | Commit subject | AC | Notes |
 |---|----------------|----|-------|
-| 1 | `docs(observability): ADR-013 span enricher from baggage` | AC-1 | ADR-first for behaviour-changing feature |
-| 2 | `feat(observability): KunBaggageKeys canonical baggage-tag names` | AC-2 | Tiny — constants only; seeds the namespace |
-| 3 | `feat(observability): KunBaggageActivityProcessor (OnStart enricher)` | AC-3 | BaseProcessor<Activity> + OnStart hook; no public DI wiring yet |
-| 4 | `feat(observability): EnrichActivitiesFromBaggage option flag + DI wiring` | AC-4 | Opt-in flag, default false |
-| 5 | `test(observability): InMemoryExporter covers baggage-to-tag copy` | AC-5 | 4+ tests per AC bullets |
-| 6 | `docs(observability): PublicAPI seeding + AGENTS + CHANGELOG for enricher` | AC-6, AC-7 | May include flipping HasPublicApi=true |
+| 1 | `docs(dapper): record AOT-intent in AGENTS.md` | AC-1 | single-file edit |
+| 2 | `docs(audit): mark Kun.Dapper YELLOW resolved` | AC-2 | multi-spot edit in one audit file |
 
-Optional 7th only if AOT publish flags anything — otherwise omit.
+## AOT / build gates
 
-## AOT / build gates that must stay green
-
-- [ ] `dotnet format` on touched projects
-- [ ] `dotnet build Kun.sln -c Release -p:TreatWarningsAsErrors=true` 0/0
-- [ ] `dotnet test tests/Kun.Observability.Tests -c Release --no-build` green
-- [ ] `dotnet publish src/Kun.Observability -c Release -r linux-x64 -p:PublishAot=true /warnaserror` ILC 0 warning
-- [ ] `CHANGELOG.md [Unreleased]` has "### Added — Kun.Observability baggage-driven activity enricher"
-- [ ] No new `<PackageReference>` in `Kun.Observability.csproj` (all OTel SDK types needed are already referenced)
-
-## Out of scope
-
-- Log-record enricher that tags `tenant.id` / `user.id` onto log
-  entries — separate task because `OpenTelemetry.Logs.LogRecord` API
-  differs from `Activity`. Tracked as ADR-013 §Follow-up F1.
-- Metric dimensions — most Kun metrics are counters without labels
-  today; dimensional enrichment is premature.
-- Aspire sample screenshot / dashboard demo — `samples/Kun.Sample.*`
-  are placeholders at the skeleton stage per repo status; revisit
-  when samples are fleshed out. Tracked as ADR-013 §Follow-up F2.
+- [ ] `dotnet format` on touched projects (docs only — may skip)
+- [ ] `dotnet build src/Kun.Dapper -c Release -p:TreatWarningsAsErrors=true` still 0/0
+- [ ] no csproj / code changes — AOT matrix unaffected
 
 ## Progress log
 
-<!-- append as commits land -->
-- 2026-04-24 1c996f0 KN-SELF-002 closed (planner prior cycle)
+- 2026-04-24 5401f89 KN-SELF-003 closed (prior cycle)
 
 ## When done
 
 1. `status: done` + `executor_head` SHA.
-2. Move KN-SELF-003 in `BACKLOG.md` to `## Done`.
-3. `echo "KN-SELF-003 done (<SHA>) — Kun.Observability baggage enricher landed." > /home/dawn/project/neuroagent/.omc/state/claude-kun_KN-SELF-003_done.txt`
-4. Planner next pick: KN-SELF-004 (Kun.Dapper AOT intent cleanup, BACKLOG P2) — small (S) warm-up before returning to larger P1 items.
+2. Move KN-SELF-004 in `BACKLOG.md` to `## Done`.
+3. `echo "KN-SELF-004 done (<SHA>) — Kun.Dapper AOT intent cleanup." > /home/dawn/project/neuroagent/.omc/state/claude-kun_KN-SELF-004_done.txt`
+4. Planner next pick: KN-SELF-005 (IAuthenticatedUser naming-consistency
+   sweep, BACKLOG P2 — another small S item).
