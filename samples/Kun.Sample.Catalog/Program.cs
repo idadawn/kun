@@ -10,6 +10,7 @@ using Kun.EntityFrameworkCore.DependencyInjection;
 using Kun.EventBus.DependencyInjection;
 using Kun.Grpc.DependencyInjection;
 using Kun.Mediator.DependencyInjection;
+using Kun.Observability.Extensions;
 using Kun.Sample.Catalog;
 using Kun.Sample.Catalog.Application.Commands;
 using Kun.Sample.Catalog.Application.DomainEventHandlers;
@@ -17,15 +18,19 @@ using Kun.Sample.Catalog.Application.Queries;
 using Kun.Sample.Catalog.Contracts;
 using Kun.Sample.Catalog.Grpc;
 using Kun.Sample.Catalog.Infrastructure;
-using Kun.Sample.Shared;
 using Kun.Sandbox.Extensions;
 using Kun.Validation.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ── OpenTelemetry (traces + metrics via OTLP) ─────────────────────────────────
-builder.Services.AddKunObservability("catalog");
+// ── OpenTelemetry (traces + metrics + logs via OTLP, with baggage enrichment) ─
+builder.Services.AddKunObservability(o =>
+{
+    o.ServiceName = "catalog";
+    o.EnrichActivitiesFromBaggage = true;
+    o.EnrichLogsFromBaggage = true;
+});
 
 // ── Connection strings ────────────────────────────────────────────────────────
 var writeCs = builder.Configuration.GetConnectionString("CatalogDb")
