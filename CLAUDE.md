@@ -124,6 +124,8 @@ In `Kun.EntityFrameworkCore`'s `UnitOfWork.SaveChangesAsync`:
 
 Consumers are wrapped in `IdempotentConsumerDecorator<T>` backed by `IProcessedMessageStore` (Redis `SETNX + EX` by default). Delivery is at-least-once — consumer handlers must be safe to call repeatedly.
 
+> **Design rationale** (type surface, publisher pump, rejected alternatives): see [ADR-015 Outbox pattern design](./docs/architecture/ADR-015-Outbox-pattern.md). The rules above are normative; the ADR explains *why*.
+
 ### Saga: Orchestration only
 
 `Kun.Saga` is Orchestration (central coordinator), not Choreography. An `ISaga<TContext>` is an ordered list of `ISagaStep<TContext>` with `ExecuteAsync` and `CompensateAsync`. The orchestrator persists `SagaInstance` + enqueues the first step in the same EF transaction as the triggering command. Step execution and compensation run off a background executor driven by the Outbox. Compensation runs **in reverse order from the failed step** and must itself be idempotent (steps that never ran must still be safe to compensate).

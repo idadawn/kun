@@ -19,7 +19,7 @@ Event-bus abstractions: integration event base (`IIntegrationEvent`), event-type
 
 - **Stable event IDs are the critical design choice.** Event types are identified by strings of shape `{bounded-context}.{event-name}.v{version}` (e.g. `order.placed.v1`, `payment.refunded.v2`) — never by `AssemblyQualifiedName`. The registry persists these mappings.
 - **AOT-safe serialization only**: integration event payloads are serialized via `KunJsonContext.Default.GetTypeInfo(type)!`. Every integration event type must be registered in `KunJsonContext`.
-- **The Outbox contract** (this module defines the shape, `Kun.EntityFrameworkCore` writes, `Kun.EventBus.RabbitMQ` publishes): message row carries `Id`, `EventTypeId` (stable string), `Payload` (JSON), `TraceParent`/`TraceState` (W3C), `OccurredAt`, `PublishedAt`, `Status`.
+- **The Outbox contract** (this module defines the shape, `Kun.EntityFrameworkCore` writes, `Kun.EventBus.RabbitMQ` publishes): message row carries `Id`, `EventTypeId` (stable string), `Payload` (JSON), `TraceParent`/`TraceState` (W3C), `OccurredAt`, `PublishedAt`, `Status`. Full design walk-through — type surface, atomicity boundary, publisher pump, rejected alternatives — in [ADR-015 Outbox pattern design](../../docs/architecture/ADR-015-Outbox-pattern.md).
 - **Consumer idempotency** is provided by `IdempotentConsumerDecorator<T>` backed by `IProcessedMessageStore`. Consumers written by users are plain `IIntegrationEventHandler<T>` — the decorator is applied at DI registration time.
 - **Version evolution**: when an event's payload changes shape, **always bump the `.v{n}` suffix** and add a new type rather than modifying the v1 type — older messages still in flight must deserialize correctly.
 
