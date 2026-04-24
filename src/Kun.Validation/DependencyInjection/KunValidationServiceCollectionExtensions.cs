@@ -73,4 +73,26 @@ public static class KunValidationServiceCollectionExtensions
             ValidationResultPipelineBehavior<TRequest, TValue>>();
         return builder;
     }
+
+    /// <summary>
+    /// Non-generic-response overload of
+    /// <see cref="AddValidationResultBehavior{TRequest, TValue}"/>. Registers
+    /// <see cref="ValidationResultPipelineBehavior{TRequest}"/> for requests
+    /// whose response is the non-generic <see cref="Result"/> (void commands).
+    /// See ADR-014 §F1.
+    /// </summary>
+    /// <typeparam name="TRequest">The request type.</typeparam>
+    /// <param name="builder">The mediator builder to register the behavior on.</param>
+    /// <returns>The same <paramref name="builder"/> for chaining.</returns>
+    public static KunMediatorBuilder AddValidationResultBehavior<TRequest>(
+        this KunMediatorBuilder builder)
+        where TRequest : IRequest<Result>
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+        builder.AddPipelineBehavior<
+            TRequest,
+            Result,
+            ValidationResultPipelineBehavior<TRequest>>();
+        return builder;
+    }
 }
