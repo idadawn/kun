@@ -18,7 +18,22 @@ Source-generated request validation. Validators emit validation logic at compile
 ### Working In This Directory
 
 - **Validators are written per-command type** and annotated/discovered by the source generator. Runtime reflection-based validator discovery (e.g. `ValidatorRegistry.Scan()`) is not allowed — the generator builds the registry at compile time.
-- **Validation failures return `Result.Fail(Error.Validation(...))`, not exceptions.** The pipeline behavior converts validator results into the Mediator response before the handler runs.
+- **Two pipeline behaviors ship** — pick one per request type:
+  - `ValidationPipelineBehavior<TRequest, TResponse>` throws
+    `ValidationException` on validator failure. Handlers either
+    return their plain response or let the exception escape to
+    ASP.NET / gRPC translation middleware.
+  - `ValidationResultPipelineBehavior<TRequest, TValue>` returns
+    `Result<TValue>.Fail(Error.Validation("request.invalid", ...))`
+    instead of throwing. Preferred for handlers that compose via
+    `Result<T>` — matches the framework-wide "business failures use
+    `Result`, not exceptions" rule in `kun/CLAUDE.md`
+    §Architectural constraints. See
+    [ADR-014](../../docs/architecture/ADR-014-Validation-Result-behavior.md).
+  - **Do not register both for the same request type** — picking
+    both produces double-wrapping of validation messages. Runtime
+    diagnostic was deemed too expensive for a rare misconfiguration;
+    doc guardrail only.
 - Keep validator logic pure (no DB calls). Semantic validation that needs data belongs in the handler, not here.
 
 ### Testing Requirements

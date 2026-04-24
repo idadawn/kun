@@ -6,6 +6,42 @@
 
 ## [Unreleased]
 
+### Added — ADR-014 Result-returning validation behavior (2026-04-24)
+
+- **docs/architecture/ADR-014-Validation-Result-behavior.md** —
+  accepted. Design for a sibling pipeline behavior to the existing
+  exception-throwing `ValidationPipelineBehavior`: on validator
+  failure, returns
+  `Result<TValue>.Fail(Error.Validation("request.invalid", ...))`
+  instead of throwing. Directly consumes ADR-011 `Result<T>`
+  composition.
+- **`Kun.Validation.Behaviors.ValidationResultPipelineBehavior<TRequest, TValue>`** —
+  new sealed class implementing
+  `IPipelineBehavior<TRequest, Result<TValue>>` with
+  `where TRequest : IRequest<Result<TValue>>`. Aggregates
+  validator errors into one joined message; empty-validators
+  fast-path.
+- **`AddValidationResultBehavior<TRequest, TValue>`** extension on
+  `KunMediatorBuilder` — explicit per-request-type registration,
+  matches the existing `AddValidator<>` / `AddValidationBehavior<>`
+  pattern. The generic constraint on `TResponse` cannot be
+  expressed at the open-generic DI layer (ADR-014 §DI
+  registration).
+- **5 new tests** in
+  `tests/Kun.Validation.Tests/ValidationResultPipelineBehaviorTests.cs`
+  covering: empty validators pass-through, validator pass, validator
+  fail → Result.Fail with `request.invalid` code, multi-validator
+  aggregation with `;` separator, handler-level `Result.Fail` is
+  **not** intercepted (domain error preserved).
+- **Coexistence rule** with the throwing `ValidationPipelineBehavior`:
+  register one or the other per request type, not both — doc
+  guardrail in `src/Kun.Validation/AGENTS.md`.
+- **Scope notes**: non-generic `Result` variant deferred as ADR-014
+  §F1. Structured per-field error payload deferred as §F2. Source-
+  generator-based bulk registration deferred as §F3. No new
+  `<PackageReference>`; `Kun.Validation` keeps
+  `IsAotCandidate=true`.
+
 ### Added — ADR-013 §F1 log-record enricher (2026-04-24)
 
 - **docs/architecture/ADR-013-Kun.Observability-enricher.md** —
