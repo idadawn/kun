@@ -30,6 +30,7 @@ Kun.EventBus.DependencyInjection.KunOutboxPublisherExtensions
 static Kun.EventBus.DependencyInjection.KunOutboxPublisherExtensions.AddKunOutboxPublisher(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.EventBus.Background.OutboxPublisherOptions!>? configure = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Kun.EventBus.DependencyInjection.KunOutboxPublisherExtensions.UseRedisOutboxLock(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 Kun.EventBus.DependencyInjection.KunEventBusBuilder.Register<TEvent>(string! eventType) -> Kun.EventBus.IEventTypeRegistrar!
+Kun.EventBus.DependencyInjection.KunEventBusBuilder.Register<TEvent>() -> Kun.EventBus.IEventTypeRegistrar!
 Kun.EventBus.DependencyInjection.KunEventBusBuilder.UseInMemoryIdempotency() -> Kun.EventBus.DependencyInjection.KunEventBusBuilder!
 Kun.EventBus.DependencyInjection.KunEventBusBuilder.UseRedisIdempotency() -> Kun.EventBus.DependencyInjection.KunEventBusBuilder!
 Kun.EventBus.Idempotency.InMemoryProcessedMessageStore
@@ -47,6 +48,10 @@ Kun.EventBus.EventTypeRegistry.GetEventType(System.Type! clrType) -> string?
 Kun.EventBus.EventTypeRegistry.Resolve(string! eventType) -> System.Type?
 Kun.EventBus.IEventTypeRegistrar
 Kun.EventBus.IEventTypeRegistrar.Register<TEvent>(string! eventType) -> Kun.EventBus.IEventTypeRegistrar!
+Kun.EventBus.IEventTypeRegistrar.Register<TEvent>() -> Kun.EventBus.IEventTypeRegistrar!
+Kun.EventBus.IntegrationEventIdAttribute
+Kun.EventBus.IntegrationEventIdAttribute.IntegrationEventIdAttribute(string! eventType) -> void
+Kun.EventBus.IntegrationEventIdAttribute.EventType.get -> string!
 Kun.EventBus.IEventTypeRegistry
 Kun.EventBus.IEventTypeRegistry.GetEventType(System.Type! clrType) -> string?
 Kun.EventBus.IEventTypeRegistry.Resolve(string! eventType) -> System.Type?
