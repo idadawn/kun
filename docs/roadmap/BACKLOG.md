@@ -53,17 +53,8 @@ worn by kun himself during idle windows picks the next item.
 <!-- KN-SELF-008 moved to ## Done on 2026-04-24 (executor head af4007c) -->
 
 
-### P2 — KN-SELF-009: flip `Kun.Sandbox` to `HasPublicApi=true`
+<!-- KN-SELF-009 moved to ## Done on 2026-04-24 (executor head 5672525) -->
 
-- **Status**: in-flight — see `kun/.autonomy/active-task.md`
-- **Size**: S (target 1–2 commits)
-- **Why**: Second step of the KN-SELF-008 pilot. Kun.Sandbox has
-  ≈15 public types (ISandboxProvider + three impls + E2B-shaped
-  DTOs / sub-APIs) that currently skip the strict-tracking gate.
-- **AC**: csproj flip + PublicAPI seed (via
-  `dotnet format analyzers --diagnostics=RS0016` code fix) +
-  RS0026 suppression on the `IProcesses.RunAsync` legacy dual-
-  overload shape + CHANGELOG "### Changed" entry.
 
 ### P3 — KN-SELF-006-legacy: `Kun.Saga.EntityFrameworkCore` split (long-parked)
 
@@ -77,6 +68,21 @@ worn by kun himself during idle windows picks the next item.
 
 ## Done
 
+- **KN-SELF-009** — flip `Kun.Sandbox` to `HasPublicApi=true` —
+  executor head `5672525` (1 combined commit, under estimate) —
+  2026-04-24. Second step of the KN-SELF-008 pilot sweep. 120
+  PublicAPI.Unshipped entries auto-emitted by `dotnet format
+  analyzers --diagnostics=RS0016` (the Roslyn code fix walks the
+  assembly's public surface and writes canonical text in one pass —
+  key strategy lesson applied after the hand-writing format
+  headaches on KN-SELF-001). `IProcesses.RunAsync` dual-overload
+  (`string[]` vs `string` first param) got a file-level
+  RS0026 suppress with an explanation comment — overload resolution
+  is unambiguous on parameter type, not optional-param count.
+  CHANGELOG "### Changed" entry surfaces the flip to consumers.
+  Remaining HasPublicApi=false modules: `*.EntityFrameworkCore`
+  family + `Kun.AspNetCore` (future KN-SELF-xxx, evaluate
+  per-module).
 - **KN-SELF-008** — flip `Kun.Observability` to `HasPublicApi=true` —
   executor head `af4007c` (1 combined commit — AC-1 flag flip +
   AC-2 CHANGELOG folded) — 2026-04-24. Seeded empty `Shipped.txt`

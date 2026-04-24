@@ -1,11 +1,13 @@
 ---
 id: KN-SELF-009
 title: Flip Kun.Sandbox to HasPublicApi=true (continue KN-SELF-008 sweep)
-status: in-flight
-planner_commit: <fill after commit>
-executor_head: <fill after first executor commit>
+status: done
+planner_commit: 7e5922a
+executor_head: 5672525
 estimated_commits: 2
+actual_commits: 1
 started: 2026-04-24
+finished: 2026-04-24
 ---
 
 # KN-SELF-009 — flip `Kun.Sandbox` to `HasPublicApi=true`
