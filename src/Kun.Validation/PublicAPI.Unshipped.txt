@@ -2,3 +2,4 @@
 Kun.Validation.Behaviors.ValidationResultPipelineBehavior<TRequest, TValue>
 Kun.Validation.Behaviors.ValidationResultPipelineBehavior<TRequest, TValue>.Handle(TRequest request, Kun.Mediator.RequestHandlerDelegate<Kun.Core.Results.Result<TValue>>! next, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Kun.Core.Results.Result<TValue>>
 Kun.Validation.Behaviors.ValidationResultPipelineBehavior<TRequest, TValue>.ValidationResultPipelineBehavior(System.Collections.Generic.IEnumerable<Kun.Validation.IValidator<TRequest>!>! validators) -> void
+static Kun.Validation.DependencyInjection.KunValidationServiceCollectionExtensions.AddValidationResultBehavior<TRequest, TValue>(this Kun.Mediator.KunMediatorBuilder! builder) -> Kun.Mediator.KunMediatorBuilder!
