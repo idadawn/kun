@@ -1,11 +1,13 @@
 ---
 id: KN-SELF-003
 title: Kun.Observability baggage-driven activity enricher
-status: in-flight
-planner_commit: <fill after commit>
-executor_head: <fill after first executor commit>
+status: done
+planner_commit: 014250b
+executor_head: 12cf37c
 estimated_commits: 7
+actual_commits: 6
 started: 2026-04-24
+finished: 2026-04-24
 ---
 
 # KN-SELF-003 — `Kun.Observability` baggage-driven activity enricher

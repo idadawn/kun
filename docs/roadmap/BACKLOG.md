@@ -36,19 +36,8 @@ worn by kun himself during idle windows picks the next item.
 <!-- KN-SELF-002 moved to ## Done on 2026-04-24 (executor head aa4b4d7) -->
 
 
-### P1 — KN-SELF-003: `Kun.Observability` trace enricher (tenant/user/outbox)
+<!-- KN-SELF-003 moved to ## Done on 2026-04-24 (executor head 12cf37c) -->
 
-- **Status**: in-flight — see `kun/.autonomy/active-task.md`
-- **Size**: M (target 6–8 commits)
-- **Why**: `KunActivitySources` registers four sources but nothing
-  auto-injects `tenant_id` / `user_id` / `outbox.message_id` as span
-  tags. Downstream operators have to correlate Aspire dashboard spans
-  back to logs by hand. Add a `KunActivityEnricher` that reads
-  `ITenantContext` + `ICurrentUser` + the current Outbox envelope (when
-  present) and tags the active span.
-- **AC**: enricher in `Kun.Observability`, opt-in via
-  `AddKunObservability().WithEnricher()`, OTel exporter test asserts
-  tags are present, Aspire sample shows them in Dashboard.
 
 ### P2 — KN-SELF-004: `Kun.Dapper` AOT intent cleanup
 
@@ -84,6 +73,19 @@ worn by kun himself during idle windows picks the next item.
 
 ## Done
 
+- **KN-SELF-003** — `Kun.Observability` baggage activity enricher + ADR-013 —
+  executor head `12cf37c` (ADR-013 + 5 code/test/doc commits) — 2026-04-24.
+  Six ACs shipped (final plan hit 6 commits, 1 under estimate): ADR
+  accepted, `KunBaggageKeys` + internal `KunBaggageActivityProcessor`
+  (OnEnd hook, AsyncLocal-safe baggage-to-tag mirror for Kun-owned
+  ActivitySources only), `EnrichActivitiesFromBaggage` opt-in flag
+  + `AddKunObservability` wiring, 7 new InMemoryExporter tests
+  (manual TracerProviderBuilder + hosted ServiceProvider paths),
+  AGENTS + CHANGELOG + ADR §OnEnd amendment. Kun.Observability ILC
+  0-warning; sln build 0 errors. HasPublicApi flip intentionally
+  deferred as a future framework-wide task. Out-of-scope tracked
+  as ADR-013 F1–F3 (log-record enricher, metric dimensions, Aspire
+  dashboard demo).
 - **KN-SELF-002** — `Kun.Testing` fluent assertion helpers + ADR-012 —
   executor head `aa4b4d7` (ADR-012 + 6 code/test/doc commits) — 2026-04-24.
   Seven ACs shipped: ADR accepted, src/Kun.Testing module scaffolded
