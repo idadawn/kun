@@ -35,6 +35,7 @@ worn by kun himself during idle windows picks the next item.
 
 ### P1 — KN-SELF-002: `Kun.Testing` fluent assertion helpers
 
+- **Status**: in-flight — see `kun/.autonomy/active-task.md`
 - **Size**: M (target 7–9 commits)
 - **Why**: Every `tests/Kun.*.Tests` project re-invents the same trio:
   `Assert.True(result.IsSuccess); Assert.Equal(expectedErrorCode,

@@ -1,150 +1,149 @@
 ---
-id: KN-SELF-001
-title: Result<T> async extension methods + ADR-011
-status: done
-planner_commit: 951eba8
-executor_head: 48937db
-estimated_commits: 7
-actual_commits: 7
+id: KN-SELF-002
+title: Kun.Testing fluent assertion helpers
+status: in-flight
+planner_commit: <fill after commit>
+executor_head: <fill after first executor commit>
+estimated_commits: 8
 started: 2026-04-24
-finished: 2026-04-24
 ---
 
-# KN-SELF-001 — `Result<T>` async extension methods + ADR-011
+# KN-SELF-002 — `Kun.Testing` fluent assertion helpers
 
 ## Why
 
-`Kun.Core.Results.Result<T>` today exposes only `Ok` / `Fail` /
-`EnsureSuccess`. Every consumer that composes async operations
-(`neuroagent-csharp` Edge and Platform, future gateway handlers, Saga
-steps) re-invents `Map` / `Bind` / `Tap` / `Ensure` ad-hoc — sometimes
-without honoring short-circuit semantics, sometimes forgetting to
-forward the `CancellationToken`. ADR-010 warned about exactly this
-drift pattern at the cookie-session layer; fix it at the core before
-more consumers copy the improvised version.
+Every `tests/Kun.*.Tests` project today open-codes the same three
+`Result` / domain-event shapes:
 
-This task is **framework-driven** (BACKLOG P0, self-managed under the
-two-role protocol). No business task is blocked on it today, but every
-future `P1-KN-xxx` that composes async handlers will benefit — and
-landing the ADR early means consumers pick up the canonical shape the
-first time they reach for it.
+```csharp
+Assert.True(result.IsSuccess);
+Assert.Equal("order.notFound", result.Error.Code);
+Assert.Contains(aggregate.DomainEvents, e => e is OrderPlacedEvent);
+```
+
+FluentAssertions is present but the `Result<T>` / `IAggregateRoot`
+shapes aren't first-class to FluentAssertions, so the same little
+block gets retyped. `neuroagent-csharp` tests repeat the pattern
+too — another consumer-drift risk like the one ADR-010 warned about
+at the session layer and ADR-011 fixed at the Result composition
+layer.
+
+Ship a small `Kun.Testing` helper assembly with:
+
+- `result.ShouldBeSuccess()` / `ShouldBeSuccess(out TValue value)`
+- `result.ShouldBeFailure()` / `ShouldHaveErrorCode("order.notFound")`
+  / `ShouldHaveErrorType(ErrorType.NotFound)`
+- `aggregate.ShouldRaise<TEvent>()` (single expected event, returns
+  the event for further inspection)
+- `aggregate.ShouldRaiseExactly<TEvent>(int count)` / `ShouldNotRaise<TEvent>()`
+
+Explicitly **out of scope** for this task: Outbox message assertions
+(Outbox lives in `Kun.EntityFrameworkCore` which is non-AOT; if/when
+needed, ships as a separate `Kun.Testing.EntityFrameworkCore`
+companion — tracked as KN-SELF-002 follow-up in BACKLOG).
 
 ## Specs to read first (non-negotiable)
 
-Required by `kun/CLAUDE.md` §Specs-first. Reading order:
+Required by `kun/CLAUDE.md` §Specs-first:
 
-1. `kun/CLAUDE.md` — §Specs-first, §Architectural constraints
-   (especially the `Result` / `Result<T>` vs exceptions rule)
+1. `kun/CLAUDE.md` — §Specs-first + §Four-layer dependency flow
+   (confirm `Kun.Testing` sits at the Abstraction layer — references
+   `Kun.Core` only)
 2. `kun/AGENTS.md`
-3. `kun/CONTRIBUTING.md` — commit + PR convention
-4. `kun/src/Kun.Core/AGENTS.md` — zero-third-party-dep rule
-5. `kun/src/Kun.Core/Results/AGENTS.md`
-   (plus `Result.cs` / `Error.cs` current surface)
-6. `kun/docs/architecture/ADR-010-Kun.Identity-cookie-session.md`
-   — reference for ADR voice / structure
-7. `kun/tests/Kun.Core.Tests/AGENTS.md`
-8. `kun/Directory.Build.props` — `TreatWarningsAsErrors`,
-   `GenerateDocumentationFile`, AOT analyzer switches
-9. `kun/Directory.Packages.props` — confirm **no new packages needed**
-   (the zero-dep rule in `Kun.Core` means all new code must be pure BCL)
+3. `kun/CONTRIBUTING.md`
+4. `kun/src/Kun.Core/AGENTS.md` — zero-third-party-dep rule applies
+   by extension (`Kun.Testing` should take no non-BCL runtime deps
+   beyond `Kun.Core`)
+5. `kun/src/Kun.Core/Results/AGENTS.md` — understand the `Result`
+   surface we're asserting against (updated in KN-SELF-001)
+6. `kun/src/Kun.Core/Domain/IAggregateRoot.cs`,
+   `Domain/IDomainEvent.cs` — shape of what `ShouldRaise` asserts on
+7. `kun/tests/Kun.Core.Tests/AGENTS.md` — testing conventions (xUnit
+   v3, FluentAssertions, AAA)
+8. `kun/Directory.Build.props` + `kun/Directory.Packages.props`
+9. ADR-010, ADR-011 — for voice/structure when writing ADR-012
 
 ## Acceptance criteria
 
-- **AC-1**: `docs/architecture/ADR-011-result-async-extensions.md`
-  accepted (Status: Accepted, dated 2026-04-24). Covers: method naming
-  (`MapAsync` / `BindAsync` / `TapAsync` / `EnsureAsync`), decision to
-  support both `Task<Result<T>>` and `ValueTask<Result<T>>` sources,
-  cancellation-token propagation, short-circuit semantics, AOT
-  constraints (no generic reflection, no `DynamicallyAccessed…`
-  attributes on public API), and explicit rejection of alternative
-  names (`ThenAsync`, `SelectAsync`, `Flatten`).
-- **AC-2**: Synchronous extension surface landed in
-  `src/Kun.Core/Results/ResultExtensions.cs`:
-  - `Result.Tap(Action)`, `Result.Ensure(Func<bool>, Error)`,
-    `Result.Match<T>(Func<T> ok, Func<Error, T> fail)`
-  - `Result<T>.Map<TOut>(Func<T, TOut>)`,
-    `Result<T>.Bind<TOut>(Func<T, Result<TOut>>)`,
-    `Result<T>.Tap(Action<T>)`,
-    `Result<T>.Ensure(Func<T, bool>, Error)`,
-    `Result<T>.Match<TOut>(Func<T, TOut> ok, Func<Error, TOut> fail)`
-  All failure-path inputs short-circuit without invoking the supplied
-  delegate; all public methods are XML-documented.
-- **AC-3**: Async extensions on `Task<Result<T>>` sources landed:
-  `MapAsync` / `BindAsync` / `TapAsync` / `EnsureAsync` plus
-  `MatchAsync`, each accepting `CancellationToken` and propagating it
-  to the delegate where the delegate accepts one. Every overload has a
-  sync-delegate and an async-delegate form.
-- **AC-4**: Async extensions on `ValueTask<Result<T>>` sources landed,
-  mirroring AC-3. Rationale for the duplicate surface is the
-  ADR-11 §Alternatives-considered (`ValueTask` for hot paths in
-  Mediator pipeline; `Task` for user-facing handler code).
-- **AC-5**: `tests/Kun.Core.Tests/Results/ResultExtensionsTests.cs`
-  covers:
-  - success pass-through for every `Map` / `Bind` / `Tap` / `Ensure`
-  - failure short-circuit for every method (delegate must **not** be
-    invoked — assert with a flag)
-  - `CancellationToken` forwarding (assert delegate sees the supplied
-    token, and a pre-cancelled token surfaces `OperationCanceledException`
-    rather than an `Error`)
-  - `Task` and `ValueTask` source parity for at least `MapAsync` and
-    `BindAsync`
-  - `Ensure`/`EnsureAsync` carry the supplied `Error` on predicate
-    failure, preserve original error on already-failure inputs
-- **AC-6**: `PublicAPI.Unshipped.txt` updated to list every new public
-  method; `CHANGELOG.md [Unreleased]` gains a `### Added` entry
-  citing ADR-011.
-- **AC-7**: Build gates green on `develop` after final commit:
-  `dotnet format --verify-no-changes`, `dotnet build Kun.sln -c Release
-  -p:TreatWarningsAsErrors=true`, `dotnet test -c Release --no-build`
-  (all non-Docker tests), and `dotnet publish src/Kun.Core -c Release
-  -p:PublishAot=true /warnaserror` (local ILC pass — CI does the full
-  link).
+- **AC-1**: `docs/architecture/ADR-012-Kun.Testing-module.md` accepted.
+  Records: module placement at the Abstraction layer, zero-runtime-
+  third-party-dep constraint (depends only on `Kun.Core`), choice of
+  throwing a custom `KunAssertionException` rather than binding to a
+  specific test framework (xUnit vs NUnit vs MSTest) so the helpers
+  are framework-agnostic, and the explicit out-of-scope list (Outbox,
+  Testcontainers fixtures, HTTP test servers).
+- **AC-2**: Scaffold `src/Kun.Testing` project — csproj with
+  `IsAotCandidate=true`, `IsPackable=true`, `HasPublicApi=true`,
+  project reference to `Kun.Core` only, no `<PackageReference>`
+  entries. Add to `Kun.sln` in the `src/` solution folder.
+- **AC-3**: Scaffold `tests/Kun.Testing.Tests` project — xUnit v3,
+  references `Kun.Testing`. Add to `Kun.sln` in the `tests/`
+  solution folder.
+- **AC-4**: `KunAssertionException` + `ResultAssertions` — fluent
+  extensions on `Result` and `Result<T>`:
+  - `ShouldBeSuccess(this Result)` / `ShouldBeSuccess(this Result<T>) -> T`
+    (returns the value so callers can chain further checks)
+  - `ShouldBeFailure(this Result|Result<T>) -> Error`
+  - `ShouldHaveErrorCode(this Result|Result<T>, string code) -> Error`
+  - `ShouldHaveErrorType(this Result|Result<T>, ErrorType type) -> Error`
+  All helpers throw `KunAssertionException` with a precise message
+  (actual vs expected) on mismatch. XML-documented.
+- **AC-5**: `DomainEventAssertions` — fluent extensions on
+  `IAggregateRoot`:
+  - `ShouldRaise<TEvent>(this IAggregateRoot) -> TEvent` (expects
+    exactly one `TEvent`; throws with count if 0 or >1)
+  - `ShouldRaiseExactly<TEvent>(this IAggregateRoot, int count) -> IReadOnlyList<TEvent>`
+  - `ShouldNotRaise<TEvent>(this IAggregateRoot)`
+  Use `OfType<TEvent>()` + LINQ (compile-time safe, AOT-friendly —
+  no reflection).
+- **AC-6**: `tests/Kun.Testing.Tests` — cover every helper: success
+  path + a negative case per helper that asserts the
+  `KunAssertionException` message contains both actual and expected
+  info. Target ≥20 tests.
+- **AC-7**: Smoke-adopt in `tests/Kun.Core.Tests` — convert 3–5
+  existing assertions in `Results/ResultTests.cs` or
+  `Results/ResultExtensionsTests.cs` to `Kun.Testing` helpers. This
+  proves the dependency shape works across the repo before other
+  workers pull it in. **Do not** mass-convert — only a handful, as a
+  smoke.
+- **AC-8**: `src/Kun.Testing/AGENTS.md` + `tests/Kun.Testing.Tests/AGENTS.md`
+  + `CHANGELOG.md [Unreleased] ### Added` entry + PublicAPI.Shipped
+  and .Unshipped seeded (new module — Shipped empty, Unshipped has
+  every new public symbol).
 
 ## Commit plan
 
 | # | Commit subject | AC | Notes |
 |---|----------------|----|-------|
-| 1 | `docs(core): ADR-011 Result<T> async extension methods` | AC-1 | ADR-first per Specs rule |
-| 2 | `feat(core): synchronous Map/Bind/Tap/Ensure/Match on Result(<T>)` | AC-2 | XML-docs, no new packages |
-| 3 | `feat(core): async Result extensions on Task<Result<T>> sources` | AC-3 | include CT overloads |
-| 4 | `feat(core): async Result extensions on ValueTask<Result<T>> sources` | AC-4 | mirror AC-3 shape |
-| 5 | `test(core): cover Result extension sync + async + CT propagation` | AC-5 | xUnit v2, pure in-memory |
-| 6 | `docs(core): CHANGELOG + PublicAPI.Unshipped for Result extensions` | AC-6 | list every new public symbol |
-| 7 | `docs(core): Results/AGENTS.md usage examples for new extensions` | AC-6 | small follow-up doc, hand-curated examples |
+| 1 | `docs(testing): ADR-012 Kun.Testing module` | AC-1 | ADR-first for new top-level module |
+| 2 | `feat(testing): scaffold Kun.Testing project + sln wiring` | AC-2, AC-3 | both csprojs + sln entries in one commit |
+| 3 | `feat(testing): KunAssertionException + ResultAssertions` | AC-4 | PublicAPI.Unshipped updated in-commit |
+| 4 | `feat(testing): DomainEventAssertions (ShouldRaise/ShouldNotRaise)` | AC-5 | PublicAPI.Unshipped updated in-commit |
+| 5 | `test(testing): Kun.Testing.Tests cover all assertions` | AC-6 | xUnit v3 + FluentAssertions on the assertion messages |
+| 6 | `test(core): smoke-adopt Kun.Testing in Kun.Core.Tests` | AC-7 | 3–5 call-sites only |
+| 7 | `docs(testing): AGENTS.md + CHANGELOG for Kun.Testing` | AC-8 | wrap-up |
 
-Optional 8th commit (only if AOT publish flags anything): `fix(core):
-AOT-quiet Result extensions` — otherwise omit.
+Optional 8th commit only if sln add or PublicAPI format sweeps surface issues — otherwise omit.
 
 ## AOT / build gates that must stay green
 
-- [ ] `dotnet format --verify-no-changes`
-- [ ] `dotnet build Kun.sln -c Release -p:TreatWarningsAsErrors=true`
-- [ ] `dotnet test tests/Kun.Core.Tests -c Release --no-build`
-- [ ] `dotnet publish src/Kun.Core -c Release -p:PublishAot=true /warnaserror`
-- [ ] `dotnet publish src/Kun.Mediator -c Release -p:PublishAot=true /warnaserror`
-      (regression check — Mediator references Core)
-- [ ] `PublicAPI.Unshipped.txt` diff non-empty
-- [ ] `CHANGELOG.md [Unreleased]` diff non-empty
-- [ ] Zero new `<PackageReference>` in `Kun.Core.csproj`
-      (zero-third-party-dep rule in `src/Kun.Core/AGENTS.md`)
+- [ ] `dotnet format` on touched projects
+- [ ] `dotnet build Kun.sln -c Release -p:TreatWarningsAsErrors=true` 0/0
+- [ ] `dotnet test tests/Kun.Testing.Tests -c Release --no-build` green
+- [ ] `dotnet test tests/Kun.Core.Tests -c Release --no-build` still 85+ green (smoke adoption)
+- [ ] `dotnet publish src/Kun.Testing -c Release -r linux-x64 -p:PublishAot=true /warnaserror` ILC 0 warning
+- [ ] `PublicAPI.Shipped.txt` (empty) + `PublicAPI.Unshipped.txt` (every new public symbol) present
+- [ ] `CHANGELOG.md [Unreleased]` has "### Added — Kun.Testing module"
+- [ ] Zero non-`Kun.Core` `<PackageReference>` in `Kun.Testing.csproj`
 
 ## Progress log
 
-- 2026-04-24 3a5aa7d bootstrap — BACKLOG + autonomy dir landed (planner pre-step)
-- 2026-04-24 951eba8 planner — pick KN-SELF-001, write active-task.md
-- 2026-04-24 fad70c7 AC-1 — ADR-011 accepted
-- 2026-04-24 8b113df AC-2 — sync Map/Bind/Tap/Ensure/Match landed on Result(<T>); PublicAPI.Unshipped updated in-commit
-- 2026-04-24 02085a1 AC-3 — Task<Result<T>> async extensions landed; RS0026 drove CT-required decision (amendment in AC-6)
-- 2026-04-24 450f278 AC-4 — ValueTask<Result<T>> async extensions landed; mirrors AC-3 on ValueTask rail
-- 2026-04-24 fd80416 AC-5 — 41 new tests (85 total green); Task/ValueTask parity + CT forwarding + null guards
-- 2026-04-24 0ce0cf7 AC-6 — CHANGELOG [Unreleased] section + ADR-011 §CancellationToken amendment recording required-CT rationale
-- 2026-04-24 48937db AC-7 — Results/AGENTS.md usage examples (multi-step handler, Tap side-effect, Match fold)
+<!-- append as commits land -->
+- 2026-04-24 90ee2bc KN-SELF-001 closed (planner prior cycle)
 
 ## When done
 
-1. Set `status: done` and `executor_head` to final commit SHA.
-2. Move the KN-SELF-001 entry in `docs/roadmap/BACKLOG.md` from
-   `P0` to `## Done` with SHA + date.
-3. `echo "KN-SELF-001 done (<final SHA>) — Result<T> async extensions
-   landed; ADR-011 accepted." > /home/dawn/project/neuroagent/.omc/state/claude-kun_KN-SELF-001_done.txt`
-4. Return to 角色1 and pick KN-SELF-002 or the next BACKLOG top.
+1. `status: done` + `executor_head` SHA.
+2. Move KN-SELF-002 in `BACKLOG.md` to `## Done`.
+3. `echo "KN-SELF-002 done (<SHA>) — Kun.Testing module + fluent helpers landed." > /home/dawn/project/neuroagent/.omc/state/claude-kun_KN-SELF-002_done.txt`
+4. Planner next pick: KN-SELF-003 (Kun.Observability trace enricher, BACKLOG P1).
