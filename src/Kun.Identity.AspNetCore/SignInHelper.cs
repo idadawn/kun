@@ -1,3 +1,11 @@
+// RS0026 flags "multiple overloads with optional parameters" as a
+// binary-compat risk. The two SignInAsync overloads differ in the
+// first parameter type (ClaimsPrincipal vs (userId, email, etc.)
+// parameter tuple) — overload resolution is unambiguous on the
+// call site, and both shipped together from day one. Suppressing
+// at file level keeps the ergonomic dual-entry-point intact.
+#pragma warning disable RS0026
+
 using System.Security.Claims;
 using System.Security.Cryptography;
 using Kun.Identity.Abstractions;

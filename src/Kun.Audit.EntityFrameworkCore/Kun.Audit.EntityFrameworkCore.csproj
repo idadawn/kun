@@ -3,7 +3,7 @@
   <PropertyGroup>
     <IsAotCandidate>false</IsAotCandidate>
     <IsPackable>true</IsPackable>
-    <HasPublicApi>false</HasPublicApi>
+    <HasPublicApi>true</HasPublicApi>
     <Description>EF Core adapter for Kun.Audit: AuditSaveChangesInterceptor, EfAuditWriter, AuditLog entity configuration. Trim-safe; not AOT-compatible because EF Core 10 AOT support is incomplete (see ADR-003).</Description>
   </PropertyGroup>
 
