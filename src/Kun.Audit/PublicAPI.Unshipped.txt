@@ -40,3 +40,9 @@ Kun.Audit.InMemoryAuditSink.InMemoryAuditSink() -> void
 Kun.Audit.InMemoryAuditSink.Entries.get -> System.Collections.Generic.IReadOnlyCollection<Kun.Audit.AuditEntry!>!
 Kun.Audit.InMemoryAuditSink.WriteAsync(Kun.Audit.AuditEntry! entry, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
 Kun.Audit.InMemoryAuditSink.Clear() -> void
+Kun.Audit.Behaviors.AuditLogPipelineBehavior<TRequest, TResponse>
+Kun.Audit.Behaviors.AuditLogPipelineBehavior<TRequest, TResponse>.AuditLogPipelineBehavior(Kun.Audit.IAuditSink! sink, Kun.Audit.IAuditChainState! chain, Kun.Core.MultiTenancy.ITenantContext! tenantContext, Kun.Core.Security.ICurrentUser! currentUser, System.TimeProvider! clock, Microsoft.Extensions.Logging.ILogger<Kun.Audit.Behaviors.AuditLogPipelineBehavior<TRequest, TResponse>!>! logger) -> void
+Kun.Audit.Behaviors.AuditLogPipelineBehavior<TRequest, TResponse>.Handle(TRequest request, Kun.Mediator.RequestHandlerDelegate<TResponse>! next, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<TResponse>
+Kun.Audit.DependencyInjection.KunAuditServiceCollectionExtensions
+static Kun.Audit.DependencyInjection.KunAuditServiceCollectionExtensions.AddKunAudit(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Kun.Audit.DependencyInjection.KunAuditServiceCollectionExtensions.AddAuditBehavior<TRequest, TResponse>(this Kun.Mediator.KunMediatorBuilder! builder) -> Kun.Mediator.KunMediatorBuilder!
