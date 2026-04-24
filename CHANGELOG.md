@@ -6,6 +6,37 @@
 
 ## [Unreleased]
 
+### Added — ADR-013 §F1 log-record enricher (2026-04-24)
+
+- **docs/architecture/ADR-013-Kun.Observability-enricher.md** —
+  amended with a new §F1 resolution section. The prior §Follow-ups
+  F1 entry is now annotated "Resolved 2026-04-24 (KN-SELF-006)"
+  with a pointer to the new section.
+- **`Kun.Observability.Enrichment.KunBaggageLogRecordProcessor`**
+  (internal) — `BaseProcessor<LogRecord>` that runs at `OnEnd`,
+  reads `Activity.Current?.Baggage`, and mirrors whitelisted keys
+  (`tenant.id`, `user.id`, `outbox.message_id`) onto
+  `LogRecord.Attributes`. Idempotent: never overwrites an
+  attribute the log statement set explicitly. No-op when no
+  `Activity.Current` exists.
+- **`KunObservabilityOptions.EnrichLogsFromBaggage`** — new flag,
+  default `false` (opt-in, mirrors `EnrichActivitiesFromBaggage`
+  posture). Setting it to `true` registers the processor into the
+  logging pipeline at `AddKunObservability` time.
+- **4 new tests** in `tests/Kun.Observability.Tests/LogBaggageEnrichmentTests.cs`
+  via `OpenTelemetry.Logs.InMemoryExporter`: baggage→attribute
+  happy path, flag-off path, caller-set-attribute-preserved path,
+  no-active-activity no-crash path.
+- **AOT / package deltas**: zero new `<PackageReference>`;
+  processor and tests use only already-referenced OpenTelemetry
+  APIs. `Kun.Observability` keeps `IsAotCandidate=true`.
+- **Operator impact**: flipping both
+  `EnrichActivitiesFromBaggage = true` and
+  `EnrichLogsFromBaggage = true` on `AddKunObservability`
+  options now produces Aspire / Jaeger / Kibana queries where the
+  same `tenant.id=…` filter works uniformly across the trace UI
+  and the log view — no hand-joining.
+
 ### Added — ADR-013 Kun.Observability baggage enricher (2026-04-24)
 
 - **docs/architecture/ADR-013-Kun.Observability-enricher.md** —

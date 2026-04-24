@@ -39,6 +39,7 @@ point — `AddKunObservability` — that:
 | `KunObservabilityServiceCollectionExtensions.AddKunObservability` | Registers the OTel pipeline. Returns `IServiceCollection` for chaining and is safe to call multiple times on the same collection (see idempotency marker). |
 | `Enrichment.KunBaggageKeys` | Public constants (`tenant.id`, `user.id`, `outbox.message_id`) — canonical baggage keys the framework mirrors onto Kun-sourced span tags when the enricher is enabled. |
 | `Enrichment.KunBaggageActivityProcessor` | Internal `BaseProcessor<Activity>` that runs at `OnEnd` for Kun-owned sources and mirrors whitelisted baggage entries onto span tags. Opt-in via `KunObservabilityOptions.EnrichActivitiesFromBaggage`. See [ADR-013](../../docs/architecture/ADR-013-Kun.Observability-enricher.md). |
+| `Enrichment.KunBaggageLogRecordProcessor` | Internal `BaseProcessor<LogRecord>` that runs at `OnEnd`, reads `Activity.Current?.Baggage`, and mirrors whitelisted keys onto `LogRecord.Attributes` *if not already set by the log statement*. Opt-in via `KunObservabilityOptions.EnrichLogsFromBaggage`. See [ADR-013 §F1 resolution](../../docs/architecture/ADR-013-Kun.Observability-enricher.md). |
 
 ## Default Toggles
 
@@ -50,6 +51,7 @@ point — `AddKunObservability` — that:
 | `IncludeEfCore` | `true` | Drop EF Core SQL traces |
 | `IncludeRuntime` | `true` | Drop GC / threadpool metrics |
 | `EnrichActivitiesFromBaggage` | `false` | Flip to `true` to mirror whitelisted baggage entries onto Kun-sourced span tags (ADR-013) |
+| `EnrichLogsFromBaggage` | `false` | Flip to `true` to mirror the same baggage keys onto `LogRecord.Attributes` — closes the spans↔logs correlation loop (ADR-013 §F1) |
 
 W3C Trace Context propagation is the OpenTelemetry 1.x default and is
 left untouched; no custom propagator is registered.
