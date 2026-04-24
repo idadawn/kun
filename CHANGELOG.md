@@ -6,6 +6,18 @@
 
 ## [Unreleased]
 
+### Highlights (2026-04-24 / 04-25)
+
+**Phase 1 neuroagent-consumer gap fully closed.** Five tickets landed in one burst (23 commits on `main`, all pushed to `origin`):
+
+- **P1-KN-001** `Kun.Storage` — new 15th module (`IFileStorage` 7-method contract + `ContentDispositionPolicy` + S3/MinIO/Local backends).
+- **P1-KN-002** S2S JWT claims alignment (`Kun.Security.S2SJwt` rewritten around `S2SJwtIssueRequest`, emits `roles`/`membership_id`/`trace_id`, default TTL 15 min, multi-aud header bug fixed).
+- **P1-KN-003** Attribute-driven integration-event registration (`[IntegrationEventId("event.v1")]` + `Register<TEvent>()` overload).
+- **P1-CS-011** `TenantRlsConnectionInterceptor` — opt-in defence-in-depth behind the EF global filter; PG-only, whitelist-guarded.
+- **P1-CS-019** `Kun.Audit` — new 16th-slot abstraction module (tamper-evident hash-chained operation audit + Mediator pipeline behaviour + 21 xunit cases).
+
+Framework module count: 13 → 15. Test projects: 11 → 13. Validation / AOT publish matrix / NuGet release / Aspire runtime drill / SG regression remain open — see `TODO-remaining.md` for the P1/P2/P3 roadmap.
+
 ### Added — Kun.Audit module (Phase 1 P1-CS-019)
 
 - New `Kun.Audit` abstraction module (IsAotCandidate=true, HasPublicApi=true): tamper-evident operation audit for CQRS commands via a Mediator pipeline behaviour + pluggable `IAuditSink`. Matches SAD v3.0 §15.5 `audit.operations` contract (prev_hash + content_hash).
