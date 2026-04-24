@@ -47,22 +47,8 @@ worn by kun himself during idle windows picks the next item.
 <!-- KN-SELF-006 moved to ## Done on 2026-04-24 (executor head c02d190) -->
 
 
-### P2 — KN-SELF-007: `Kun.Validation` Result-returning pipeline behavior (ADR-011 consumer)
+<!-- KN-SELF-007 moved to ## Done on 2026-04-24 (executor head 2d7cc50) -->
 
-- **Status**: in-flight — see `kun/.autonomy/active-task.md`
-- **Size**: M (target 5 commits)
-- **Why**: The existing `ValidationPipelineBehavior` throws
-  `ValidationException` on validator failure. Its own XML doc flags
-  "Result-based semantics shipped as a follow-up" — consumers who
-  return `Result<T>` from handlers want validation failures to land
-  as `Result<T>.Fail(Error.Validation(...))` rather than throwing.
-  KN-SELF-001 made the `Result<T>` composition ergonomic; this is
-  the missing validation-stage enablement of the
-  "business-failures-use-Result-not-exceptions" rule from
-  `kun/CLAUDE.md` §Architectural constraints.
-- **AC**: ADR-014, `ValidationResultPipelineBehavior<TRequest, TValue>`,
-  `AddValidationResultBehavior<TRequest, TValue>()` extension,
-  test coverage for the 5 canonical scenarios, AGENTS + CHANGELOG.
 
 ### P3 — KN-SELF-006-legacy: `Kun.Saga.EntityFrameworkCore` split (long-parked)
 
@@ -76,6 +62,24 @@ worn by kun himself during idle windows picks the next item.
 
 ## Done
 
+- **KN-SELF-007** — `Kun.Validation` Result-returning pipeline
+  behavior (ADR-014, ADR-011 consumer) — executor head `2d7cc50`
+  (ADR-014 + 4 code/test/doc commits) — 2026-04-24. Five ACs
+  shipped, hit estimate exactly: ADR-014 accepted,
+  `ValidationResultPipelineBehavior<TRequest, TValue>` with
+  `where TRequest : IRequest<Result<TValue>>`, explicit
+  `AddValidationResultBehavior<TRequest, TValue>()` DI extension on
+  `KunMediatorBuilder` matching the existing `AddValidator<>` /
+  `AddValidationBehavior<>` style, 5 new integration tests
+  (empty-validators pass-through / validator-pass / validator-fail
+  → `Result.Fail`/`request.invalid` / multi-validator aggregation /
+  handler-level `Result.Fail` preserved untouched), AGENTS
+  "Two pipeline behaviors ship — pick one" subsection +
+  CHANGELOG entry. Kun.Validation ILC 0-warning; sln 0 errors;
+  17/17 tests pass (12 existing + 5 new). Closes the
+  "business-failures-use-Result-not-exceptions" rule enablement at
+  the validation stage and makes ADR-011 `Result<T>` extensions a
+  first-class pipeline consumer.
 - **KN-SELF-006** — `Kun.Observability` log-record enricher (ADR-013 §F1) —
   executor head `c02d190` (ADR amendment + 4 code/test/doc commits) —
   2026-04-24. Five ACs shipped, hit the 5-commit estimate: ADR-013

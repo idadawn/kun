@@ -1,11 +1,13 @@
 ---
 id: KN-SELF-007
 title: Kun.Validation Result-returning pipeline behavior (ADR-011 consumer)
-status: in-flight
-planner_commit: <fill after commit>
-executor_head: <fill after first executor commit>
+status: done
+planner_commit: b388bb1
+executor_head: 2d7cc50
 estimated_commits: 5
+actual_commits: 5
 started: 2026-04-24
+finished: 2026-04-24
 ---
 
 # KN-SELF-007 — `Kun.Validation` Result-returning pipeline behavior
