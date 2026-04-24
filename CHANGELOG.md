@@ -6,6 +6,28 @@
 
 ## [Unreleased]
 
+### Security — Resolve NU1902 / GHSA-g94r-2vxg-569j on OpenTelemetry.Api 1.12.0 (2026-04-24)
+
+- **KN-SELF-015** closes the NU1902 advisory
+  ([GHSA-g94r-2vxg-569j](https://github.com/advisories/GHSA-g94r-2vxg-569j),
+  moderate severity) against `OpenTelemetry.Api 1.12.0`, which
+  was entering the transitive graph of `Kun.Sample.Catalog` +
+  `Kun.Sample.Tests` via
+  `OpenTelemetry.Instrumentation.EntityFrameworkCore 1.12.0-beta.1`.
+- **Fix** (`ce910a4`): `Directory.Packages.props` OpenTelemetry
+  group bumped — `OpenTelemetry.Api` explicitly pinned to
+  **1.15.3** (patched), plus companion pins on `OpenTelemetry` /
+  `OpenTelemetry.Extensions.Hosting` / `OpenTelemetry.Exporter.*`
+  to 1.12.0 to keep the group coherent. CPM now force-resolves
+  the transitive dependency up to the patched line.
+- **Operator impact**: `dotnet build Kun.sln -c Release
+  -p:TreatWarningsAsErrors=true` returns to 0 errors
+  (NuGetAudit no longer promotes NU1902 to error). No source-
+  or behaviour-level changes; purely a dependency graph
+  tightening. Downstream consumers of Kun that pin
+  `OpenTelemetry.Api` directly should align on 1.15.3 to
+  avoid a version conflict at restore.
+
 ### Added — Non-generic `Result` variant of ValidationResultPipelineBehavior (2026-04-24)
 
 - **KN-SELF-012** closes **ADR-014 §F1** — the deferred

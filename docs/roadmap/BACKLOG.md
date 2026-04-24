@@ -71,28 +71,7 @@ worn by kun himself during idle windows picks the next item.
 <!-- KN-SELF-014-rescoped moved to ## Done on 2026-04-24 (executor head 25a3604) -->
 
 
-### P1 — follow-up: resolve NU1902 advisory on OpenTelemetry.Api 1.12.0 (blocks sample builds)
-
-- **Status**: open (urgent — blocks `dotnet build Kun.sln -c
-  Release /warnaserror`).
-- **Size**: S (target 1–2 commits).
-- **Why**: NuGet advisory refresh on 2026-04-24 (afternoon)
-  flagged `OpenTelemetry.Api 1.12.0` for
-  [GHSA-g94r-2vxg-569j](https://github.com/advisories/GHSA-g94r-2vxg-569j)
-  (moderate severity). `Kun.Sample.Catalog` and
-  `Kun.Sample.Tests` pull it transitively through
-  `OpenTelemetry.Instrumentation.EntityFrameworkCore 1.12.0-beta.1`
-  and `OpenTelemetry 1.11.2`. NuGetAudit promotes it to error
-  under `TreatWarningsAsErrors=true` (Release build default),
-  breaking the solution build.
-- **AC**: pin `OpenTelemetry.Api` in `Directory.Packages.props`
-  to a patched version (check GHSA for the fix window —
-  likely 1.13.x); verify the CPM pin resolves at restore;
-  re-run `dotnet build Kun.sln -c Release
-  -p:TreatWarningsAsErrors=true` and confirm 0 errors.
-  Fallback: narrow `<NoWarn>NU1902</NoWarn>` in the two
-  sample csprojs with a commit-message justification pointing
-  at the advisory URL.
+<!-- KN-SELF-015 (NU1902 / GHSA-g94r-2vxg-569j) moved to ## Done on 2026-04-24 -->
 
 ### P3 — follow-up: complete `Kun.Testing.EntityFrameworkCore` tests + docs
 
@@ -127,6 +106,26 @@ worn by kun himself during idle windows picks the next item.
 ---
 
 ## Done
+
+- **KN-SELF-015** — resolve NU1902 advisory on
+  `OpenTelemetry.Api 1.12.0`
+  ([GHSA-g94r-2vxg-569j](https://github.com/advisories/GHSA-g94r-2vxg-569j),
+  moderate severity) — executor head `ce910a4` (1 fix commit
+  by main controller + 1 CHANGELOG / closeout commit by
+  kun) — 2026-04-24. Two ACs shipped: AC-1 bumped the
+  `Directory.Packages.props` OpenTelemetry group so
+  `OpenTelemetry.Api` is explicitly pinned to `1.15.3`
+  (patched) with companion pins on `OpenTelemetry` /
+  `OpenTelemetry.Extensions.Hosting` / `OpenTelemetry.Exporter.*`
+  raised to `1.12.0` for group coherence — CPM now force-
+  resolves the transitive graph above the CVE line; AC-2
+  added a CHANGELOG `[Unreleased]` "Security" entry
+  documenting advisory URL, fix commit, patched version,
+  and downstream-consumer guidance (align `OpenTelemetry.Api`
+  on 1.15.3). Gate: `dotnet build Kun.sln -c Release
+  -p:TreatWarningsAsErrors=true` now 0 errors (previously
+  2 NU1902 errors on Kun.Sample.Catalog + Kun.Sample.Tests).
+  Unblocked every subsequent sample / AOT verification path.
 
 - **KN-SELF-014-rescoped** — Aspire Dashboard baggage demo
   (ADR-013 §F3) — executor head `25a3604` (2 feat commits by

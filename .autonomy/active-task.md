@@ -1,11 +1,28 @@
 ---
 id: KN-SELF-015
 title: Resolve NU1902 advisory on OpenTelemetry.Api 1.12.0 (unblock sample builds)
-status: in-flight
-planner_commit: <fill after commit>
-executor_head: <fill after first executor commit>
+status: done
+planner_commit: 3429965
+executor_head: <fill at closeout>
 estimated_commits: 2
 started: 2026-04-24
+finished: 2026-04-24
+ship_log: |
+  AC-1 shipped in ce910a4 (main controller, direct commit):
+    Directory.Packages.props OpenTelemetry group bumped;
+    OpenTelemetry.Api explicitly pinned to 1.15.3 (patched),
+    companion pins on OpenTelemetry / Extensions.Hosting /
+    Exporter.* raised to 1.12.0 for group coherence. CPM now
+    force-resolves the transitive graph above the NU1902 CVE
+    line.
+  AC-2 shipped in <this closeout commit>: CHANGELOG.md
+    [Unreleased] "Security" entry documents the advisory,
+    the fix commit hash, the patched version, and downstream
+    consumer guidance (align OpenTelemetry.Api on 1.15.3).
+  Gate: `dotnet build Kun.sln -c Release
+    -p:TreatWarningsAsErrors=true` now 0 errors (8 CS1591
+    warnings in Aspire-generated AppHost code, pre-existing,
+    excluded from TreatWarningsAsErrors per repo convention).
 ---
 
 # KN-SELF-015 — resolve NU1902 on `OpenTelemetry.Api 1.12.0`
