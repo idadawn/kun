@@ -25,61 +25,121 @@ public sealed class LocalFileStorageTests : IDisposable
     }
 
     [Fact]
-    public async Task PutAndGet_Works()
+    public async Task PutObject_Then_GetObject_Roundtrips_Content_And_Metadata()
     {
-        var content = Encoding.UTF8.GetBytes("hello world");
-        using var stream = new MemoryStream(content);
+        var bytes = Encoding.UTF8.GetBytes("hello world");
+        using var stream = new MemoryStream(bytes);
 
-        await _storage.PutAsync("test/file.txt", stream, "text/plain", _ct);
-        using var result = await _storage.GetAsync("test/file.txt", _ct);
-        using var reader = new StreamReader(result);
+        await _storage.PutObjectAsync(
+            "test/file.txt",
+            stream,
+            new PutObjectOptions(ContentType: "text/plain", FileName: "file.txt"),
+            _ct);
+
+        await using var download = await _storage.GetObjectAsync("test/file.txt", _ct);
+        using var reader = new StreamReader(download.Content);
         var text = await reader.ReadToEndAsync(_ct);
 
         text.Should().Be("hello world");
+        download.Metadata.ContentType.Should().Be("text/plain");
+        download.Metadata.ContentLength.Should().Be(bytes.Length);
     }
 
     [Fact]
-    public async Task Exists_ReturnsTrue_AfterPut()
+    public async Task HeadObject_Returns_Metadata_After_Put()
     {
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes("data"));
-        await _storage.PutAsync("exists-test.txt", stream, "text/plain", _ct);
+        await _storage.PutObjectAsync(
+            "exists-test.txt",
+            stream,
+            new PutObjectOptions(ContentType: "application/json"),
+            _ct);
 
-        var exists = await _storage.ExistsAsync("exists-test.txt", _ct);
+        var metadata = await _storage.HeadObjectAsync("exists-test.txt", _ct);
 
-        exists.Should().BeTrue();
+        metadata.Should().NotBeNull();
+        metadata!.ContentType.Should().Be("application/json");
+        metadata.ContentLength.Should().Be(4);
     }
 
     [Fact]
-    public async Task Delete_RemovesFile()
+    public async Task HeadObject_Returns_Null_For_Missing_File()
+    {
+        var metadata = await _storage.HeadObjectAsync("does-not-exist.txt", _ct);
+        metadata.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task DeleteObject_Removes_File_And_Sidecar()
     {
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes("to-delete"));
-        await _storage.PutAsync("delete-test.txt", stream, "text/plain", _ct);
+        await _storage.PutObjectAsync(
+            "delete-test.txt",
+            stream,
+            new PutObjectOptions(ContentType: "text/plain"),
+            _ct);
 
-        await _storage.DeleteAsync("delete-test.txt", _ct);
-        var exists = await _storage.ExistsAsync("delete-test.txt", _ct);
+        await _storage.DeleteObjectAsync("delete-test.txt", _ct);
+        var metadata = await _storage.HeadObjectAsync("delete-test.txt", _ct);
 
-        exists.Should().BeFalse();
+        metadata.Should().BeNull();
     }
 
     [Fact]
-    public async Task Exists_ReturnsFalse_ForMissingFile()
+    public async Task DeleteObject_Is_NoOp_For_Missing_File()
     {
-        var exists = await _storage.ExistsAsync("does-not-exist.txt", _ct);
-        exists.Should().BeFalse();
-    }
-
-    [Fact]
-    public async Task Delete_DoesNotThrow_ForMissingFile()
-    {
-        var act = () => _storage.DeleteAsync("nonexistent.txt", _ct);
+        var act = () => _storage.DeleteObjectAsync("nonexistent.txt", _ct);
         await act.Should().NotThrowAsync();
     }
 
     [Fact]
-    public async Task GetPresignedUrl_Throws_NotSupportedException()
+    public async Task GetObject_Throws_FileNotFoundException_For_Missing_Path()
     {
-        var act = () => _storage.GetPresignedUrlAsync("file.txt", TimeSpan.FromMinutes(5), _ct);
+        var act = () => _storage.GetObjectAsync("missing.txt", _ct);
+        await act.Should().ThrowAsync<FileNotFoundException>();
+    }
+
+    [Fact]
+    public async Task ListObjects_Yields_Uploaded_Files_With_Prefix()
+    {
+        await Put("users/alice/profile.json", "{}", "application/json");
+        await Put("users/bob/profile.json", "{}", "application/json");
+        await Put("reports/q1.txt", "hello", "text/plain");
+
+        var results = new List<ObjectSummary>();
+        await foreach (var summary in _storage.ListObjectsAsync("users/", _ct))
+        {
+            results.Add(summary);
+        }
+
+        results.Select(s => s.Path).Should().BeEquivalentTo(
+            new[] { "users/alice/profile.json", "users/bob/profile.json" });
+    }
+
+    [Fact]
+    public async Task CreatePresignedUploadUrl_Throws_NotSupported_On_Local()
+    {
+        var act = () => _storage.CreatePresignedUploadUrlAsync(
+            "x.txt",
+            new PresignedUploadRequest(TimeSpan.FromMinutes(5)),
+            _ct);
         await act.Should().ThrowAsync<NotSupportedException>();
+    }
+
+    [Fact]
+    public async Task CreatePresignedDownloadUrl_Throws_NotSupported_On_Local()
+    {
+        var act = () => _storage.CreatePresignedDownloadUrlAsync(
+            "x.txt",
+            new PresignedDownloadRequest(TimeSpan.FromMinutes(5)),
+            _ct);
+        await act.Should().ThrowAsync<NotSupportedException>();
+    }
+
+    private async Task Put(string path, string content, string contentType)
+    {
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(content));
+        await _storage.PutObjectAsync(path, stream, new PutObjectOptions(ContentType: contentType), _ct);
     }
 
     public void Dispose()
