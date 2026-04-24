@@ -9,6 +9,7 @@ graph TD
     Core --> EventBus[Kun.EventBus<br/>事件分发/Outbox 抽象]
     Core --> Security[Kun.Security<br/>S2S JWT/租户上下文]
     Core --> Validation[Kun.Validation<br/>SourceGen 验证器]
+    Core --> Audit[Kun.Audit<br/>操作审计/哈希链]
 
     Infra --> EfCore[Kun.EntityFrameworkCore<br/>写侧持久化/Outbox 实现]
     Infra --> Dapper[Kun.Dapper<br/>读侧查询]
@@ -42,7 +43,7 @@ graph TD
 ├─────────────────────────────────────────────────────────┤
 │  Abstraction Layer                                      │
 │  Kun.Mediator / Kun.Infrastructure                      │
-│  Kun.EventBus / Kun.Security / Kun.Validation           │
+│  Kun.EventBus / Kun.Security / Kun.Validation / Kun.Audit│
 ├─────────────────────────────────────────────────────────┤
 │  Core Layer                                             │
 │  Kun.Core (zero dependencies)                           │

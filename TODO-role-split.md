@@ -191,7 +191,7 @@
 | S2S JWT claims 对齐 | 角色1 | ✅ 已完成 2026-04-24 | Set B (`Kun.Security.S2SJwt`) —— `S2SJwtIssueRequest` 记录型参数，emit roles/membership_id/trace_id，TTL 默认 900s，修顺带 fix 了多 aud 写到 JWT header 的 bug；Set A (Kun.Gateway 60s) 刻意未动 |
 | IEventTypeRegistry 属性驱动 | 角色1 | ✅ 已完成 2026-04-24 | `[IntegrationEventId("event.v1")]` + `Register<T>()` 无参重载（标 RequiresUnreferencedCode），显式字符串路径保留；3 个样例事件已迁移 |
 | RLS interceptor | 角色1 | ✅ 已完成 2026-04-24 | `TenantRlsConnectionInterceptor`（opt-in）：SET/RESET `app.current_tenant_id`；白名单防注入；只对 Npgsql 激活；policy 模板 + 3 条 Postgres 集成测试 + `docs/security/multi-tenancy-rls.md` |
-| Kun.Audit | 角色1 | 未开始 | M4 Week 7 起 |
+| Kun.Audit | 角色1 | ✅ 已完成 2026-04-24 | 新增 Abstraction 模块（第 15 个）：`AuditEntry` + `IAuditSink` + `IAuditChainState` + `AuditContentHasher` + `AuditLogPipelineBehavior`；SHA-256 哈希链；per-tenant 串行化；21 条单测；`docs/security/audit-log.md` |
 | Mediator SG 回归 | 角色1 | 延后 | ADR fallback |
 | Validation SG 回归 | 角色1 | 延后 | ADR fallback |
 | Saga SG | 角色1 | 延后 | |

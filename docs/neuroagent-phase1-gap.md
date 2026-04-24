@@ -84,7 +84,7 @@
 | 模块 | 需新增/修改的能力 | 对应 TaskPlan | 状态 |
 |------|-----------------|--------------|:---:|
 | ~~**（新建）Kun.Storage**~~ | ~~IFileStorage 抽象 + S3/MinIO/Local 实现 + 活跃 web Content-Disposition attachment~~ | P1-KN-001 | ✅ 已落地 |
-| **（新建）Kun.Audit** | 审计日志 Interceptor/Middleware，自动从 CQRS Pipeline 捕获 Command 执行记录，异步写 audit schema（含哈希链） | P1-CS-019 | ⏳ 待 M4 Week 7 |
+| ~~**（新建）Kun.Audit**~~ | ~~审计日志 Pipeline Behavior + 哈希链~~ | P1-CS-019 | ✅ 已落地 |
 
 ---
 
@@ -170,13 +170,13 @@ Sample 项目 `Kun.Sample.Order` 已展示完整 Outbox 使用模式（EfOutboxM
 
 ## 7. 结论
 
-Kun 框架对 NeuroAgent Phase 1 的 **核心基础设施支持度约 95%**（2026-04-24 更新）：
+Kun 框架对 NeuroAgent Phase 1 的 **核心基础设施支持度 100%**（2026-04-24 全量落地）：
 
-- **已满足**：CQRS/DDD/EF Core 写侧/Dapper 读侧/Outbox+Saga/S2S JWT 全链路/多租户 QueryFilter/限流/验证/**对象存储（Kun.Storage，含 S3/MinIO/Local 与活跃-MIME 附件强制）**
-- **需新建**：Kun.Audit（审计 Pipeline）— 可延至 M4 Week 7 开始
-- **无需修改**：全部 13 个原有 src 模块代码无需改动；Kun.Storage 已作为第 14 个模块落地
+- **已满足**：CQRS/DDD/EF Core 写侧/Dapper 读侧/Outbox+Saga/S2S JWT 全链路/多租户 QueryFilter+RLS interceptor（防御纵深）/限流/验证/对象存储（Kun.Storage）/**操作审计哈希链（Kun.Audit）**
+- **新增模块**：Kun.Storage（第 14 个）、Kun.Audit（第 15 个）—— 均 AOT 候选 or trim-safe，符合 Kun 分层与 AOT 约定
+- **原有 13 模块代码无需改动**
 
-Phase 1 在 Kun 侧的剩余工作量主要是 **P1-CS-019（Kun.Audit 新建）**；KN-001/KN-002/KN-003 三项均已具备。
+Phase 1 在 Kun 侧的 gap 全部关闭：P1-KN-001（Storage）/ P1-KN-002（S2S claims）/ P1-KN-003（IntegrationEventId）/ P1-CS-011（RLS interceptor）/ P1-CS-019（Audit）均已落地。
 
 ---
 

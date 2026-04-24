@@ -74,6 +74,7 @@ Kun Framework 的名字源自《庄子》。"鲲"寓意框架从轻量级单体�
 | `Kun.EventBus.RabbitMQ` | RabbitMQ 传输、消费端幂等 | ✅ |
 | `Kun.Saga` | Saga Orchestration 编排器 | ✅ |
 | `Kun.Storage` | 对象存储抽象 + S3/MinIO/本地后端 + 活跃-MIME 附件强制 | ⚠️ trim-safe |
+| `Kun.Audit` | 操作审计日志 + SHA-256 哈希链 + Mediator Pipeline Behavior | ✅ |
 | `Kun.Security` | S2S JWT 签发/校验、租户上下文注入 | ✅ |
 | `Kun.Validation` | SourceGen 验证器 | ✅ |
 | `Kun.AspNetCore` | Minimal API 扩展、Pipeline Behaviors | ✅ |

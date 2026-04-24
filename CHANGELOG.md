@@ -6,6 +6,17 @@
 
 ## [Unreleased]
 
+### Added — Kun.Audit module (Phase 1 P1-CS-019)
+
+- New `Kun.Audit` abstraction module (IsAotCandidate=true, HasPublicApi=true): tamper-evident operation audit for CQRS commands via a Mediator pipeline behaviour + pluggable `IAuditSink`. Matches SAD v3.0 §15.5 `audit.operations` contract (prev_hash + content_hash).
+- `AuditContentHasher.Compute`: canonical `id|tenant|actor|command|ISO-timestamp|latency|outcome|errorCode` + SHA-256 over `prev || canonical`, lower-case hex. Timestamp pinned to round-trip `O` format with `InvariantCulture` so hashes are stable across culture / timezone.
+- `IAuditChainState.AppendAsync`: atomic read-previous / compute-new / commit-new, serialised per tenant key so concurrent commands on the same tenant cannot fork the chain. `InMemoryAuditChainState` uses per-tenant `SemaphoreSlim`; production deployments are expected to back this with a durable DB-level coordinator (documented in `docs/security/audit-log.md`).
+- `AuditLogPipelineBehavior<TRequest, TResponse>`: captures actor/tenant/timing/outcome per handler invocation. Original handler exception is preserved via `ExceptionDispatchInfo`. Audit-write failures are logged at Warning and swallowed — audit MUST NOT convert a successful handler into a failure nor mask a business exception.
+- DI: `AddKunAudit()` wires `InMemoryAuditChainState` + `InMemoryAuditSink` + `TimeProvider.System` as `TryAdd` defaults; `AddAuditBehavior<TCommand, TResponse>()` on `KunMediatorBuilder` opts one command in at a time so queries stay unaudited.
+- New doc `docs/security/audit-log.md` covers record shape, chain semantics, serialisation contract, in-memory limitations, production shape, wiring, failure semantics, and chain-verification procedure.
+- 21 xunit cases in `tests/Kun.Audit.Tests` cover the hash matrix, concurrent chain serialisation (100-task storm), sink ordering/null-guards, behaviour success/exception paths, sink-failure non-propagation, consecutive-entry linking, and per-tenant chain isolation.
+- Registered in `Kun.sln` under GUID `{A100000E-...}`; `src/AGENTS.md` / `README.md` module matrix / `docs/architecture/module-map.md` updated.
+
 ### Added — Kun.EntityFrameworkCore tenant-RLS interceptor (Phase 1 P1-CS-011)
 
 - New `Kun.EntityFrameworkCore.Interceptors.TenantRlsConnectionInterceptor`: opt-in EF `DbConnectionInterceptor` that pushes `ITenantContext.TenantId` into the PostgreSQL session variable `app.current_tenant_id` on connection open and RESETs it on close. Gives NeuroAgent a second isolation layer behind the existing EF global query filter when paired with RLS policies on the database schema.
