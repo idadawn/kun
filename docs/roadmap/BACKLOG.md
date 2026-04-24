@@ -62,16 +62,8 @@ worn by kun himself during idle windows picks the next item.
 <!-- KN-SELF-011 moved to ## Done on 2026-04-24 (executor head 74f21c1) -->
 
 
-### P2 — KN-SELF-012: non-generic Result variant of ValidationResultPipelineBehavior (ADR-014 F1)
+<!-- KN-SELF-012 moved to ## Done on 2026-04-24 (executor head 4554c8d) -->
 
-- **Status**: in-flight — see `kun/.autonomy/active-task.md`
-- **Size**: S (target 3 commits)
-- **Why**: KN-SELF-007 shipped the `Result<TValue>` variant; ADR-014
-  §F1 deferred the non-generic `Result` variant (for void-returning
-  commands). Close F1 — mirror implementation in the same file.
-- **AC**: `ValidationResultPipelineBehavior<TRequest>` sibling
-  class + `AddValidationResultBehavior<TRequest>()` DI overload +
-  3 mirrored tests + CHANGELOG + ADR-014 §F1 resolution marker.
 
 ### P3 — KN-SELF-006-legacy: `Kun.Saga.EntityFrameworkCore` split (long-parked)
 
@@ -84,6 +76,29 @@ worn by kun himself during idle windows picks the next item.
 ---
 
 ## Done
+
+- **KN-SELF-012** — non-generic `Result` variant of
+  `ValidationResultPipelineBehavior` (ADR-014 §F1) — executor
+  head `4554c8d` (1 feat + 1 test + 1 doc commit — hit the
+  3-commit estimate exactly) — 2026-04-24. Four ACs shipped:
+  sibling class `ValidationResultPipelineBehavior<TRequest>`
+  where `TRequest : IRequest<Result>` co-located with the
+  generic variant in the same file (same validator loop, same
+  `"; "`-joined `Error.Validation("request.invalid", …)` shape,
+  returns `Result.Fail(...)` instead of
+  `Result<TValue>.Fail(...)`), `AddValidationResultBehavior<TRequest>()`
+  single-type-param overload on
+  `KunValidationServiceCollectionExtensions`, 3 mirrored tests
+  (validator-fail → `Result.Fail(request.invalid)`, multi-validator
+  aggregation, handler-level `Result.Fail` preserved untouched),
+  `CHANGELOG.md [Unreleased]` Added entry + `ADR-014 §F1`
+  resolution marker with a note that the "doubled registration
+  surface" concern was overstated. 20/20 Kun.Validation tests
+  pass (17 existing + 3 new). Solution build 0 errors;
+  Kun.Validation ILC 0-warning. Closes KN-SELF-007's deferred
+  follow-up — void-returning commands can now participate in
+  the `Result`-based railway without throwing or hand-rolling
+  a catch adapter.
 
 - **KN-SELF-011** — ADR-015 Outbox pattern design (retroactive) —
   executor head `74f21c1` (ADR + cross-link + addendum commits,

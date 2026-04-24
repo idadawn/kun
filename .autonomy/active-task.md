@@ -1,11 +1,12 @@
 ---
 id: KN-SELF-012
 title: Non-generic Result variant of ValidationResultPipelineBehavior (ADR-014 F1)
-status: in-flight
-planner_commit: <fill after commit>
-executor_head: <fill after first executor commit>
+status: done
+planner_commit: 547252c
+executor_head: 4554c8d
 estimated_commits: 3
 started: 2026-04-24
+finished: 2026-04-24
 ---
 
 # KN-SELF-012 — non-generic `Result` variant of `ValidationResultPipelineBehavior`
@@ -71,11 +72,17 @@ companion.
 
 ## AOT / build gates
 
-- [ ] `dotnet build Kun.sln -c Release -p:TreatWarningsAsErrors=true` 0/0
-- [ ] `dotnet test tests/Kun.Validation.Tests -c Release --no-build`
-      green (17 existing + 3 new = 20)
-- [ ] `dotnet publish src/Kun.Validation -c Release -r linux-x64
-      -p:PublishAot=true /warnaserror` ILC 0 warning
+- [x] `dotnet build Kun.sln -c Release -p:TreatWarningsAsErrors=true`
+      0 errors (8 CS1591 warnings in AppHost sample, pre-existing,
+      intentionally excluded from `WarningsNotAsErrors`).
+- [x] `dotnet test tests/Kun.Validation.Tests -c Release --no-build`
+      green (17 existing + 3 new = 20). Verified after 7b15620
+      (executor commit 2).
+- [x] `dotnet publish src/Kun.Validation -c Release -r linux-x64
+      -p:PublishAot=true /warnaserror` ILC 0-warning. Native-link
+      step fails on this dev box for lack of clang/gcc in PATH —
+      same environmental limitation all prior KN-SELF cycles hit;
+      the ILC gate (what this flag guards) is green.
 
 ## Out of scope
 
@@ -85,6 +92,15 @@ companion.
 ## Progress log
 
 - 2026-04-24 4f06307 KN-SELF-011 closed (prior cycle)
+- 2026-04-24 547252c planner pick + active-task brief (role 1)
+- 2026-04-24 385239f executor commit 1 (AC-1 + AC-2): non-generic
+  behaviour sibling class in same file + DI overload; PublicAPI
+  entries added in-commit.
+- 2026-04-24 7b15620 executor commit 2 (AC-3): 3 new tests for
+  non-generic path; 20/20 Kun.Validation tests green.
+- 2026-04-24 4554c8d executor commit 3 (AC-4): ADR-014 §F1
+  resolved marker + CHANGELOG [Unreleased] Added entry.
+- 2026-04-24 hit 3-commit estimate exactly. Closing.
 
 ## When done
 
