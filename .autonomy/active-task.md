@@ -1,82 +1,101 @@
 ---
-id: KN-SELF-004
-title: Kun.Dapper AOT intent cleanup (AGENTS note + audit follow-up)
-status: done
-planner_commit: b314e69
-executor_head: 674a323
+id: KN-SELF-005
+title: IAuthenticatedUser vs ICurrentUser — guidance doc + XML cross-links
+status: in-flight
+planner_commit: <fill after commit>
+executor_head: <fill after first executor commit>
 estimated_commits: 2
-actual_commits: 2
 started: 2026-04-24
-finished: 2026-04-24
 ---
 
-# KN-SELF-004 — `Kun.Dapper` AOT intent cleanup
+# KN-SELF-005 — `IAuthenticatedUser` vs `ICurrentUser` naming-consistency sweep
 
 ## Why
 
-The AOT audit dated 2026-04-23 flagged `Kun.Dapper` YELLOW: no
-explicit `<IsAotCandidate>` declaration. The csproj has since been
-patched (**`<IsAotCandidate>false</IsAotCandidate>`** with a comment
-pointing at the audit), but:
+ADR-010 introduced `IAuthenticatedUser` (cookie / browser flow) as
+the browser-facing extension of `ICurrentUser` (S2S JWT flow). The
+inheritance is clean (`IAuthenticatedUser : ICurrentUser`) and the
+DI registration in `Kun.Identity.AspNetCore` binds both to the same
+request-scoped instance — so callers choose by the fields they need,
+not by "which one is right here". Without durable guidance, the next
+sprint could easily invent `ICurrentUserEx` / `IEnhancedCurrentUser` /
+a per-service adapter — exactly the drift ADR-010 was written to
+end.
 
-- `src/Kun.Dapper/AGENTS.md` "For AI Agents" section does not record
-  the AOT intent, so a future agent modifying the file would not know
-  why the flag is deliberately `false`.
-- `docs/architecture/AOT-audit-2026-04-23.md` still lists Kun.Dapper
-  as YELLOW in its TL;DR + module matrix + detail section + §后续建议
-  — the stale status creates false signal during audits or when a
-  new agent greps for "YELLOW" before picking up follow-ups.
-
-Tiny cleanup to close the audit finding cleanly.
+The BACKLOG lists three acceptable deliverables (editorconfig rule,
+hand-rolled reflection-at-test-time rule, guidance doc). A guidance
+doc is the cheapest and highest-signal option — the other two need a
+"maintainer who remembers to update the allow-list when a legit new
+subinterface lands", which is the same shape of drift we're trying
+to avoid.
 
 ## Specs to read first
 
-1. `kun/CLAUDE.md` — §Four-layer dependency flow (confirms
-   `Kun.Dapper` sits above `Kun.EntityFrameworkCore` in the read
-   split and is deliberately out of the AOT-candidate set because
-   Dapper.AOT does its AOT-compat via source generator in consumer
-   query handlers, not in the wrapper module)
-2. `kun/docs/architecture/AOT-audit-2026-04-23.md` — the stale §YELLOW
-   text needs a resolution marker
-3. `kun/src/Kun.Dapper/Kun.Dapper.csproj` — already has the explicit
-   flag + comment (sanity check)
-4. `kun/src/Kun.Dapper/AGENTS.md` — target for the new AOT-intent
-   note
+1. `kun/CLAUDE.md` — §Specs-first
+2. `kun/docs/architecture/ADR-008-Kun.Identity-module.md` — parent
+   context for the `ICurrentUser` surface (S2S JWT side)
+3. `kun/docs/architecture/ADR-010-Kun.Identity-cookie-session.md` —
+   rationale for adding `IAuthenticatedUser` and the exact drift
+   language ADR-010 warned about
+4. `kun/src/Kun.Core/Security/ICurrentUser.cs` — 3 members
+5. `kun/src/Kun.Identity/Abstractions/IAuthenticatedUser.cs` —
+   extends `ICurrentUser`, adds `TenantId` / `Email` / `Name` /
+   `Principal`
+6. `kun/src/Kun.Core/Security/AnonymousCurrentUser.cs` + existing
+   `JwtCurrentUser.cs` / `KunCurrentUser.cs` implementations — the
+   two bindings that exist today
 
 ## Acceptance criteria
 
-- **AC-1**: `src/Kun.Dapper/AGENTS.md` "For AI Agents" section gains
-  a bullet recording the AOT intent — `<IsAotCandidate>false</IsAotCandidate>`
-  is deliberate; AOT coverage for read-side query handlers is each
-  consumer's responsibility via `[DapperAot]`-annotated query
-  methods, not this wrapper module's.
-- **AC-2**: `docs/architecture/AOT-audit-2026-04-23.md` amended
-  with a post-audit resolution marker. Keep the original YELLOW
-  text as-is (history preservation) but add a clear "Resolved
-  2026-04-24 in KN-SELF-004" line at each relevant spot (TL;DR,
-  module matrix row, §YELLOW detail, §后续建议).
+- **AC-1**: New guidance doc
+  `docs/architecture/when-to-use-currentuser.md`. Sections:
+  - Two interfaces, one instance (current state).
+  - Decision table — which interface for which consumer scenario
+    (S2S gRPC handler, browser endpoint, background worker, unit
+    test).
+  - How to extend correctly: add fields to `IAuthenticatedUser` for
+    browser-only concerns, add fields to `ICurrentUser` only when
+    the S2S path *also* needs them, **never** ship an
+    `I*CurrentUser`-shaped third sibling.
+  - Quick "anti-patterns" section listing specific forbidden
+    names / shapes so reviewers can cite the doc.
+- **AC-2**: XML doc on `ICurrentUser.cs` and `IAuthenticatedUser.cs`
+  gains a `<seealso>` pointer to the guidance doc so IDEs surface it
+  at the code site.
 
 ## Commit plan
 
 | # | Commit subject | AC | Notes |
 |---|----------------|----|-------|
-| 1 | `docs(dapper): record AOT-intent in AGENTS.md` | AC-1 | single-file edit |
-| 2 | `docs(audit): mark Kun.Dapper YELLOW resolved` | AC-2 | multi-spot edit in one audit file |
+| 1 | `docs(identity): guidance on ICurrentUser vs IAuthenticatedUser` | AC-1 | new file, self-contained |
+| 2 | `docs(identity): cross-link current-user interfaces to guidance doc` | AC-2 | XML comment edits on both interfaces |
 
 ## AOT / build gates
 
-- [ ] `dotnet format` on touched projects (docs only — may skip)
-- [ ] `dotnet build src/Kun.Dapper -c Release -p:TreatWarningsAsErrors=true` still 0/0
-- [ ] no csproj / code changes — AOT matrix unaffected
+- [ ] `dotnet build Kun.sln -c Release -p:TreatWarningsAsErrors=true`
+      still 0/0 (XML comment edits must produce valid crefs)
+- [ ] No code changes — AOT / tests unaffected
+
+## Out of scope
+
+- Reflection-at-test-time guard that asserts no new `ICurrentUser`
+  subinterface lands outside the known set. Added value is low for
+  the cost — the guidance doc + XML pointer is the primary lever.
+  Tracked as potential future tightening once a concrete drift
+  incident occurs.
+- editorconfig / `.globalconfig` analyzer rule — same rationale.
 
 ## Progress log
 
-- 2026-04-24 5401f89 KN-SELF-003 closed (prior cycle)
+- 2026-04-24 349da89 KN-SELF-004 closed (prior cycle)
 
 ## When done
 
 1. `status: done` + `executor_head` SHA.
-2. Move KN-SELF-004 in `BACKLOG.md` to `## Done`.
-3. `echo "KN-SELF-004 done (<SHA>) — Kun.Dapper AOT intent cleanup." > /home/dawn/project/neuroagent/.omc/state/claude-kun_KN-SELF-004_done.txt`
-4. Planner next pick: KN-SELF-005 (IAuthenticatedUser naming-consistency
-   sweep, BACKLOG P2 — another small S item).
+2. Move KN-SELF-005 in `BACKLOG.md` to `## Done`.
+3. `echo "KN-SELF-005 done (<SHA>) — current-user guidance doc + XML cross-links." > /home/dawn/project/neuroagent/.omc/state/claude-kun_KN-SELF-005_done.txt`
+4. Planner next pick: BACKLOG is now empty of eligible (S/M-sized)
+   items — KN-SELF-006 is L-sized Saga EF split (parked). Re-scan
+   the codebase for a fresh P1 or P2 item to add to BACKLOG before
+   picking, OR add a brand-new KN-SELF-xxx item addressing a
+   concrete pain point surfaced during the last 4 tasks.

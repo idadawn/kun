@@ -44,7 +44,9 @@ worn by kun himself during idle windows picks the next item.
 
 ### P2 — KN-SELF-005: Naming-consistency sweep on `IAuthenticatedUser`
 
-- **Size**: S (target 3–5 commits)
+- **Status**: in-flight — see `kun/.autonomy/active-task.md`
+- **Size**: S (target 3–5 commits — plan cut to 2 after picking the
+  guidance-doc option from the three BACKLOG alternatives)
 - **Why**: ADR-010 introduced `IAuthenticatedUser` alongside
   `ICurrentUser`. The two must not drift in future edits —
   add compile-time tests / analyzer-like checks (or at minimum an ADR
