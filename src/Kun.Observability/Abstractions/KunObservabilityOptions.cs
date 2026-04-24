@@ -51,4 +51,18 @@ public sealed class KunObservabilityOptions
 
     /// <summary>When <see langword="true"/> (default), registers the OpenTelemetry logger provider and exports log records via OTLP.</summary>
     public bool LoggingEnabled { get; set; } = true;
+
+    /// <summary>
+    /// When <see langword="true"/>, installs a
+    /// <c>BaseProcessor&lt;Activity&gt;</c> that mirrors whitelisted
+    /// OpenTelemetry baggage entries (see
+    /// <c>Kun.Observability.Enrichment.KunBaggageKeys</c>) onto span
+    /// tags for activities emitted by Kun-owned
+    /// <see cref="System.Diagnostics.ActivitySource"/>s. Default
+    /// <see langword="false"/> (opt-in per
+    /// <c>docs/architecture/ADR-013-Kun.Observability-enricher.md</c>
+    /// §Default posture). Has no effect when
+    /// <see cref="TracingEnabled"/> is <see langword="false"/>.
+    /// </summary>
+    public bool EnrichActivitiesFromBaggage { get; set; }
 }

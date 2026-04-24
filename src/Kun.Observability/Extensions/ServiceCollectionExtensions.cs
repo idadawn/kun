@@ -1,5 +1,6 @@
 using System.Reflection;
 using Kun.Observability.Abstractions;
+using Kun.Observability.Enrichment;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry.Logs;
@@ -84,6 +85,11 @@ public static class KunObservabilityServiceCollectionExtensions
                 if (snapshot.IncludeEfCore)
                 {
                     tracing.AddEntityFrameworkCoreInstrumentation();
+                }
+
+                if (snapshot.EnrichActivitiesFromBaggage)
+                {
+                    tracing.AddProcessor(new KunBaggageActivityProcessor());
                 }
 
                 tracing.AddOtlpExporter(ConfigureOtlp(snapshot));
