@@ -74,6 +74,13 @@ public sealed class MinioFixture : IAsyncLifetime
     }
 
     /// <summary>Builds a new <see cref="IAmazonS3"/> client aimed at the running MinIO container.</summary>
+    /// <remarks>
+    /// MinIO inside Testcontainers listens on plain HTTP. Setting <c>UseHttp = true</c> tells
+    /// the AWS SDK that the target endpoint supports HTTP, so presigned URLs are emitted with
+    /// the <c>http://</c> scheme (the SDK default is <c>https://</c>, which would make any
+    /// downstream HttpClient attempt a TLS handshake against a plain-text server and fail
+    /// with "Cannot determine the frame size" on the wire).
+    /// </remarks>
     public IAmazonS3 CreateClient() =>
         new AmazonS3Client(
             new BasicAWSCredentials(AccessKey, SecretKey),
@@ -81,5 +88,6 @@ public sealed class MinioFixture : IAsyncLifetime
             {
                 ServiceURL = Endpoint,
                 ForcePathStyle = true,
+                UseHttp = true,
             });
 }

@@ -71,13 +71,15 @@ public sealed partial class S3FileStorage : IFileStorage
             InputStream = content,
             ContentType = contentType,
             AutoCloseStream = false,
-            // Required when InputStream is non-seekable (e.g. a live upload
-            // passing through an HttpRequest body). AWS SIGv4 otherwise needs
-            // to hash the full payload before transmitting, which forces the
-            // SDK to buffer everything in memory. Confidentiality is still
-            // guaranteed by TLS; integrity relies on the HTTPS layer instead
-            // of the signed-body hash.
-            DisablePayloadSigning = true,
+            // Only disable payload signing for non-seekable streams, where SIGv4
+            // would otherwise buffer the full payload in memory to hash it up front
+            // (e.g. a live upload passing through an HttpRequest body). Seekable
+            // streams (MemoryStream, FileStream, buffered request bodies) can be
+            // hashed in place, so signing works over both HTTP and HTTPS. AWS rejects
+            // DisablePayloadSigning=true over plain HTTP, so callers sending non-
+            // seekable streams must still use an HTTPS endpoint — integrity is then
+            // guaranteed by TLS instead of the signed body hash.
+            DisablePayloadSigning = !content.CanSeek,
         };
 
         var response = await _s3.PutObjectAsync(request, cancellationToken).ConfigureAwait(false);
