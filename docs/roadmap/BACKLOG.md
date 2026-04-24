@@ -68,6 +68,27 @@ worn by kun himself during idle windows picks the next item.
 <!-- KN-SELF-013 moved to ## Done on 2026-04-24 (executor head e3e9e45) -->
 
 
+### P2 — KN-SELF-014: end-to-end `outbox-and-integration-events.md` guide + Kun.EventBus AGENTS cross-link
+
+- **Status**: in-flight — see `kun/.autonomy/active-task.md`
+- **Size**: S (target 2 commits)
+- **Why**: KN-SELF-011 shipped ADR-015 (Outbox design); the
+  full publish/consume surface is already coded
+  (`IIntegrationEvent`, `IIntegrationEventHandler<T>`,
+  `IEventTypeRegistry`, `IdempotentConsumerDecorator<T>`,
+  `OutboxMessage`). `docs/guides/` has no end-to-end recipe —
+  consumers must triangulate from ADR-015 + why-outbox.md +
+  Kun.EventBus/AGENTS + Kun.EntityFrameworkCore/AGENTS +
+  CLAUDE.md §Outbox. Close the gap (mirrors KN-SELF-013 for
+  validation).
+- **AC**: new `docs/guides/outbox-and-integration-events.md`
+  with atomicity-boundary + stable-event-ID sections, worked
+  publish + consume examples, W3C trace-propagation note,
+  four anti-patterns (direct bus publish / AQN event ID /
+  non-idempotent consumer / MessageContext mutation), and
+  a see-also footer. `src/Kun.EventBus/AGENTS.md` gets a
+  one-line guide cross-link + front-matter bump.
+
 ### P3 — KN-SELF-006-legacy: `Kun.Saga.EntityFrameworkCore` split (long-parked)
 
 - **Size**: L (≥10 commits, breaking change for consumers)

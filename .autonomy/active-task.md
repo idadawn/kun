@@ -1,192 +1,156 @@
 ---
-id: KN-SELF-013
-title: docs/guides/validating-commands.md end-to-end guide + Kun.Validation AGENTS refresh
-status: done
-planner_commit: e9fe67a
-executor_head: e3e9e45
+id: KN-SELF-014
+title: docs/guides/outbox-and-integration-events.md end-to-end guide + Kun.EventBus AGENTS cross-link refresh
+status: in-flight
+planner_commit: <fill after commit>
+executor_head: <fill after first executor commit>
 estimated_commits: 2
 started: 2026-04-24
-finished: 2026-04-24
 ---
 
-# KN-SELF-013 — end-to-end validation guide + AGENTS refresh
+# KN-SELF-014 — Outbox + integration-events consumer guide
 
 ## Why
 
-KN-SELF-007 shipped `ValidationResultPipelineBehavior<TRequest, TValue>`
-and KN-SELF-012 shipped the non-generic `<TRequest>` sibling +
-DI overload. Both ADR-011 and ADR-014 now describe a complete
-validation story — but a downstream engineer opening
-`kun/docs/guides/` today finds guides for rate-limit, read-side,
-and multitenancy, and **no** guide for how to wire a command +
-validator + Result pipeline end-to-end.
+KN-SELF-011 shipped ADR-015 (Outbox pattern design), and the
+framework already exposes the full surface — `IIntegrationEvent`,
+`IIntegrationEventHandler<T>`, `IIntegrationEventBus`,
+`IEventTypeRegistry`, `IOutboxPublisher`,
+`IdempotentConsumerDecorator<T>`, stable event IDs,
+`OutboxMessage` + EF transaction atomicity. A downstream
+engineer wiring "publish `OrderPlaced` → consumer inserts
+fulfillment row idempotently" today has to triangulate across:
 
-The gap matters because the choice between the two pipeline
-behaviors (throwing vs Result, generic vs non-generic) is a
-decision point at every handler, and today that decision is
-only documented split across:
+- `docs/architecture/ADR-015-Outbox-pattern.md` (design,
+  normative + rejected alternatives — not a quickstart)
+- `docs/architecture/why-outbox.md` (primer — motivates the
+  pattern but doesn't walk wiring)
+- `src/Kun.EventBus/AGENTS.md` + `src/Kun.EventBus.RabbitMQ/AGENTS.md`
+  (agent-facing guardrails)
+- `src/Kun.EntityFrameworkCore/AGENTS.md` (the atomicity point
+  lives here)
+- `kun/CLAUDE.md` §Outbox (the rule statement)
 
-- `docs/architecture/ADR-014-Validation-Result-behavior.md`
-  (deep design doc — not a quickstart)
-- `src/Kun.Validation/AGENTS.md` "Two pipeline behaviors ship"
-  subsection (agent-facing guardrail — also lists only the
-  generic variant; the non-generic shipped after this was
-  last edited)
-- `CHANGELOG.md [Unreleased]` (release notes, not discovery)
+Same gap shape KN-SELF-013 closed for validation: no
+end-to-end recipe under `docs/guides/` for new consumers.
 
-A consumer writing a new `DeleteUserCommand : IRequest<Result>`
-or `CreateOrderCommand : IRequest<Result<OrderDto>>` has no
-single file to read to get started. Fix by:
-
-1. Writing `docs/guides/validating-commands.md` — a
-   consumer-facing end-to-end walkthrough with the decision
-   tree, both variants, test pattern, and anti-patterns.
-2. Refreshing `src/Kun.Validation/AGENTS.md` "Two pipeline
-   behaviors ship" subsection to (a) mention the non-generic
-   variant (it's stale post-KN-SELF-012), and (b) cross-link
-   to the new guide.
-
-Doc-only — no code / test / public-API surface changes.
+Close it with one guide + a surgical cross-link refresh of
+`src/Kun.EventBus/AGENTS.md`. Doc-only — no code, no test,
+no PublicAPI churn.
 
 ## Specs to read first (non-negotiable)
 
-Required by `kun/CLAUDE.md` §Specs-first. Read each before
+Required by `kun/CLAUDE.md` §Specs-first. Read before
 writing:
 
-1. `kun/CLAUDE.md` — §Specs-first + §Architectural constraints
-   (especially "Business failures use `Result` / `Result<T>`,
-   not exceptions")
-2. `kun/docs/architecture/ADR-011-Result-async-extensions.md` —
-   the `Result<T>` composition surface the Result-returning
-   variant feeds into
-3. `kun/docs/architecture/ADR-014-Validation-Result-behavior.md`
-   (whole doc, especially §Scope and §F1-resolved note)
-4. `kun/src/Kun.Validation/AGENTS.md` — current guardrail text
-5. `kun/src/Kun.Validation/Behaviors/ValidationResultPipelineBehavior.cs`
-   — both generic and non-generic classes, doc comments
-6. `kun/src/Kun.Validation/Behaviors/ValidationPipelineBehavior.cs`
-   — the throwing variant (for the decision tree)
-7. `kun/src/Kun.Validation/DependencyInjection/KunValidationServiceCollectionExtensions.cs`
-   — all DI overloads
-8. `kun/tests/Kun.Validation.Tests/ValidationResultPipelineBehaviorTests.cs`
-   — test patterns to show in the guide
-9. `kun/docs/guides/gateway-rate-limit.md`,
-   `kun/docs/guides/read-side-patterns.md`,
-   `kun/docs/guides/saas-multitenancy.md` — existing guides,
-   match their shape (headings, cross-link style, file length)
+1. `kun/CLAUDE.md` — §Outbox rule + §Architectural constraints
+2. `kun/docs/architecture/ADR-015-Outbox-pattern.md` — full
+3. `kun/docs/architecture/why-outbox.md` — prose framing to
+   match
+4. `kun/src/Kun.EventBus/AGENTS.md` — current guardrails
+5. `kun/src/Kun.EventBus.RabbitMQ/AGENTS.md` — consumer wiring
+6. `kun/src/Kun.EntityFrameworkCore/AGENTS.md` — atomicity site
+7. `kun/src/Kun.EventBus/IIntegrationEvent*.cs` +
+   `IEventTypeRegistry.cs` +
+   `Idempotency/IdempotentConsumerDecorator.cs` +
+   `Outbox/OutboxMessage.cs` (grep for real API shapes before
+   quoting them in the guide)
+8. `kun/docs/guides/gateway-rate-limit.md`,
+   `kun/docs/guides/validating-commands.md` — style + length
+   target
 
 ## Acceptance criteria
 
-- **AC-1**: New file `kun/docs/guides/validating-commands.md`
-  shipped. Must include:
-  - Opening "who this is for" paragraph.
-  - **Decision tree** section picking between the three
-    behaviors (throwing / Result<TValue> / Result) with a
-    table mapping handler return type → pick.
-  - Worked example 1 — generic `Result<TValue>` command (e.g.
-    `CreateOrderCommand : IRequest<Result<OrderDto>>` with
-    two validators, DI wiring via
-    `AddValidator<,>` + `AddValidationResultBehavior<,>()`,
-    and a handler + test sketch showing the `Result.Fail`
-    path).
-  - Worked example 2 — non-generic `Result` command (e.g.
-    `DeleteUserCommand : IRequest<Result>` with one
-    validator, DI wiring via
-    `AddValidator<,>` + `AddValidationResultBehavior<>()`,
-    and a handler + test sketch).
-  - **Anti-patterns** section: (a) do not register both
-    behaviors for the same request type (double-wrap), (b)
-    do not throw `ValidationException` inside a
-    `Result`-returning handler, (c) do not put DB / network
-    calls in a validator (semantic validation belongs in the
-    handler).
-  - **See also** footer linking ADR-011, ADR-014,
-    Kun.Validation AGENTS.md, and
-    `docs/architecture/when-to-use-currentuser.md`
-    (as the Kun-idiomatic-doc-style exemplar).
-  - Target length: ≤ ~200 lines. Match prose density of
-    `gateway-rate-limit.md`.
+- **AC-1**: New `kun/docs/guides/outbox-and-integration-events.md`.
+  Must include:
+  - Opening "适用对象" — who this is for (framework consumers
+    wiring their first integration event + downstream consumer).
+  - **Atomicity boundary** section — the one-transaction rule
+    (aggregate changes + outbox rows committed together in
+    `SaveChangesAsync`). Sketch with a diagram (ASCII or a
+    one-line `SaveChangesAsync` walkthrough).
+  - **Stable event ID rule** — `{bounded-context}.{name}.v{n}`
+    and the `IEventTypeRegistry` registration point. One-line
+    reminder that `AssemblyQualifiedName` is forbidden.
+  - **Publish example** — worked example: `OrderPlacedIntegrationEvent`
+    definition, domain → integration mapping in the
+    Command handler, EF Core `DbContext.SaveChangesAsync`
+    commits both rows atomically, background `OutboxPublisher`
+    pumps to RabbitMQ.
+  - **Consume example** — worked example:
+    `OrderPlacedIntegrationEventHandler : IIntegrationEventHandler<OrderPlacedIntegrationEvent>`,
+    explicit `IdempotentConsumerDecorator<T>` wrapping, what
+    the at-least-once contract means for handler code (idempotency-
+    key based on event ID + event-local fields if needed).
+  - **W3C trace propagation note** — `TraceParent` / `TraceState`
+    are captured on enqueue and replayed on publish; cross-service
+    spans stitch together automatically. Distinction vs ADR-013
+    baggage (baggage = user-scoped tenant/user IDs).
+  - **Anti-patterns** section: (a) direct `IIntegrationEventBus.Publish`
+    from within a domain operation (bypasses Outbox, breaks
+    atomicity), (b) using `Type.AssemblyQualifiedName` as the
+    event ID (breaks consumer resolution on assembly rename),
+    (c) writing a consumer that's not idempotent (double-delivery
+    on retry = data corruption), (d) mutating `MessageContext`
+    across handlers (context is per-message, not a shared bag).
+  - **Escape hatches / deferred** footer — point at ADR-015
+    §F1 (dead-letter, not yet shipped), §F2 (per-tenant batch
+    priority, not yet shipped), §F3 (Kun.Testing.EntityFrameworkCore
+    Outbox helpers, not yet shipped) so consumers know where
+    the edges are.
+  - **相关** footer linking ADR-015, why-outbox.md, Kun.EventBus
+    AGENTS, Kun.EventBus.RabbitMQ AGENTS, Kun.EntityFrameworkCore
+    AGENTS, and docs/guides/validating-commands.md (sibling
+    guide).
+  - Target length: ≤ ~250 lines. Match prose density of
+    gateway-rate-limit.md / validating-commands.md.
 
-- **AC-2**: `src/Kun.Validation/AGENTS.md` "Two pipeline
-  behaviors ship" subsection updated:
-  - Add a third bullet describing
-    `ValidationResultPipelineBehavior<TRequest>` (non-generic)
-    with its `IRequest<Result>` constraint and
-    `AddValidationResultBehavior<TRequest>()` DI surface.
-  - Change the closing "See [ADR-014]" line to also link to
-    the new guide: "See [ADR-014](…) for design, or
-    [docs/guides/validating-commands.md](../../docs/guides/validating-commands.md)
-    for a consumer-facing walkthrough."
-  - No other edits — keep it surgical.
+- **AC-2**: `src/Kun.EventBus/AGENTS.md` picks up a one-line
+  cross-link near the top (below the Purpose section) pointing
+  at the new guide as the consumer entry point. Front-matter
+  `Updated:` bumped to 2026-04-24. No other edits — keep it
+  surgical.
 
 ## Commit plan
 
 | # | Commit subject | AC |
 |---|----------------|----|
-| 1 | `docs(validation): end-to-end validating-commands guide` | AC-1 |
-| 2 | `docs(validation): refresh AGENTS for non-generic variant + guide cross-link` | AC-2 |
+| 1 | `docs(eventbus): end-to-end outbox-and-integration-events guide` | AC-1 |
+| 2 | `docs(eventbus): refresh AGENTS with guide cross-link` | AC-2 |
 
-(Estimate 2 commits — could be folded into 1 if the AGENTS
-refresh is truly surgical, but keeping separate for review
-clarity matches the "one-commit-per-sub-step" cadence rule.)
+## AOT / build gates
 
-## AOT / build gates that must stay green
+Doc-only — code/AOT gates do not apply. Discipline checks:
 
-Doc-only task — the code/AOT gates do not apply. The
-discipline checks are:
-
-- [x] Doc-only change; `dotnet format` not applicable
-      (markdown is not part of the formatter scope).
-- [x] All relative links in the guide verified before
-      commit: ADR-011, ADR-014, src/Kun.Validation/AGENTS.md,
-      src/Kun.Testing/AGENTS.md,
-      docs/architecture/when-to-use-currentuser.md.
-- [x] All referenced type and extension-method names
-      grepped against HEAD: `IRequest<>`, `Result`,
-      `Result<>`, `Error.Validation`, `ErrorType.Validation`,
-      `IValidator<>`, `ValidationResult.Failure`,
-      `ValidationError`, `AddValidator<,>`,
-      `AddValidationResultBehavior<TRequest>`,
-      `AddValidationResultBehavior<TRequest, TValue>`,
-      `AddKunMediator`, `AddRequestHandler`,
-      `ResultAssertions.ShouldBeFailure/ShouldBeSuccess`.
+- [ ] Every relative link in the new guide resolves
+      (manual scan each `[…](…)` target).
+- [ ] No code snippet references a type / method / property
+      that does not exist in `src/Kun.EventBus/` or
+      `src/Kun.EntityFrameworkCore/` as of HEAD (grep each
+      name before committing).
 
 ## Out of scope
 
-- Source-generator-based bulk registration (ADR-014 §F3).
-- Structured per-field error payload (ADR-014 §F2).
-- Adding the guide to a "table of contents" meta-page —
-  `docs/guides/` has no index today; do not invent one.
-- Translating any existing guides to Chinese (the repo
-  mixes zh / en per-doc; match the tone of the three
-  sibling guides, which are English).
+- Dead-letter implementation (ADR-015 §F1 — L-size, parked).
+- Per-tenant batch priority (ADR-015 §F2).
+- `Kun.Testing.EntityFrameworkCore` Outbox helpers (ADR-015
+  §F3 — M-size new module, deferred).
+- Diagrams beyond ASCII / one-line sketches (render tooling
+  not in scope for this doc task).
 
 ## Progress log
 
-- 2026-04-24 10c4a9a KN-SELF-012 closed + archived; planner
-  hat on for KN-SELF-013 pick.
-- 2026-04-24 e9fe67a planner pick + active-task brief (role 1).
-- 2026-04-24 5f63663 executor commit 1 (AC-1): new
-  docs/guides/validating-commands.md (~170 lines) — decision
-  tree, CreateOrderCommand generic Result example,
-  DeleteUserCommand non-generic Result example, anti-patterns,
-  see-also footer. All cross-links + API names verified
-  before push.
-- 2026-04-24 e3e9e45 executor commit 2 (AC-2): surgical refresh
-  of src/Kun.Validation/AGENTS.md — "Two pipeline behaviors
-  ship" → "Three", new non-generic bullet, ADR-014 + guide
-  cross-link, front-matter bump.
-- 2026-04-24 hit 2-commit estimate exactly. Closing.
+- 2026-04-24 997c64b KN-SELF-013 closed + archived; planner
+  hat on for KN-SELF-014 pick.
 
 ## When done
 
 1. `status: done` + `executor_head` SHA.
-2. Move KN-SELF-013 to BACKLOG `## Done`.
-3. `echo "KN-SELF-013 done (<SHA>) — end-to-end validation
-   guide shipped + Kun.Validation AGENTS refreshed." >
-   /home/dawn/project/neuroagent/.omc/state/claude-kun_KN-SELF-013_done.txt`
-4. Planner next pick candidates: ADR-015 F3
-   Kun.Testing.EntityFrameworkCore Outbox helpers (new
-   module, M size), ADR-013 F2 metric dimensions from
-   baggage (Kun.Observability, S-M), or fresh pain point
-   surfaced while writing the guide.
+2. Move KN-SELF-014 to BACKLOG `## Done`.
+3. `echo "KN-SELF-014 done (<SHA>) — outbox + integration-events
+   consumer guide shipped + Kun.EventBus AGENTS cross-linked." >
+   /home/dawn/project/neuroagent/.omc/state/claude-kun_KN-SELF-014_done.txt`
+4. Planner next pick candidates: ADR-015 §F3
+   Kun.Testing.EntityFrameworkCore Outbox helpers (M), ADR-013
+   §F3 Aspire dashboard demo (S-M), Saga consumer guide (S,
+   parallel to this one but for Saga), or fresh pain point.
