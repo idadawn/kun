@@ -41,8 +41,13 @@ public sealed class S2SJwtRoundTripTests : IDisposable
         var verifier = CreateVerifier();
 
         var token = await issuer.IssueAsync(
-            "user-001", "tenant-001", ["threads:read", "threads:write"],
-            ["neuroagent-platform"], "session-001", _ct);
+            new S2SJwtIssueRequest(
+                UserId: "user-001",
+                TenantId: "tenant-001",
+                Audience: ["neuroagent-platform"],
+                Scopes: ["threads:read", "threads:write"],
+                SessionId: "session-001"),
+            _ct);
 
         var principal = await verifier.VerifyAsync(token, "neuroagent-platform", _ct);
 
@@ -91,8 +96,13 @@ public sealed class S2SJwtRoundTripTests : IDisposable
         var verifier = CreateVerifier();
 
         var token = await issuer.IssueAsync(
-            "user-001", "tenant-001", ["threads:read"],
-            ["neuroagent-platform"], "session-001", _ct);
+            new S2SJwtIssueRequest(
+                UserId: "user-001",
+                TenantId: "tenant-001",
+                Audience: ["neuroagent-platform"],
+                Scopes: ["threads:read"],
+                SessionId: "session-001"),
+            _ct);
 
         // Verify with wrong audience
         var result = await verifier.VerifyAsync(token, "neuroagent-storage", _ct);
@@ -131,8 +141,13 @@ public sealed class S2SJwtRoundTripTests : IDisposable
         var verifier = CreateVerifier(rotationOptions);
 
         var token = await issuer.IssueAsync(
-            "user-001", "tenant-001", ["threads:read"],
-            ["neuroagent-platform"], "session-001", _ct);
+            new S2SJwtIssueRequest(
+                UserId: "user-001",
+                TenantId: "tenant-001",
+                Audience: ["neuroagent-platform"],
+                Scopes: ["threads:read"],
+                SessionId: "session-001"),
+            _ct);
 
         var result = await verifier.VerifyAsync(token, "neuroagent-platform", _ct);
 

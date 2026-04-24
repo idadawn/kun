@@ -21,6 +21,10 @@ public sealed class S2SJwtOptions
     /// <summary>Token issuer. Must be <c>neuroagent-edge</c> per contract.</summary>
     public string Issuer { get; init; } = "neuroagent-edge";
 
-    /// <summary>Default token lifetime. Defaults to 300 seconds (5 minutes).</summary>
-    public int DefaultLifetimeSeconds { get; init; } = 300;
+    /// <summary>
+    /// Default token lifetime. Defaults to 900 seconds (15 minutes) per SAD v3.0 §12.
+    /// Individual calls to <see cref="IS2SJwtIssuer.IssueAsync"/> can override via
+    /// <see cref="S2SJwtIssueRequest.Lifetime"/>.
+    /// </summary>
+    public int DefaultLifetimeSeconds { get; init; } = 900;
 }
