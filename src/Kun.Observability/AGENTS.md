@@ -37,6 +37,8 @@ point — `AddKunObservability` — that:
 |------|---------|
 | `KunObservabilityOptions` | All switches — service identity, OTLP endpoint, per-instrumentation toggles, and per-pillar toggles (tracing / metrics / logging). |
 | `KunObservabilityServiceCollectionExtensions.AddKunObservability` | Registers the OTel pipeline. Returns `IServiceCollection` for chaining and is safe to call multiple times on the same collection (see idempotency marker). |
+| `Enrichment.KunBaggageKeys` | Public constants (`tenant.id`, `user.id`, `outbox.message_id`) — canonical baggage keys the framework mirrors onto Kun-sourced span tags when the enricher is enabled. |
+| `Enrichment.KunBaggageActivityProcessor` | Internal `BaseProcessor<Activity>` that runs at `OnEnd` for Kun-owned sources and mirrors whitelisted baggage entries onto span tags. Opt-in via `KunObservabilityOptions.EnrichActivitiesFromBaggage`. See [ADR-013](../../docs/architecture/ADR-013-Kun.Observability-enricher.md). |
 
 ## Default Toggles
 
@@ -47,6 +49,7 @@ point — `AddKunObservability` — that:
 | `IncludeHttpClient` | `true` | Drop outbound HTTP spans + metrics |
 | `IncludeEfCore` | `true` | Drop EF Core SQL traces |
 | `IncludeRuntime` | `true` | Drop GC / threadpool metrics |
+| `EnrichActivitiesFromBaggage` | `false` | Flip to `true` to mirror whitelisted baggage entries onto Kun-sourced span tags (ADR-013) |
 
 W3C Trace Context propagation is the OpenTelemetry 1.x default and is
 left untouched; no custom propagator is registered.

@@ -6,6 +6,40 @@
 
 ## [Unreleased]
 
+### Added — ADR-013 Kun.Observability baggage enricher (2026-04-24)
+
+- **docs/architecture/ADR-013-Kun.Observability-enricher.md** —
+  accepted. Baggage-driven activity enrichment: consumer code
+  pushes `tenant.id` / `user.id` / `outbox.message_id` into
+  OpenTelemetry baggage at the request boundary; the framework
+  mirrors those whitelisted keys onto Kun-sourced span tags so
+  Aspire / Jaeger operators can filter by tenant / user without
+  hand-correlating spans to logs.
+- **`Kun.Observability.Enrichment.KunBaggageKeys`** — public
+  static class exposing the canonical baggage key names and
+  `All` array for iteration.
+- **`Kun.Observability.Enrichment.KunBaggageActivityProcessor`**
+  (internal) — `BaseProcessor<Activity>` that runs at `OnEnd`
+  for activities whose `ActivitySource.Name` is in
+  `KunActivitySources.All` and mirrors the whitelisted baggage
+  subset to span tags.
+- **`KunObservabilityOptions.EnrichActivitiesFromBaggage`** —
+  new flag, default `false` (opt-in per ADR-013 §Default
+  posture). Setting it to `true` registers the processor into
+  the `TracerProviderBuilder` at `AddKunObservability` time.
+- **7 new tests in `tests/Kun.Observability.Tests/BaggageEnrichmentTests.cs`**
+  — processor-level unit tests (manual `TracerProviderBuilder` +
+  `AlwaysOnSampler` + `OpenTelemetry.Exporter.InMemory`) plus
+  DI-wired integration tests verifying the option flag both on
+  and off.
+- **AOT / package deltas**: zero new `<PackageReference>` on
+  `Kun.Observability.csproj`; module stays `IsAotCandidate=true`.
+  `HasPublicApi` stays `false` for this module — tracking a
+  future flip as a separate framework-wide task so every
+  `Kun.*` module adopts strict API tracking together.
+- **Out of scope** (ADR-013 F1–F3): log-record enricher,
+  metric-dimension enricher, Aspire sample-dashboard demo.
+
 ### Added — ADR-012 Kun.Testing module (2026-04-24)
 
 - **docs/architecture/ADR-012-Kun.Testing-module.md** — accepted. New

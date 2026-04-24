@@ -32,6 +32,25 @@ already does this for the S2S JWT tenant claim via an
 `AsyncLocal<>`-backed context across HTTP / gRPC / async hops,
 reaching every downstream Activity without additional wiring.
 
+### Hook point: `OnEnd`, not `OnStart`
+
+The mirror happens in `BaseProcessor<Activity>.OnEnd`, not
+`OnStart`. Rationale — `OnStart` runs the instant `Activity.Start()`
+is called, which is *before* consumer code inside the activity
+body has a chance to call `SetBaggage` on it. `OnEnd` runs just
+before the activity leaves the pipeline toward exporters and sees
+every baggage entry that was set at any point in the activity's
+lifespan. This handles both idiomatic cases cleanly:
+
+1. Baggage set at request boundary → child activity inherits it →
+   `OnEnd` mirrors it to tags.
+2. Baggage set mid-activity (less common but legal) → `OnEnd` still
+   sees the final baggage state and mirrors it.
+
+Exporters receive the tagged activity on the same pipeline pass
+because `OnEnd` precedes the exporter call in OTel's processor
+chain.
+
 ### Why baggage and not scoped DI
 
 The intuitive design — "processor constructor takes
