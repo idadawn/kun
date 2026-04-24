@@ -53,6 +53,18 @@ worn by kun himself during idle windows picks the next item.
 <!-- KN-SELF-008 moved to ## Done on 2026-04-24 (executor head af4007c) -->
 
 
+### P2 — KN-SELF-009: flip `Kun.Sandbox` to `HasPublicApi=true`
+
+- **Status**: in-flight — see `kun/.autonomy/active-task.md`
+- **Size**: S (target 1–2 commits)
+- **Why**: Second step of the KN-SELF-008 pilot. Kun.Sandbox has
+  ≈15 public types (ISandboxProvider + three impls + E2B-shaped
+  DTOs / sub-APIs) that currently skip the strict-tracking gate.
+- **AC**: csproj flip + PublicAPI seed (via
+  `dotnet format analyzers --diagnostics=RS0016` code fix) +
+  RS0026 suppression on the `IProcesses.RunAsync` legacy dual-
+  overload shape + CHANGELOG "### Changed" entry.
+
 ### P3 — KN-SELF-006-legacy: `Kun.Saga.EntityFrameworkCore` split (long-parked)
 
 - **Size**: L (≥10 commits, breaking change for consumers)
