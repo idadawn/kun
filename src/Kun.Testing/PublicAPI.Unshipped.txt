@@ -1,8 +1,12 @@
 #nullable enable
+Kun.Testing.Domain.DomainEventAssertions
 Kun.Testing.KunAssertionException
 Kun.Testing.KunAssertionException.KunAssertionException(string! message) -> void
 Kun.Testing.KunAssertionException.KunAssertionException(string! message, System.Exception! inner) -> void
 Kun.Testing.Results.ResultAssertions
+static Kun.Testing.Domain.DomainEventAssertions.ShouldNotRaise<TEvent>(this Kun.Core.Domain.IAggregateRoot! aggregate) -> void
+static Kun.Testing.Domain.DomainEventAssertions.ShouldRaise<TEvent>(this Kun.Core.Domain.IAggregateRoot! aggregate) -> TEvent
+static Kun.Testing.Domain.DomainEventAssertions.ShouldRaiseExactly<TEvent>(this Kun.Core.Domain.IAggregateRoot! aggregate, int count) -> System.Collections.Generic.IReadOnlyList<TEvent>!
 static Kun.Testing.Results.ResultAssertions.ShouldBeFailure(this Kun.Core.Results.Result result) -> Kun.Core.Results.Error!
 static Kun.Testing.Results.ResultAssertions.ShouldBeFailure<T>(this Kun.Core.Results.Result<T> result) -> Kun.Core.Results.Error!
 static Kun.Testing.Results.ResultAssertions.ShouldBeSuccess(this Kun.Core.Results.Result result) -> void
