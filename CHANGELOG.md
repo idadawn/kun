@@ -6,6 +6,20 @@
 
 ## [Unreleased]
 
+### Added — Kun.Storage (Phase 1 P1-KN-001)
+
+- **Kun.Storage** module (trim-safe, `IsAotCandidate=false` due to AWSSDK.S3 reflection):
+  - `IFileStorage` seven-method contract: `PutObject` / `GetObject` / `HeadObject` / `DeleteObject` / `ListObjects` / `CreatePresignedUploadUrl` / `CreatePresignedDownloadUrl`.
+  - Supporting types: `ObjectMetadata` / `ObjectSummary` / `ObjectDownload` (IAsyncDisposable) / `PutObjectOptions` / `PresignedUploadRequest+Url` / `PresignedDownloadRequest+Url`.
+  - `ContentDispositionPolicy`: active-web MIME whitelist (HTML/SVG/XML/JS/WASM/XHTML/ECMAScript) + RFC 5987 attachment builder. Enforced at every write path and every presigned-download URL so user-uploaded content cannot render inline.
+  - `S3FileStorage` (AWSSDK.S3, compatible with MinIO via path-style + custom endpoint). Auto-probes stored MIME on presigned GET to inject `ResponseContentDisposition` attachment override.
+  - `LocalFileStorage`: 2-layer path-traversal defense (syntactic + semantic), `.kunmeta` JSON sidecar for metadata, HMAC-SHA256-signed `kun-local://` stub URLs for presigned ops (dev-only).
+  - DI: `AddKunStorage` / `AddLocalStorage` / `AddS3Storage` with central `StorageOptions`.
+- **Tests**:
+  - `tests/Kun.Storage.Tests`: ContentDispositionPolicy matrix, LocalFileStorage round-trips + traversal + attachment enforcement, mocked-S3 unit tests, DI resolution tests.
+  - `tests/Kun.IntegrationTests/Storage/S3FileStorageIntegrationTests.cs` + `Fixtures/MinioFixture.cs`: MinIO Testcontainer with real `HttpClient` round-trips against presigned URLs.
+- **Docs**: new `src/Kun.Storage/AGENTS.md`, module added to `src/AGENTS.md`, README, `docs/architecture/module-map.md`; `docs/neuroagent-phase1-gap.md` updated to mark P1-KN-001 complete.
+
 ### Fixed
 
 - **Kun.Gateway**: `S2sTokenIssuer` now injects `IHostEnvironment` and throws `InvalidOperationException` when the signing key file is missing in non-Development environments, preventing silent ephemeral-key self-signing in production.

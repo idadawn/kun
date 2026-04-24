@@ -16,6 +16,8 @@ graph TD
     EventBus --> Saga[Kun.Saga<br/>Saga 编排器/补偿/超时]
     EventBus --> RabbitMq[Kun.EventBus.RabbitMQ<br/>集成事件传输]
 
+    Storage[Kun.Storage<br/>对象存储/S3/MinIO/本地]
+
     Mediator --> AspNet[Kun.AspNetCore<br/>Minimal API/Pipeline Behaviors]
     Mediator --> Grpc[Kun.Grpc<br/>拦截器/Result 映射]
 
@@ -36,7 +38,7 @@ graph TD
 ├─────────────────────────────────────────────────────────┤
 │  Infrastructure Layer                                   │
 │  Kun.EntityFrameworkCore / Kun.Dapper                   │
-│  Kun.EventBus.RabbitMQ / Kun.Saga                       │
+│  Kun.EventBus.RabbitMQ / Kun.Saga / Kun.Storage         │
 ├─────────────────────────────────────────────────────────┤
 │  Abstraction Layer                                      │
 │  Kun.Mediator / Kun.Infrastructure                      │

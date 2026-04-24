@@ -43,7 +43,7 @@
 
 | 能力 | SAD 引用 | 对应 TaskPlan | 现有 Kun 模块 | 是否已具备 |
 |------|---------|--------------|-------------|----------|
-| **IFileStorage 抽象**（MinIO/S3/Local） | §7.3 Kun.Storage | P1-KN-001 | **无** | 缺失 — Kun 无 Storage/OSS 模块 |
+| **IFileStorage 抽象**（MinIO/S3/Local） | §7.3 Kun.Storage | P1-KN-001 | Kun.Storage | **已具备** — IFileStorage 7 方法 + S3/MinIO + Local + ContentDispositionPolicy（活跃-MIME 强制 attachment）+ MinIO Testcontainer 集成测试 |
 | **S2S JWT 签发**（RSA、含 JWKS 端点） | §7.1 Kun.Edge、§12 S2S JWT 设计 | P1-KN-002 | Kun.Gateway（S2sTokenIssuer）+ Kun.Security（验证侧） | **已具备** — S2sTokenIssuer + JwksEndpoint + KunServiceAuthenticationExtensions |
 | **S2S JWT 验证**（下游服务 Bearer 认证） | §7.1、§12 | P1-KN-002 | Kun.Security | **已具备** — FileKunJwksProvider + KunServiceAuthenticationExtensions |
 | **Outbox Pattern**（EF Core 同事务写 + Background publish） | §3.2 schema 所有权、§7.4 Aspire | P1-KN-003 | Kun.EventBus + Kun.EntityFrameworkCore | **已具备** — IntegrationEventOutboxAccumulator + OutboxPublisherBackgroundService + RedisOutboxLockProvider |
@@ -81,10 +81,10 @@
 
 ### 3.2 需新增能力的模块
 
-| 模块 | 需新增/修改的能力 | 对应 TaskPlan |
-|------|-----------------|--------------|
-| **（新建）Kun.Storage** | IFileStorage 抽象接口 + S3/MinIO 实现 + Local 实现。接口需包含：CreatePresignedUploadUrl / CreatePresignedDownloadUrl / PutObject / GetObject / HeadObject / DeleteObject / ListObjects。活跃 web 类型强制 Content-Disposition: attachment | P1-KN-001 |
-| **（新建）Kun.Audit** | 审计日志 Interceptor/Middleware，自动从 CQRS Pipeline 捕获 Command 执行记录，异步写 audit schema（含哈希链） | P1-CS-019 |
+| 模块 | 需新增/修改的能力 | 对应 TaskPlan | 状态 |
+|------|-----------------|--------------|:---:|
+| ~~**（新建）Kun.Storage**~~ | ~~IFileStorage 抽象 + S3/MinIO/Local 实现 + 活跃 web Content-Disposition attachment~~ | P1-KN-001 | ✅ 已落地 |
+| **（新建）Kun.Audit** | 审计日志 Interceptor/Middleware，自动从 CQRS Pipeline 捕获 Command 执行记录，异步写 audit schema（含哈希链） | P1-CS-019 | ⏳ 待 M4 Week 7 |
 
 ---
 
@@ -119,19 +119,21 @@
 
 ### P1-KN-001 Kun.Storage 新增 IFileStorage 抽象
 
-**状态**：缺失，需新建整个模块
+**状态**：✅ **已落地**（2026-04-24）
 **工作目录**：kun/
 **SAD 引用**：§7.3 Kun.Storage（IFileStorage 接口 + S3/MinIO/Local 实现）
 
-需实现：
-- `src/Kun.Storage/Kun.Storage.csproj`
-- `src/Kun.Storage/Abstractions/IFileStorage.cs` — 接口定义（7 个方法）
-- `src/Kun.Storage/Abstractions/ObjectMetadata.cs` — 元数据类型
-- `src/Kun.Storage/Abstractions/PresignedUploadUrl.cs` / `PresignedDownloadUrl.cs`
-- `src/Kun.Storage/Implementations/S3FileStorage.cs` — AWS SDK for .NET，兼容 MinIO
-- `src/Kun.Storage/Implementations/LocalFileSystemStorage.cs` — 本地开发用
-- `tests/Kun.Storage.Tests/Kun.Storage.Tests.csproj` — 单元测试（mock S3 或 MinIO testcontainer）
-- 需处理：活跃 web 类型（text/html 等）强制 Content-Disposition: attachment
+已实现：
+- `src/Kun.Storage/Kun.Storage.csproj`（IsAotCandidate=false，AWSSDK 反射原因；trim-safe）
+- `src/Kun.Storage/Abstractions/IFileStorage.cs`（7 方法：PutObject/GetObject/HeadObject/DeleteObject/ListObjects/CreatePresignedUploadUrl/CreatePresignedDownloadUrl）
+- `src/Kun.Storage/Abstractions/ObjectMetadata.cs` / `ObjectSummary.cs` / `ObjectDownload.cs`
+- `src/Kun.Storage/Abstractions/PresignedUploadRequest.cs` / `PresignedUploadUrl.cs` / `PresignedDownloadRequest.cs` / `PresignedDownloadUrl.cs`
+- `src/Kun.Storage/Abstractions/ContentDispositionPolicy.cs`（活跃-MIME 白名单：text/html、application/xhtml+xml、image/svg+xml、application/xml、text/xml、application/javascript、text/javascript、application/ecmascript、application/wasm；RFC 5987 非-ASCII 文件名）
+- `src/Kun.Storage/Implementations/S3FileStorage.cs`（兼容 MinIO；PutObject 自动强制附件；CreatePresignedDownloadUrl 基于 HeadObject 判断是否注入 ResponseContentDisposition 覆盖）
+- `src/Kun.Storage/Implementations/LocalFileStorage.cs`（路径遍历双层防护；`.kunmeta` sidecar 保存元数据；HMAC-SHA256 签名的 `kun-local://` stub URL）
+- `src/Kun.Storage/DependencyInjection/KunStorageServiceCollectionExtensions.cs`（`AddKunStorage` / `AddLocalStorage` / `AddS3Storage`）
+- `tests/Kun.Storage.Tests`（ContentDispositionPolicyTests、LocalFileStorageTests、S3FileStorageTests mocked、KunStorageServiceCollectionExtensionsTests）
+- `tests/Kun.IntegrationTests/Storage/S3FileStorageIntegrationTests.cs` + `Fixtures/MinioFixture.cs`（真实 MinIO 容器往返 + 真实 HttpClient 对 presigned URL 的调用）
 
 ### P1-KN-002 S2S JWT 签发与验证
 
@@ -168,13 +170,13 @@ Sample 项目 `Kun.Sample.Order` 已展示完整 Outbox 使用模式（EfOutboxM
 
 ## 7. 结论
 
-Kun 框架对 NeuroAgent Phase 1 的 **核心基础设施支持度约 85%**：
+Kun 框架对 NeuroAgent Phase 1 的 **核心基础设施支持度约 95%**（2026-04-24 更新）：
 
-- **已满足**：CQRS/DDD/EF Core 写侧/Dapper 读侧/Outbox+Saga/S2S JWT 全链路/多租户 QueryFilter/限流/验证
-- **需新建**：Kun.Storage（IFileStorage）、Kun.Audit（审计 Pipeline）
-- **无需修改**：全部 13 个现有 src 模块代码无需改动
+- **已满足**：CQRS/DDD/EF Core 写侧/Dapper 读侧/Outbox+Saga/S2S JWT 全链路/多租户 QueryFilter/限流/验证/**对象存储（Kun.Storage，含 S3/MinIO/Local 与活跃-MIME 附件强制）**
+- **需新建**：Kun.Audit（审计 Pipeline）— 可延至 M4 Week 7 开始
+- **无需修改**：全部 13 个原有 src 模块代码无需改动；Kun.Storage 已作为第 14 个模块落地
 
-Phase 1 实际在 Kun 侧的工作量集中在 **P1-KN-001（Kun.Storage 新建）**，其他两个 KN 任务（S2S JWT + Outbox）已具备。
+Phase 1 在 Kun 侧的剩余工作量主要是 **P1-CS-019（Kun.Audit 新建）**；KN-001/KN-002/KN-003 三项均已具备。
 
 ---
 

@@ -187,8 +187,8 @@
 
 | 模块 / 任务 | 负责人 | 状态 | 备注 |
 |---|---|---|---|
-| Kun.Storage | 角色1 | 未开始 | 首个启动项 |
-| S2S JWT claims 对齐 | 角色1 | 未开始 | |
+| Kun.Storage | 角色1 | ✅ 已完成 2026-04-24 | 7 方法 + ContentDispositionPolicy + Local HMAC stub + MinIO 集成测试；本地无 dotnet，构建/测试待 CI |
+| S2S JWT claims 对齐 | 角色1 | 未开始 | 下一项 |
 | IEventTypeRegistry 属性驱动 | 角色1 | 未开始 | |
 | RLS interceptor | 角色1 | 未开始 | |
 | Kun.Audit | 角色1 | 未开始 | M4 Week 7 起 |
