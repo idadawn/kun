@@ -117,23 +117,81 @@ public sealed class LocalFileStorageTests : IDisposable
     }
 
     [Fact]
-    public async Task CreatePresignedUploadUrl_Throws_NotSupported_On_Local()
+    public async Task CreatePresignedUploadUrl_Returns_SignedStubUrl()
     {
-        var act = () => _storage.CreatePresignedUploadUrlAsync(
-            "x.txt",
-            new PresignedUploadRequest(TimeSpan.FromMinutes(5)),
+        var result = await _storage.CreatePresignedUploadUrlAsync(
+            "uploads/file.bin",
+            new PresignedUploadRequest(TimeSpan.FromMinutes(5), ContentType: "application/octet-stream"),
             _ct);
-        await act.Should().ThrowAsync<NotSupportedException>();
+
+        result.HttpMethod.Should().Be("PUT");
+        result.Url.Scheme.Should().Be("kun-local");
+        result.Url.Query.Should().Contain("op=upload")
+            .And.Contain("expires=")
+            .And.Contain("sig=");
+        result.RequiredHeaders.Should().ContainKey("Content-Type")
+            .WhoseValue.Should().Be("application/octet-stream");
+        result.ExpiresAt.Should().BeCloseTo(DateTimeOffset.UtcNow.AddMinutes(5), TimeSpan.FromSeconds(5));
     }
 
     [Fact]
-    public async Task CreatePresignedDownloadUrl_Throws_NotSupported_On_Local()
+    public async Task CreatePresignedDownloadUrl_Returns_SignedStubUrl()
     {
-        var act = () => _storage.CreatePresignedDownloadUrlAsync(
-            "x.txt",
+        var result = await _storage.CreatePresignedDownloadUrlAsync(
+            "downloads/file.bin",
             new PresignedDownloadRequest(TimeSpan.FromMinutes(5)),
             _ct);
-        await act.Should().ThrowAsync<NotSupportedException>();
+
+        result.Url.Scheme.Should().Be("kun-local");
+        result.Url.Query.Should().Contain("op=download")
+            .And.Contain("sig=");
+    }
+
+    [Theory]
+    [InlineData("../secret.txt")]
+    [InlineData("foo/../../etc/passwd")]
+    [InlineData("/abs/path.txt")]
+    public async Task PutObject_Rejects_Paths_That_Escape_Root(string escapingPath)
+    {
+        using var stream = new MemoryStream(new byte[] { 1, 2, 3 });
+        var act = () => _storage.PutObjectAsync(
+            escapingPath, stream, new PutObjectOptions("application/octet-stream"), _ct);
+        await act.Should().ThrowAsync<ArgumentException>();
+    }
+
+    [Fact]
+    public async Task PutObject_Forces_Attachment_Disposition_For_Unsafe_MimeType()
+    {
+        using var html = new MemoryStream(Encoding.UTF8.GetBytes("<script>alert(1)</script>"));
+        await _storage.PutObjectAsync(
+            "user-upload/evil.html",
+            html,
+            new PutObjectOptions(ContentType: "text/html", FileName: "evil.html"),
+            _ct);
+
+        var metadata = await _storage.HeadObjectAsync("user-upload/evil.html", _ct);
+
+        metadata.Should().NotBeNull();
+        metadata!.ContentDisposition.Should().NotBeNull();
+        metadata.ContentDisposition!.Should().StartWith("attachment");
+    }
+
+    [Fact]
+    public async Task CreatePresignedDownloadUrl_Forces_Attachment_For_Unsafe_MimeType()
+    {
+        using var svg = new MemoryStream(Encoding.UTF8.GetBytes("<svg/>"));
+        await _storage.PutObjectAsync(
+            "inline-risk.svg",
+            svg,
+            new PutObjectOptions(ContentType: "image/svg+xml"),
+            _ct);
+
+        var result = await _storage.CreatePresignedDownloadUrlAsync(
+            "inline-risk.svg",
+            new PresignedDownloadRequest(TimeSpan.FromMinutes(5)),
+            _ct);
+
+        Uri.UnescapeDataString(result.Url.Query).Should().Contain("cd=attachment");
     }
 
     private async Task Put(string path, string content, string contentType)
