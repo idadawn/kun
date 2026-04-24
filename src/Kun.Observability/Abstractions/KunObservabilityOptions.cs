@@ -65,4 +65,18 @@ public sealed class KunObservabilityOptions
     /// <see cref="TracingEnabled"/> is <see langword="false"/>.
     /// </summary>
     public bool EnrichActivitiesFromBaggage { get; set; }
+
+    /// <summary>
+    /// When <see langword="true"/>, installs a
+    /// <c>BaseProcessor&lt;LogRecord&gt;</c> that mirrors whitelisted
+    /// OpenTelemetry baggage entries (from the ambient
+    /// <see cref="System.Diagnostics.Activity.Current"/>) onto log
+    /// record attributes. The log statement's own attributes win
+    /// on conflict — the enricher only adds missing keys. Default
+    /// <see langword="false"/> (opt-in, mirrors
+    /// <see cref="EnrichActivitiesFromBaggage"/> posture per
+    /// ADR-013 §F1 resolution). Has no effect when
+    /// <see cref="LoggingEnabled"/> is <see langword="false"/>.
+    /// </summary>
+    public bool EnrichLogsFromBaggage { get; set; }
 }

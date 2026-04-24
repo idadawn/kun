@@ -126,6 +126,12 @@ public static class KunObservabilityServiceCollectionExtensions
                     options.IncludeFormattedMessage = true;
                     options.IncludeScopes = true;
                     options.ParseStateValues = true;
+
+                    if (snapshot.EnrichLogsFromBaggage)
+                    {
+                        options.AddProcessor(new KunBaggageLogRecordProcessor());
+                    }
+
                     options.AddOtlpExporter(ConfigureOtlp(snapshot));
                 });
             });
