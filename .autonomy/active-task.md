@@ -1,11 +1,28 @@
 ---
 id: KN-SELF-017
 title: docs/guides/outbox-and-integration-events.md consumer guide
-status: in-flight
-planner_commit: <fill after commit>
-executor_head: <fill after first executor commit>
+status: done
+planner_commit: 97e4847
+executor_head: <this closeout commit>
 estimated_commits: 2
 started: 2026-04-24
+finished: 2026-04-24
+ship_log: |
+  AC-1 shipped in e9ad7b9: new docs/guides/outbox-and-
+    integration-events.md (~260 lines, Chinese prose +
+    English code, matching validating-commands.md density).
+    Atomicity boundary + stable event ID + publish + consume +
+    testing + W3C trace + 4 anti-patterns + edges footer +
+    see-also. Every type / method name verified against HEAD
+    (IntegrationEventBuffer, UseInMemoryIdempotency,
+    AddKunOutboxPublisher, AddRabbitMq,
+    IIntegrationEventPublisher.PublishAsync, MessageContext,
+    IEventTypeRegistry methods).
+  AC-2 shipped in (this closeout commit): one-line cross-link
+    added near Kun.EventBus/AGENTS.md Purpose section pointing
+    consumers at the new guide as the starter-entry-point
+    ("for consumers wiring their first integration event:
+    read [guide] first").
 ---
 
 # KN-SELF-017 — end-to-end Outbox + integration-events consumer guide

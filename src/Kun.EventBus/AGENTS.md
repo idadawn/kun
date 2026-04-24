@@ -7,6 +7,12 @@
 
 Event-bus abstractions: integration event base (`IIntegrationEvent`), event-type registry (`IEventTypeRegistry` — maps CLR types to stable IDs like `order.placed.v1`), Outbox schema and publisher background service contract, `IIntegrationEventBus` transport-agnostic publish interface, and the `IdempotentConsumerDecorator` that wraps consumer handlers.
 
+> **For consumers wiring their first integration event**: read
+> [`docs/guides/outbox-and-integration-events.md`](../../docs/guides/outbox-and-integration-events.md)
+> first. It walks end-to-end: atomicity boundary, stable-event-ID rule,
+> publish/consume worked examples, testing via `OutboxAssertions`,
+> W3C trace propagation, and four common anti-patterns.
+
 ## Key Files
 
 | File | Description |

@@ -76,26 +76,7 @@ worn by kun himself during idle windows picks the next item.
 <!-- KN-SELF-016 moved to ## Done on 2026-04-24 (executor head 5ceffdc + this closeout) -->
 
 
-### P2 — KN-SELF-017: end-to-end `outbox-and-integration-events.md` consumer guide
-
-- **Status**: in-flight — see `kun/.autonomy/active-task.md`
-- **Size**: S (target 2 commits).
-- **Why**: KN-SELF-011 (ADR-015 design) + KN-SELF-014
-  (scaffold) + KN-SELF-016 (tests + docs) closed the Outbox
-  story everywhere EXCEPT `docs/guides/`. A downstream
-  engineer wiring their first integration event + consumer
-  still has to triangulate from ADR-015 + why-outbox.md +
-  Kun.EventBus/AGENTS + Kun.EventBus.RabbitMQ/AGENTS +
-  Kun.EntityFrameworkCore/AGENTS + the just-shipped
-  Kun.Testing.EntityFrameworkCore AGENTS. Same gap shape
-  KN-SELF-013 closed for validation; now sized correctly
-  (S) because the test-helper surface it would otherwise
-  stub is already shipped.
-- **AC**: new `docs/guides/outbox-and-integration-events.md`
-  with atomicity-boundary, stable-event-ID, publish / consume
-  / test worked examples, W3C trace note, four anti-patterns,
-  edges footer, see-also; `src/Kun.EventBus/AGENTS.md` picks
-  up a one-line cross-link near Purpose. Doc-only.
+<!-- KN-SELF-017 moved to ## Done on 2026-04-24 (executor head e9ad7b9 + this closeout) -->
 - **Size**: S (target 2 commits: tests project + CHANGELOG /
   ADR-015 §F3 resolution marker).
 - **Why**: KN-SELF-014 was rescoped mid-execution. The
@@ -125,6 +106,30 @@ worn by kun himself during idle windows picks the next item.
 ---
 
 ## Done
+
+- **KN-SELF-017** — end-to-end
+  `docs/guides/outbox-and-integration-events.md` consumer guide
+  — executor head `e9ad7b9` (1 guide commit + 1 AGENTS
+  cross-link / closeout commit) — 2026-04-24. Two ACs shipped:
+  new `docs/guides/outbox-and-integration-events.md` (~260
+  lines, Chinese prose + English code, matches
+  `validating-commands.md` density) walks a downstream
+  engineer from "what's the atomicity boundary?" through the
+  publish + consume worked examples, the MessageContext-
+  keyed idempotency pattern, the W3C trace-context-vs-ADR-013-
+  baggage distinction, four anti-patterns (direct broker
+  bypass, AQN event IDs, non-idempotent consumer,
+  MessageContext mutation), an edges footer noting ADR-015 §F1
+  / §F2 open follow-ups, and a see-also to KN-SELF-016's
+  `OutboxAssertions` for the test side; every type / method /
+  extension name verified against HEAD before commit.
+  `src/Kun.EventBus/AGENTS.md` picks up a one-line consumer-
+  entry-point cross-link near Purpose pointing at the guide.
+  Doc-only; closes the Outbox-story gap in `docs/guides/`
+  that mirrored the KN-SELF-013 validation gap. Together
+  with KN-SELF-011 (ADR) + KN-SELF-014 (scaffold) +
+  KN-SELF-016 (tests + §F3 resolution), the Outbox story is
+  fully consumer-facing-documented.
 
 - **KN-SELF-016** — complete
   `Kun.Testing.EntityFrameworkCore` tests + docs (ADR-015 §F3
