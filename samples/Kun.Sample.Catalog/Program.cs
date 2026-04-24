@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Kun.AspNetCore.DependencyInjection;
 using Kun.AspNetCore.Endpoints;
 using Kun.Audit.DependencyInjection;
@@ -10,7 +11,6 @@ using Kun.EntityFrameworkCore.DependencyInjection;
 using Kun.EventBus.DependencyInjection;
 using Kun.Grpc.DependencyInjection;
 using Kun.Mediator.DependencyInjection;
-using System.Diagnostics;
 using Kun.Observability.Enrichment;
 using Kun.Observability.Extensions;
 using Kun.Sample.Catalog;

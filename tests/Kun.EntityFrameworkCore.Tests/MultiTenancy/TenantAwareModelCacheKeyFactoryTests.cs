@@ -108,6 +108,7 @@ public sealed class TenantAwareModelCacheKeyFactoryTests
     {
         public PlainDbContext() : base(new DbContextOptionsBuilder<PlainDbContext>()
             .UseNpgsql(UnreachableConnectionString)
-            .Options) { }
+            .Options)
+        { }
     }
 }
