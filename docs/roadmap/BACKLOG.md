@@ -68,26 +68,32 @@ worn by kun himself during idle windows picks the next item.
 <!-- KN-SELF-013 moved to ## Done on 2026-04-24 (executor head e3e9e45) -->
 
 
-### P2 — KN-SELF-014: end-to-end `outbox-and-integration-events.md` guide + Kun.EventBus AGENTS cross-link
+### P2 — KN-SELF-014: `Kun.Testing.EntityFrameworkCore` Outbox assertion helpers (ADR-015 §F3)
 
 - **Status**: in-flight — see `kun/.autonomy/active-task.md`
-- **Size**: S (target 2 commits)
-- **Why**: KN-SELF-011 shipped ADR-015 (Outbox design); the
-  full publish/consume surface is already coded
-  (`IIntegrationEvent`, `IIntegrationEventHandler<T>`,
-  `IEventTypeRegistry`, `IdempotentConsumerDecorator<T>`,
-  `OutboxMessage`). `docs/guides/` has no end-to-end recipe —
-  consumers must triangulate from ADR-015 + why-outbox.md +
-  Kun.EventBus/AGENTS + Kun.EntityFrameworkCore/AGENTS +
-  CLAUDE.md §Outbox. Close the gap (mirrors KN-SELF-013 for
-  validation).
-- **AC**: new `docs/guides/outbox-and-integration-events.md`
-  with atomicity-boundary + stable-event-ID sections, worked
-  publish + consume examples, W3C trace-propagation note,
-  four anti-patterns (direct bus publish / AQN event ID /
-  non-idempotent consumer / MessageContext mutation), and
-  a see-also footer. `src/Kun.EventBus/AGENTS.md` gets a
-  one-line guide cross-link + front-matter bump.
+- **Size**: M (target 4 commits)
+- **Why**: ADR-015 §F3 deferred the EF-persisted Outbox test
+  helpers. Consumers writing "does my command stage the right
+  OutboxMessage in-transaction?" tests today hand-roll the
+  query + iterate + assert boilerplate at every call site.
+  Ship a sibling module to `Kun.Testing` that takes EF Core
+  as a dependency (non-AOT — matches `Kun.EntityFrameworkCore`)
+  and provides `ShouldHaveOutboxMessage` /
+  `ShouldHaveExactlyOneOutboxMessage` /
+  `ShouldNotHaveOutboxMessage` on both `DbContext` and
+  `IEnumerable<OutboxMessage>`.
+- **AC**: new `src/Kun.Testing.EntityFrameworkCore/` module
+  wired into `Kun.sln` + `OutboxAssertions` class + tests
+  project `tests/Kun.Testing.EntityFrameworkCore.Tests/` +
+  CHANGELOG entry + ADR-015 §F3 resolution marker + AGENTS
+  cross-links from `Kun.EventBus` and `Kun.Testing`.
+- **Rescope**: initial pick on 2026-04-24 `c3ad04d` was
+  `outbox-and-integration-events.md` guide (S, doc-only,
+  paralleled KN-SELF-013). User re-directed to pick from the
+  three KN-SELF-013-closeout candidates; ADR-015 §F3 has the
+  highest ROI of the three (ADR-013 §F2 blocked on no-metrics-
+  pipeline; ADR-013 §F3 Aspire demo stays as next-cycle
+  fallback).
 
 ### P3 — KN-SELF-006-legacy: `Kun.Saga.EntityFrameworkCore` split (long-parked)
 
