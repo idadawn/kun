@@ -68,34 +68,31 @@ worn by kun himself during idle windows picks the next item.
 <!-- KN-SELF-013 moved to ## Done on 2026-04-24 (executor head e3e9e45) -->
 
 
-### P2 — KN-SELF-014-rescoped: Aspire Dashboard baggage demo (ADR-013 §F3)
+<!-- KN-SELF-014-rescoped moved to ## Done on 2026-04-24 (executor head 25a3604) -->
 
-- **Status**: in-flight — see `kun/.autonomy/active-task.md`
-- **Size**: S (target 3 commits, user-specified scope)
-- **Why**: ADR-013 shipped `KunBaggageActivityProcessor` +
-  `KunBaggageLogRecordProcessor` (KN-SELF-003 / KN-SELF-006),
-  but no sample service actually enables them. Aspire Dashboard
-  (launched by `Kun.Sample.AppHost`) should show `tenant.id` /
-  `user.id` span tags so framework consumers see the enrichment
-  contract in action. Closes ADR-013 §F3 Aspire demo follow-up.
-- **AC**: Catalog sample swaps `Kun.Sample.Shared.AddKunObservability`
-  (the shared OTel wrapper) for the framework's
-  `Kun.Observability.Extensions.AddKunObservability` with
-  `EnrichActivitiesFromBaggage=true` + `EnrichLogsFromBaggage=true`;
-  `/health` endpoint sets `KunBaggageKeys.TenantId` +
-  `KunBaggageKeys.UserId` baggage so the activity enricher
-  mirrors them onto span tags for the Aspire Dashboard trace
-  view; solution build stays green.
-- **Rescope history**:
-  1. `c3ad04d` — first pick: `outbox-and-integration-events.md`
-     guide. Rescoped by user (out of closeout candidates).
-  2. `a0fe17e` — second pick: `Kun.Testing.EntityFrameworkCore`
-     Outbox helpers (ADR-015 §F3, M). Partial-shipped (scaffold
-     + `OutboxAssertions`) before rescope; tests + docs
-     deferred to KN-SELF-015-or-later.
-  3. (this) — third pick: Aspire Dashboard baggage demo
-     (ADR-013 §F3, S-M, matches user's explicit size
-     preference).
+
+### P1 — follow-up: resolve NU1902 advisory on OpenTelemetry.Api 1.12.0 (blocks sample builds)
+
+- **Status**: open (urgent — blocks `dotnet build Kun.sln -c
+  Release /warnaserror`).
+- **Size**: S (target 1–2 commits).
+- **Why**: NuGet advisory refresh on 2026-04-24 (afternoon)
+  flagged `OpenTelemetry.Api 1.12.0` for
+  [GHSA-g94r-2vxg-569j](https://github.com/advisories/GHSA-g94r-2vxg-569j)
+  (moderate severity). `Kun.Sample.Catalog` and
+  `Kun.Sample.Tests` pull it transitively through
+  `OpenTelemetry.Instrumentation.EntityFrameworkCore 1.12.0-beta.1`
+  and `OpenTelemetry 1.11.2`. NuGetAudit promotes it to error
+  under `TreatWarningsAsErrors=true` (Release build default),
+  breaking the solution build.
+- **AC**: pin `OpenTelemetry.Api` in `Directory.Packages.props`
+  to a patched version (check GHSA for the fix window —
+  likely 1.13.x); verify the CPM pin resolves at restore;
+  re-run `dotnet build Kun.sln -c Release
+  -p:TreatWarningsAsErrors=true` and confirm 0 errors.
+  Fallback: narrow `<NoWarn>NU1902</NoWarn>` in the two
+  sample csprojs with a commit-message justification pointing
+  at the advisory URL.
 
 ### P3 — follow-up: complete `Kun.Testing.EntityFrameworkCore` tests + docs
 
@@ -130,6 +127,32 @@ worn by kun himself during idle windows picks the next item.
 ---
 
 ## Done
+
+- **KN-SELF-014-rescoped** — Aspire Dashboard baggage demo
+  (ADR-013 §F3) — executor head `25a3604` (2 feat commits by
+  main controller + 2 planner rescope commits by kun) —
+  2026-04-24. Two ACs shipped: `Kun.Sample.Catalog/Program.cs`
+  swapped `Kun.Sample.Shared.AddKunObservability` for
+  `Kun.Observability.Extensions.AddKunObservability` with
+  `EnrichActivitiesFromBaggage=true` +
+  `EnrichLogsFromBaggage=true` (`46f9715`); `/health` endpoint
+  sets `KunBaggageKeys.TenantId="demo-tenant-0001"` +
+  `KunBaggageKeys.UserId="demo-user-0001"` on
+  `Activity.Current` so the activity enricher
+  (`KunBaggageActivityProcessor`) mirrors them onto the ASP.NET
+  span's tags for Aspire Dashboard trace view (`25a3604`).
+  AC-3 (solution build green) blocked by a **pre-existing**
+  NU1902 advisory (GHSA-g94r-2vxg-569j) against transitively-
+  pulled `OpenTelemetry.Api 1.12.0` — not regressed by this
+  task; Kun.Sample.Catalog + Kun.Sample.Tests both hit it
+  since the NuGet advisory refresh landed mid-session. Tracked
+  as P1 follow-up below. Rescope history: `c3ad04d` (outbox
+  guide, rescoped) → `a0fe17e` (Kun.Testing.EF Outbox helpers,
+  partial-shipped then rescoped) → `4d8b94a` + `af5d84b`
+  (Aspire demo, final pick). Partial helpers from a0fe17e are
+  orphaned on develop (scaffold + OutboxAssertions class are
+  functional and build 0-warning; tests + CHANGELOG / ADR-015
+  §F3 resolution marker deferred — see P3 follow-up above).
 
 - **KN-SELF-013** — end-to-end `validating-commands.md` guide +
   Kun.Validation AGENTS refresh — executor head `e3e9e45`

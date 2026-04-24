@@ -1,17 +1,31 @@
 ---
 id: KN-SELF-014-rescoped
 title: Aspire Dashboard demo — baggage enrichment visible in Kun.Sample.AppHost
-status: in-flight
-planner_commit: <fill after re-pick commit>
-executor_head: <fill after first executor commit>
+status: done
+planner_commit: 4d8b94a
+executor_head: 25a3604
 estimated_commits: 3
 started: 2026-04-24
+finished: 2026-04-24
 rescope_note: |
   Original KN-SELF-014 pick was Kun.Testing.EntityFrameworkCore Outbox helpers.
   User (main controller) redirected to S-sized Aspire dashboard demo:
   expose ADR-013 baggage enrichment (tenant.id / user.id) in Aspire Dashboard
   by wiring Kun.Observability into Kun.Sample.Catalog and setting baggage
   at the request boundary.
+ship_log: |
+  AC-1 shipped in 46f9715 (main controller): Kun.Sample.Catalog.Program.cs
+    swapped Kun.Sample.Shared.AddKunObservability for
+    Kun.Observability.Extensions.AddKunObservability with
+    EnrichActivitiesFromBaggage=true + EnrichLogsFromBaggage=true.
+  AC-2 shipped in 25a3604 (main controller): /health endpoint sets
+    KunBaggageKeys.TenantId="demo-tenant-0001" + KunBaggageKeys.UserId="demo-user-0001"
+    baggage on Activity.Current so the activity enricher mirrors them onto
+    span tags for the Aspire Dashboard trace view.
+  AC-3 blocked by pre-existing NU1902 advisory (GHSA-g94r-2vxg-569j) on
+    transitively-pulled OpenTelemetry.Api 1.12.0. Not regressed by this task —
+    Kun.Sample.Catalog + Kun.Sample.Tests both hit it; advisory refresh
+    landed after the AC-1 commit merged. Tracked as a follow-up in BACKLOG.
 ---
 
 # KN-SELF-014-rescoped — Aspire Dashboard baggage demo
