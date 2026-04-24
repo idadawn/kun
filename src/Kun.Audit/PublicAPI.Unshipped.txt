@@ -78,3 +78,48 @@ Kun.Audit.NullAuditWriter.NullAuditWriter(Microsoft.Extensions.Logging.ILogger<K
 Kun.Audit.NullAuditWriter.WriteAsync(Kun.Audit.AuditLog! entry, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 static Kun.Audit.DependencyInjection.KunAuditServiceCollectionExtensions.AddKunAudit(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.Audit.DependencyInjection.KunAuditOptions!>? configure = null) -> Kun.Audit.DependencyInjection.KunAuditBuilder!
 static Kun.Audit.DependencyInjection.KunAuditServiceCollectionExtensions.UseEventBus(this Kun.Audit.DependencyInjection.KunAuditBuilder! builder) -> Kun.Audit.DependencyInjection.KunAuditBuilder!
+static Kun.Audit.DependencyInjection.KunAuditServiceCollectionExtensions.AddAuditBehavior<TRequest, TResponse>(this Kun.Mediator.KunMediatorBuilder! builder) -> Kun.Mediator.KunMediatorBuilder!
+Kun.Audit.AuditOutcome
+Kun.Audit.AuditOutcome.Success = 0 -> Kun.Audit.AuditOutcome
+Kun.Audit.AuditOutcome.Exception = 1 -> Kun.Audit.AuditOutcome
+Kun.Audit.AuditEntry
+Kun.Audit.AuditEntry.AuditEntry(System.Guid Id, string? TenantId, string? ActorId, string! CommandName, System.DateTimeOffset OccurredAt, long LatencyMs, Kun.Audit.AuditOutcome Outcome, string? ErrorCode, string? PrevHash, string! ContentHash) -> void
+Kun.Audit.AuditEntry.Id.get -> System.Guid
+Kun.Audit.AuditEntry.Id.init -> void
+Kun.Audit.AuditEntry.TenantId.get -> string?
+Kun.Audit.AuditEntry.TenantId.init -> void
+Kun.Audit.AuditEntry.ActorId.get -> string?
+Kun.Audit.AuditEntry.ActorId.init -> void
+Kun.Audit.AuditEntry.CommandName.get -> string!
+Kun.Audit.AuditEntry.CommandName.init -> void
+Kun.Audit.AuditEntry.OccurredAt.get -> System.DateTimeOffset
+Kun.Audit.AuditEntry.OccurredAt.init -> void
+Kun.Audit.AuditEntry.LatencyMs.get -> long
+Kun.Audit.AuditEntry.LatencyMs.init -> void
+Kun.Audit.AuditEntry.Outcome.get -> Kun.Audit.AuditOutcome
+Kun.Audit.AuditEntry.Outcome.init -> void
+Kun.Audit.AuditEntry.ErrorCode.get -> string?
+Kun.Audit.AuditEntry.ErrorCode.init -> void
+Kun.Audit.AuditEntry.PrevHash.get -> string?
+Kun.Audit.AuditEntry.PrevHash.init -> void
+Kun.Audit.AuditEntry.ContentHash.get -> string!
+Kun.Audit.AuditEntry.ContentHash.init -> void
+Kun.Audit.IAuditSink
+Kun.Audit.IAuditSink.WriteAsync(Kun.Audit.AuditEntry! entry, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Kun.Audit.IAuditChainState
+Kun.Audit.IAuditChainState.AppendAsync(string? tenantKey, System.Func<string?, System.Threading.Tasks.ValueTask<string!>>! computeNewHash, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<string!>
+Kun.Audit.AuditContentHasher
+static Kun.Audit.AuditContentHasher.Compute(System.Guid id, string? tenantId, string? actorId, string! commandName, System.DateTimeOffset occurredAt, long latencyMs, Kun.Audit.AuditOutcome outcome, string? errorCode, string? prevHash) -> string!
+Kun.Audit.InMemoryAuditChainState
+Kun.Audit.InMemoryAuditChainState.InMemoryAuditChainState() -> void
+Kun.Audit.InMemoryAuditChainState.AppendAsync(string? tenantKey, System.Func<string?, System.Threading.Tasks.ValueTask<string!>>! computeNewHash, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<string!>
+Kun.Audit.InMemoryAuditChainState.PeekTip(string? tenantKey) -> string?
+Kun.Audit.InMemoryAuditChainState.Dispose() -> void
+Kun.Audit.InMemoryAuditSink
+Kun.Audit.InMemoryAuditSink.InMemoryAuditSink() -> void
+Kun.Audit.InMemoryAuditSink.Entries.get -> System.Collections.Generic.IReadOnlyCollection<Kun.Audit.AuditEntry!>!
+Kun.Audit.InMemoryAuditSink.WriteAsync(Kun.Audit.AuditEntry! entry, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Kun.Audit.InMemoryAuditSink.Clear() -> void
+Kun.Audit.Behaviors.AuditLogPipelineBehavior<TRequest, TResponse>
+Kun.Audit.Behaviors.AuditLogPipelineBehavior<TRequest, TResponse>.AuditLogPipelineBehavior(Kun.Audit.IAuditSink! sink, Kun.Audit.IAuditChainState! chain, Kun.Core.MultiTenancy.ITenantContext! tenantContext, Kun.Core.Security.ICurrentUser! currentUser, System.TimeProvider! clock, Microsoft.Extensions.Logging.ILogger<Kun.Audit.Behaviors.AuditLogPipelineBehavior<TRequest, TResponse>!>! logger) -> void
+Kun.Audit.Behaviors.AuditLogPipelineBehavior<TRequest, TResponse>.Handle(TRequest request, Kun.Mediator.RequestHandlerDelegate<TResponse>! next, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<TResponse>

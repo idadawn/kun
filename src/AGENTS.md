@@ -5,7 +5,7 @@
 
 ## Purpose
 
-The 13 framework modules that compose Kun Framework. Each module is a distinct NuGet package and a csproj here. Modules are layered Core → Abstraction → Infrastructure → Host; dependencies flow downward only.
+The 15 framework modules that compose Kun Framework. Each module is a distinct NuGet package and a csproj here. Modules are layered Core → Abstraction → Infrastructure → Host; dependencies flow downward only.
 
 ## Key Files
 
@@ -23,10 +23,12 @@ The 13 framework modules that compose Kun Framework. Each module is a distinct N
 | `Kun.EventBus/` | Abstraction | ✅ | Domain / integration event abstractions, Outbox publisher contract (see `Kun.EventBus/AGENTS.md`) |
 | `Kun.Security/` | Abstraction | ✅ | S2S JWT issuance / validation, tenant context wiring (see `Kun.Security/AGENTS.md`) |
 | `Kun.Validation/` | Abstraction | ✅ | Source-generated validators (see `Kun.Validation/AGENTS.md`) |
+| `Kun.Audit/` | Abstraction | ✅ | Hash-chained operation audit pipeline behaviour + pluggable sinks (see `Kun.Audit/AGENTS.md`) |
 | `Kun.EntityFrameworkCore/` | Infrastructure | ⚠️ trim-safe | Write-side EF Core, Outbox writer, tenant filters (see `Kun.EntityFrameworkCore/AGENTS.md`) |
 | `Kun.Dapper/` | Infrastructure | ✅ | Read-side Dapper AOT wrapper (see `Kun.Dapper/AGENTS.md`) |
 | `Kun.EventBus.RabbitMQ/` | Infrastructure | ✅ | RabbitMQ transport + idempotent consumer decorator (see `Kun.EventBus.RabbitMQ/AGENTS.md`) |
 | `Kun.Saga/` | Infrastructure | ✅ | Saga Orchestration engine (see `Kun.Saga/AGENTS.md`) |
+| `Kun.Storage/` | Infrastructure | ⚠️ trim-safe | IFileStorage with S3/MinIO and local backends + Content-Disposition policy (see `Kun.Storage/AGENTS.md`) |
 | `Kun.AspNetCore/` | Host | ✅ | Minimal API extensions + Pipeline Behaviors (see `Kun.AspNetCore/AGENTS.md`) |
 | `Kun.Grpc/` | Host | ✅ | gRPC interceptors, `Result → RpcException` mapping (see `Kun.Grpc/AGENTS.md`) |
 | `Kun.Gateway/` | Host | ✅ | YARP gateway, S2S JWT issuance, rate limiting (see `Kun.Gateway/AGENTS.md`) |

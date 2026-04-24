@@ -143,10 +143,10 @@ Phase 1 顶层速览（完整矩阵请见 [`docs/architecture/module-map.md`](do
 | `Kun.Security` | S2S JWT 签发/校验、租户上下文注入 | ✅ |
 | `Kun.Identity` | 外部 OIDC 客户端 + JWT validator/issuer | ✅ |
 | `Kun.MultiTenancy` | `ITenantContext` + EF 查询过滤器 | ✅ |
-| `Kun.Audit` | 审计写入器抽象 + `EventBusAuditWriter` | ✅ |
+| `Kun.Audit` | 双通道审计：writer/reader 抽象 + `EventBusAuditWriter` + SHA-256 哈希链 Mediator Pipeline Behavior | ✅ |
 | `Kun.RateLimit` | 按租户 / IP 分区限流 | ✅ |
 | `Kun.Caching` | `IKunCache` + Memory / Redis 后端 | ✅ |
-| `Kun.Storage` | 7-method `IFileStorage` + Local / S3 | ✅ |
+| `Kun.Storage` | 7-method `IFileStorage` + Local / S3 + 活跃-MIME attachment 强制 | ✅ |
 | `Kun.Observability` | 统一 OpenTelemetry 装配：`AddKunObservability` 一键接入 Kun 全套 ActivitySource + HTTP/EF/Runtime 指令 | ✅ |
 | `Kun.Configuration` | 强类型 Options + fail-fast 校验 | ✅ |
 | `Kun.Sandbox` | E2B v2 兼容 sandbox + Supervisor / E2B Cloud / InMemory 后端 | ✅ |

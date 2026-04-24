@@ -41,8 +41,13 @@ public sealed class S2SJwtRoundTripTests : IDisposable
         var verifier = CreateVerifier();
 
         var token = await issuer.IssueAsync(
-            "user-001", "tenant-001", ["threads:read", "threads:write"],
-            ["neuroagent-platform"], "session-001", _ct);
+            new S2SJwtIssueRequest(
+                UserId: "user-001",
+                TenantId: "tenant-001",
+                Audience: ["neuroagent-platform"],
+                Scopes: ["threads:read", "threads:write"],
+                SessionId: "session-001"),
+            _ct);
 
         var principal = await verifier.VerifyAsync(token, "neuroagent-platform", _ct);
 
@@ -91,8 +96,13 @@ public sealed class S2SJwtRoundTripTests : IDisposable
         var verifier = CreateVerifier();
 
         var token = await issuer.IssueAsync(
-            "user-001", "tenant-001", ["threads:read"],
-            ["neuroagent-platform"], "session-001", _ct);
+            new S2SJwtIssueRequest(
+                UserId: "user-001",
+                TenantId: "tenant-001",
+                Audience: ["neuroagent-platform"],
+                Scopes: ["threads:read"],
+                SessionId: "session-001"),
+            _ct);
 
         // Verify with wrong audience
         var result = await verifier.VerifyAsync(token, "neuroagent-storage", _ct);
@@ -131,8 +141,13 @@ public sealed class S2SJwtRoundTripTests : IDisposable
         var verifier = CreateVerifier(rotationOptions);
 
         var token = await issuer.IssueAsync(
-            "user-001", "tenant-001", ["threads:read"],
-            ["neuroagent-platform"], "session-001", _ct);
+            new S2SJwtIssueRequest(
+                UserId: "user-001",
+                TenantId: "tenant-001",
+                Audience: ["neuroagent-platform"],
+                Scopes: ["threads:read"],
+                SessionId: "session-001"),
+            _ct);
 
         var result = await verifier.VerifyAsync(token, "neuroagent-platform", _ct);
 
@@ -140,6 +155,162 @@ public sealed class S2SJwtRoundTripTests : IDisposable
         result!.FindFirst("sub")!.Value.Should().Be("user-001");
 
         ecdsa2.Dispose();
+    }
+
+    [Fact]
+    public async Task Roles_AreEmittedAsMultiple_Claims()
+    {
+        var issuer = CreateIssuer();
+        var verifier = CreateVerifier();
+
+        var token = await issuer.IssueAsync(
+            new S2SJwtIssueRequest(
+                UserId: "user-roles",
+                TenantId: "tenant-001",
+                Audience: ["neuroagent-platform"],
+                Roles: ["admin", "editor", "viewer"]),
+            _ct);
+
+        var principal = await verifier.VerifyAsync(token, "neuroagent-platform", _ct);
+        principal.Should().NotBeNull();
+        principal!.FindAll("roles").Select(c => c.Value)
+            .Should().BeEquivalentTo(new[] { "admin", "editor", "viewer" });
+    }
+
+    [Fact]
+    public async Task MembershipId_IsEmitted_WhenProvided()
+    {
+        var issuer = CreateIssuer();
+        var verifier = CreateVerifier();
+
+        var token = await issuer.IssueAsync(
+            new S2SJwtIssueRequest(
+                UserId: "user-001",
+                TenantId: "tenant-001",
+                Audience: ["neuroagent-platform"],
+                MembershipId: "mbr-42"),
+            _ct);
+
+        var principal = await verifier.VerifyAsync(token, "neuroagent-platform", _ct);
+        principal!.FindFirst("membership_id")!.Value.Should().Be("mbr-42");
+    }
+
+    [Fact]
+    public async Task MembershipId_IsAbsent_When_NotProvided()
+    {
+        var issuer = CreateIssuer();
+        var verifier = CreateVerifier();
+
+        var token = await issuer.IssueAsync(
+            new S2SJwtIssueRequest(
+                UserId: "user-001",
+                TenantId: "tenant-001",
+                Audience: ["neuroagent-platform"]),
+            _ct);
+
+        var principal = await verifier.VerifyAsync(token, "neuroagent-platform", _ct);
+        principal!.FindFirst("membership_id").Should().BeNull();
+    }
+
+    [Fact]
+    public async Task TraceId_IsEmitted_WhenProvided()
+    {
+        var issuer = CreateIssuer();
+        var verifier = CreateVerifier();
+
+        var token = await issuer.IssueAsync(
+            new S2SJwtIssueRequest(
+                UserId: "user-001",
+                TenantId: "tenant-001",
+                Audience: ["neuroagent-platform"],
+                TraceId: "0af7651916cd43dd8448eb211c80319c"),
+            _ct);
+
+        var principal = await verifier.VerifyAsync(token, "neuroagent-platform", _ct);
+        principal!.FindFirst("trace_id")!.Value.Should().Be("0af7651916cd43dd8448eb211c80319c");
+    }
+
+    [Fact]
+    public async Task TraceId_IsAbsent_When_NotProvided()
+    {
+        var issuer = CreateIssuer();
+        var verifier = CreateVerifier();
+
+        var token = await issuer.IssueAsync(
+            new S2SJwtIssueRequest(
+                UserId: "user-001",
+                TenantId: "tenant-001",
+                Audience: ["neuroagent-platform"]),
+            _ct);
+
+        var principal = await verifier.VerifyAsync(token, "neuroagent-platform", _ct);
+        principal!.FindFirst("trace_id").Should().BeNull();
+    }
+
+    [Fact]
+    public async Task DefaultLifetime_IsFiveMinutes_WhenOptionsLeaveItUnset()
+    {
+        var defaultOptions = new S2SJwtOptions
+        {
+            SigningKeyPem = _privateKeyPem,
+            KeyId = "test-key-1",
+            Issuer = "neuroagent-edge",
+            // DefaultLifetimeSeconds left at the type default (300s = 5 minutes,
+            // upper bound of whitepaper §9.6 zero-trust TTL range).
+        };
+        var issuer = CreateIssuer(defaultOptions);
+
+        var before = DateTime.UtcNow;
+        var token = await issuer.IssueAsync(
+            new S2SJwtIssueRequest(
+                UserId: "user-001",
+                TenantId: "tenant-001",
+                Audience: ["neuroagent-platform"]),
+            _ct);
+        var after = DateTime.UtcNow;
+
+        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
+        var expectedMin = before.AddMinutes(5).AddSeconds(-5);
+        var expectedMax = after.AddMinutes(5).AddSeconds(5);
+        jwt.ValidTo.Should().BeOnOrAfter(expectedMin).And.BeOnOrBefore(expectedMax);
+    }
+
+    [Fact]
+    public async Task Lifetime_Override_Applies_When_Provided_In_Request()
+    {
+        var issuer = CreateIssuer();
+
+        var before = DateTime.UtcNow;
+        var token = await issuer.IssueAsync(
+            new S2SJwtIssueRequest(
+                UserId: "user-001",
+                TenantId: "tenant-001",
+                Audience: ["neuroagent-platform"],
+                Lifetime: TimeSpan.FromSeconds(30)),
+            _ct);
+        var after = DateTime.UtcNow;
+
+        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
+        jwt.ValidTo.Should().BeOnOrAfter(before.AddSeconds(25))
+            .And.BeOnOrBefore(after.AddSeconds(35));
+    }
+
+    [Fact]
+    public async Task MultiAudience_IsEmittedInPayload_NotHeader()
+    {
+        var issuer = CreateIssuer();
+
+        var token = await issuer.IssueAsync(
+            new S2SJwtIssueRequest(
+                UserId: "user-001",
+                TenantId: "tenant-001",
+                Audience: ["neuroagent-platform", "neuroagent-storage"]),
+            _ct);
+
+        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
+        jwt.Audiences.Should().BeEquivalentTo(new[] { "neuroagent-platform", "neuroagent-storage" });
+        // aud must live in payload, not header
+        jwt.Header.Should().NotContainKey("aud");
     }
 
     private S2SJwtIssuer CreateIssuer(S2SJwtOptions? options = null)

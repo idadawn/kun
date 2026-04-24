@@ -31,6 +31,7 @@ static Kun.EventBus.DependencyInjection.KunOutboxPublisherExtensions.AddKunOutbo
 static Kun.EventBus.DependencyInjection.KunOutboxPublisherExtensions.UseRedisOutboxLock(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 Kun.EventBus.DependencyInjection.KunEventBusBuilder.Register<TEvent>(string! eventType) -> Kun.EventBus.IEventTypeRegistrar!
 Kun.EventBus.DependencyInjection.KunEventBusBuilder.Register<TEvent>(string! eventType, System.Text.Json.Serialization.Metadata.JsonTypeInfo<TEvent!>! typeInfo) -> Kun.EventBus.IEventTypeRegistrar!
+Kun.EventBus.DependencyInjection.KunEventBusBuilder.Register<TEvent>() -> Kun.EventBus.IEventTypeRegistrar!
 Kun.EventBus.DependencyInjection.KunEventBusBuilder.UseInMemoryIdempotency() -> Kun.EventBus.DependencyInjection.KunEventBusBuilder!
 Kun.EventBus.DependencyInjection.KunEventBusBuilder.UseRedisIdempotency() -> Kun.EventBus.DependencyInjection.KunEventBusBuilder!
 Kun.EventBus.Idempotency.InMemoryProcessedMessageStore
@@ -51,6 +52,10 @@ Kun.EventBus.EventTypeRegistry.GetJsonTypeInfo(System.Type! clrType) -> System.T
 Kun.EventBus.IEventTypeRegistrar
 Kun.EventBus.IEventTypeRegistrar.Register<TEvent>(string! eventType) -> Kun.EventBus.IEventTypeRegistrar!
 Kun.EventBus.IEventTypeRegistrar.Register<TEvent>(string! eventType, System.Text.Json.Serialization.Metadata.JsonTypeInfo<TEvent!>! typeInfo) -> Kun.EventBus.IEventTypeRegistrar!
+Kun.EventBus.IEventTypeRegistrar.Register<TEvent>() -> Kun.EventBus.IEventTypeRegistrar!
+Kun.EventBus.IntegrationEventIdAttribute
+Kun.EventBus.IntegrationEventIdAttribute.IntegrationEventIdAttribute(string! eventType) -> void
+Kun.EventBus.IntegrationEventIdAttribute.EventType.get -> string!
 Kun.EventBus.IEventTypeRegistry
 Kun.EventBus.IEventTypeRegistry.GetEventType(System.Type! clrType) -> string?
 Kun.EventBus.IEventTypeRegistry.Resolve(string! eventType) -> System.Type?

@@ -32,6 +32,26 @@ public sealed class KunEventBusBuilder : IEventTypeRegistrar
         return this;
     }
 
+    /// <inheritdoc/>
+    [RequiresUnreferencedCode(
+        "Reads [IntegrationEventId] via reflection on typeof(TEvent). " +
+        "Under trimming, IntegrationEventIdAttribute instances must be preserved. " +
+        "Use Register<TEvent>(string) to avoid reflection entirely.")]
+    public IEventTypeRegistrar Register<TEvent>() where TEvent : class
+    {
+        var attr = (IntegrationEventIdAttribute?)Attribute.GetCustomAttribute(
+            typeof(TEvent), typeof(IntegrationEventIdAttribute), inherit: false);
+        if (attr is null)
+        {
+            throw new InvalidOperationException(
+                $"Type {typeof(TEvent).FullName} has no [IntegrationEventId] attribute. " +
+                $"Decorate it with [IntegrationEventId(\"your.token.v1\")] " +
+                $"or call Register<{typeof(TEvent).Name}>(\"your.token.v1\") explicitly.");
+        }
+
+        return Register<TEvent>(attr.EventType);
+    }
+
     /// <summary>Registers an <see cref="IIntegrationEventHandler{TEvent}"/> for <typeparamref name="TEvent"/>.</summary>
     public KunEventBusBuilder AddHandler<TEvent, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] THandler>()
         where TEvent : class

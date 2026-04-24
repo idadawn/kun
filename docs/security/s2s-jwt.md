@@ -267,3 +267,72 @@ builder.Services
 
 The order matters: `AddKunSecurity` must come before `AddAuthentication`, and `UseAuthentication`
 must come before `UseAuthorization` in the middleware pipeline.
+
+---
+
+## NeuroAgent S2S JWT (Kun.Security.S2SJwt)
+
+Alongside the Kun-canonical Gateway issuer documented above, the repository ships a second
+implementation under `src/Kun.Security/S2SJwt/` that satisfies the NeuroAgent SAD v3.0 §12 claim
+contract. The two implementations coexist because they answer different questions:
+
+- `Kun.Gateway.S2sTokenIssuer` (Set A, the one described above) is the zero-trust primitive of the
+  Kun framework itself — RS256, 60-second TTL, minted on every request as the external token is
+  swapped for the internal one. It intentionally emits only the claims the framework needs.
+- `Kun.Security.S2SJwt.S2SJwtIssuer` (Set B) is the NeuroAgent-specific issuer consumed by
+  `neuroagent-csharp`. It uses ES256, a 15-minute default TTL, and the richer SAD §12 claim set
+  below. It is **not** used by `Kun.Gateway` and does not replace Set A.
+
+Use Set B when you are implementing a NeuroAgent service that must mint its own S2S tokens (the
+edge gateway, offline workers, batch jobs). Use Set A when you are within the Kun request pipeline
+behind `Kun.Gateway`.
+
+### Claim shape (SAD v3.0 §12)
+
+| Claim | Required | Source | Notes |
+|---|:---:|---|---|
+| `sub` | ✓ | `S2SJwtIssueRequest.UserId` | UUID of the authenticating user. |
+| `jti` | ✓ | auto | Generated per-issue; `Guid.NewGuid("N")`. |
+| `tenant_id` | ✓ | `S2SJwtIssueRequest.TenantId` | UUID of the owning tenant. |
+| `aud` | ✓ | `S2SJwtIssueRequest.Audience` | Single value ⇒ string `aud`; multiple ⇒ payload `aud` array. |
+| `roles` | — | `S2SJwtIssueRequest.Roles` | Each role is emitted as a distinct `roles` claim (not joined). |
+| `scope` | — | `S2SJwtIssueRequest.Scopes` | Space-joined OAuth2-style scopes; emitted as a single `scope` claim when set. |
+| `session_id` | — | `S2SJwtIssueRequest.SessionId` | Opaque session identifier for revocation support. |
+| `membership_id` | — | `S2SJwtIssueRequest.MembershipId` | Active tenant membership, when a user has more than one. |
+| `trace_id` | — | `S2SJwtIssueRequest.TraceId` | W3C trace id (hex) for OpenTelemetry trace continuity. |
+
+### TTL and lifetime override
+
+`S2SJwtOptions.DefaultLifetimeSeconds` defaults to **900** (15 minutes) per SAD §12. Individual
+calls may shorten the window via `S2SJwtIssueRequest.Lifetime`, for example when minting a token
+for a batch step that is expected to complete in under a minute.
+
+### Registration
+
+```csharp
+// src/Kun.Security/S2SJwt/KunSecurityS2SJwtServiceCollectionExtensions.cs
+services.AddS2SJwt(options =>
+{
+    options.SigningKeyPem = File.ReadAllText("keys/current.pem");
+    options.KeyId         = "k1";
+    options.Issuer        = "neuroagent-edge";
+    // options.PreviousSigningKeyPem + PreviousKeyId for rotation
+});
+```
+
+The `AddS2SJwt` extension registers both `IS2SJwtIssuer` and `IS2SJwtVerifier`, plus the JWKS
+middleware that exposes the current public key at `/internal/.well-known/jwks.json` when invoked
+via `app.UseS2SJwksEndpoint()`.
+
+### Why two implementations and not one
+
+- **Algorithm**: Kun framework treats RS256 as the lingua franca; NeuroAgent's platform contract
+  standardised on ES256 before Kun's issuer existed.
+- **Claim surface area**: NeuroAgent needs `membership_id` and multi-role RBAC; Kun's internal
+  calls don't.
+- **Lifetime**: Kun's 60-second TTL is a deliberate zero-trust primitive that pairs with
+  `PropagateS2sTokenHandler` copying the inbound token unchanged — it would be wrong to push that
+  to 15 minutes. NeuroAgent's 15-minute default is a product decision, not a framework decision.
+
+Consolidating the two into one issuer is possible and may be revisited once the NeuroAgent claim
+contract stabilises, but keeping them separate today makes the blast radius of each change small.

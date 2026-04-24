@@ -90,12 +90,15 @@ graph TD
     Core --> EventBus[Kun.EventBus<br/>事件分发/Outbox 抽象]
     Core --> Security[Kun.Security<br/>S2S JWT/租户上下文]
     Core --> Validation[Kun.Validation<br/>SourceGen 验证器]
+    Core --> Audit[Kun.Audit<br/>操作审计/哈希链]
 
     Infra --> EfCore[Kun.EntityFrameworkCore<br/>写侧持久化/Outbox 实现]
     Infra --> Dapper[Kun.Dapper<br/>读侧查询]
 
     EventBus --> Saga[Kun.Saga<br/>Saga 编排器/补偿/超时]
     EventBus --> RabbitMq[Kun.EventBus.RabbitMQ<br/>集成事件传输]
+
+    Storage[Kun.Storage<br/>对象存储/S3/MinIO/本地]
 
     Mediator --> AspNet[Kun.AspNetCore<br/>Minimal API/Pipeline Behaviors]
     Mediator --> Grpc[Kun.Grpc<br/>拦截器/Result 映射]
@@ -117,11 +120,11 @@ graph TD
 ├─────────────────────────────────────────────────────────┤
 │  Infrastructure Layer                                   │
 │  Kun.EntityFrameworkCore / Kun.Dapper                   │
-│  Kun.EventBus.RabbitMQ / Kun.Saga                       │
+│  Kun.EventBus.RabbitMQ / Kun.Saga / Kun.Storage         │
 ├─────────────────────────────────────────────────────────┤
 │  Abstraction Layer                                      │
 │  Kun.Mediator / Kun.Infrastructure                      │
-│  Kun.EventBus / Kun.Security / Kun.Validation           │
+│  Kun.EventBus / Kun.Security / Kun.Validation / Kun.Audit│
 ├─────────────────────────────────────────────────────────┤
 │  Core Layer                                             │
 │  Kun.Core (zero dependencies)                           │

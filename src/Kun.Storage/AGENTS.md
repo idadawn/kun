@@ -1,80 +1,77 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-04-22 -->
+<!-- Generated: 2026-04-24 | Updated: 2026-04-24 -->
 
 # Kun.Storage
 
 ## Purpose
 
-Object-storage abstraction covering Amazon S3, S3-compatible backends
-(MinIO), and the local filesystem. Seven-method contract mandated by
-`docs/neuroagent-phase1-gap.md §5.1`.
+Object-storage abstraction (`IFileStorage`) covering the seven operations required by downstream consumers: `PutObject`, `GetObject`, `HeadObject`, `DeleteObject`, `ListObjects`, `CreatePresignedUploadUrl`, `CreatePresignedDownloadUrl`. Ships two implementations — `S3FileStorage` (backed by AWSSDK.S3, also serves MinIO via path-style + custom endpoint) and `LocalFileStorage` (filesystem, dev-only with HMAC-signed `kun-local://` presigned URLs). Active-web MIME types (HTML, SVG, XML, JS, WASM) are forced to `Content-Disposition: attachment` at every write and presigned-download step so user-uploaded content cannot execute in the download origin.
 
-## Layer and AOT
+## Key Files
 
-- Layer: **Infrastructure** — implementations reference external SDKs
-  (`AWSSDK.S3`) and filesystem APIs.
-- `<IsAotCandidate>true</IsAotCandidate>` — the module intentionally
-  avoids `TransferUtility`, `System.Reflection.Emit`, and any
-  `JsonSerializer.Serialize(obj)` overloads so the AOT analyzer stays
-  clean. If the AOT analyzer regresses (e.g. after an AWSSDK upgrade),
-  **stop-gate the change, do not flip `IsAotCandidate=false` silently**
-  — escalate to main for an ADR decision.
-
-## Key Types
-
-| Type | Responsibility |
-|------|----------------|
-| `IFileStorage` | 7-method contract: `PutObjectAsync`, `GetObjectAsync`, `HeadObjectAsync`, `DeleteObjectAsync`, `ListObjectsAsync`, `CreatePresignedUploadUrlAsync`, `CreatePresignedDownloadUrlAsync`. |
-| `ObjectMetadata` | Immutable record: `ObjectKey`, `Size`, `ContentType`, `Sha256`, `LastModified`. |
-| `PresignedUploadUrl` / `PresignedDownloadUrl` | Immutable records carrying the signed URL + expiry. |
-| `S3FileStorage` | `AWSSDK.S3` implementation, MinIO-compatible when `S3StorageOptions.ForcePathStyle=true`. |
-| `LocalFileSystemStorage` | Dev-only backend. Persists object body plus a `{key}.kun-meta` plain-text sidecar recording content type, SHA-256, size, and last-modified. |
-| `ContentDispositionPolicy` (internal) | Single source of truth for the list of active-web MIME types that must be stored / served with `Content-Disposition: attachment`. |
-
-## Security — Content-Disposition forcing
-
-Active-web MIME types (`text/html`, `text/xml`, `application/xhtml+xml`,
-`application/xml`, `image/svg+xml`,
-`application/x-shockwave-flash`) are persisted to S3 with
-`Content-Disposition: attachment; filename="…"` so that a compromised
-object cannot execute in a browser served inline from the bucket. The
-enforcement is symmetric: tests in `ContentDispositionPolicyTests`
-assert the vocabulary is not silently trimmed.
-
-The local backend stores these objects unchanged; it is not expected
-to serve files over HTTP. Consumers that do expose local storage over
-HTTP are responsible for replicating the `attachment` forcing at the
-HTTP layer.
-
-## Wiring
-
-```csharp
-services.AddKunStorage()
-    .UseLocal(o => o.RootPath = "/var/lib/kun-storage");
-
-// or:
-services.AddKunStorage()
-    .UseS3(o =>
-    {
-        o.BucketName = "kun-uploads";
-        o.Endpoint = "http://minio:9000";
-        o.Region = "us-east-1";
-        o.AccessKey = "…";
-        o.SecretKey = "…";
-        o.ForcePathStyle = true;   // required for MinIO
-    });
-```
+| File | Description |
+|------|-------------|
+| `Kun.Storage.csproj` | `IsAotCandidate=false` — AWSSDK.S3 still relies on reflection; module is trim-safe only |
+| `Abstractions/IFileStorage.cs` | The seven-method contract |
+| `Abstractions/ContentDispositionPolicy.cs` | Active-web MIME whitelist + RFC 5987 attachment builder |
+| `Implementations/S3FileStorage.cs` | S3 / MinIO backend |
+| `Implementations/LocalFileStorage.cs` | Local filesystem backend with `.kunmeta` sidecar + HMAC-signed stub URLs |
+| `DependencyInjection/KunStorageServiceCollectionExtensions.cs` | `AddKunStorage` / `AddLocalStorage` / `AddS3Storage` |
 
 ## For AI Agents
 
-- Do not add new methods to `IFileStorage` without updating
-  `docs/neuroagent-phase1-gap.md §5.1`. The gap audit is the
-  authoritative AC; the interface exists to satisfy it.
-- Do not add a third backend without a matching csproj split
-  (`Kun.Storage.Azure`, etc.) — the core module deliberately stays
-  AOT-strict and trim-safe.
-- Extending `ContentDispositionPolicy.ActiveWebTypes` requires updating
-  the tests in the same PR.
-- When adding a method that hashes content, use `SHA256.HashData` or
-  `SHA256.ComputeHashAsync` (reflection-free), never
-  `HashAlgorithm.Create("SHA256")`.
+### Working In This Directory
+
+- **Content-Disposition policy is non-negotiable.** Every write path and every presigned-download URL must pass through `ContentDispositionPolicy.EnforceAttachment` when the content-type is in the unsafe list. Do not add backend-specific shortcuts that bypass it.
+- **The unsafe-MIME list is a security boundary.** Any addition or removal requires a brief note in the PR describing the threat model — do not adjust casually.
+- **Forbidden in implementations**:
+  - Trusting caller-supplied `Content-Disposition` without running it through the policy.
+  - Accepting absolute paths or `..` segments in `LocalFileStorage` — `ResolvePath` enforces both a syntactic and a semantic (under-root) check.
+  - Passing the `SecretKey` option straight to the local HMAC key — derive it via SHA-256 so stored keys don't leak as signing material.
+- **`LocalFileStorage` is dev-only.** `kun-local://` URLs require a dedicated middleware to validate the HMAC and serve bytes; the scheme is not directly fetchable by a browser.
+- **MetaData sidecar**: `LocalFileStorage` persists per-object metadata in `<path>.kunmeta` JSON. Delete it alongside the primary object.
+- **`IsAotCandidate=false` is intentional.** AWSSDK.S3 trimming is shaky and AOT is untested. Do not flip without CI evidence from a publish gate.
+- **Presigned TTL guidance**: keep `ExpiresIn` short — minutes, not hours. Long-lived links defeat the short-lifetime security story.
+- **User metadata casing**: S3 lowercases user metadata keys. Store them lowercase to round-trip cleanly.
+
+### Testing Requirements
+
+- Unit tests cover the policy matrix, DI wiring, Local round-trips, and S3 behaviour with a mocked `IAmazonS3`. They must run without Docker.
+- Integration tests (`tests/Kun.IntegrationTests/Storage/S3FileStorageIntegrationTests.cs`) spin up MinIO via Testcontainers and exercise: round-trip, attachment persistence, list-prefix, real presigned PUT via `HttpClient`, real presigned GET with attachment override.
+- When adding a new backend, add a parallel unit-mock suite AND an integration fixture. Never let a production backend ship without container-level coverage.
+
+### Common Patterns
+
+```csharp
+// Registering with explicit provider helpers is preferred over toggling options.Provider by hand.
+services.AddS3Storage(o =>
+{
+    o.BucketName = "user-uploads";
+    o.Endpoint   = "http://minio.internal:9000"; // MinIO
+    o.AccessKey  = accessKey;
+    o.SecretKey  = secretKey;
+});
+
+// Content-Disposition is enforced automatically — you do not need to pre-compute it.
+await storage.PutObjectAsync(
+    "users/alice/avatar.html",
+    stream,
+    new PutObjectOptions(ContentType: "text/html", FileName: "avatar.html"),
+    ct);
+
+// Stored disposition will be "attachment; filename=\"avatar.html\"; filename*=UTF-8''avatar.html"
+```
+
+## Dependencies
+
+### Internal
+
+- None from Kun.* — `Kun.Storage` is a self-contained infrastructure module.
+
+### External
+
+- `AWSSDK.S3` (3.7.x) — S3 / MinIO client.
+- `AWSSDK.Extensions.NETCore.Setup` — DI helpers.
+- `Microsoft.Extensions.DependencyInjection.Abstractions`, `Microsoft.Extensions.Options`, `Microsoft.Extensions.Logging.Abstractions` — wiring.
+
+<!-- MANUAL: -->
