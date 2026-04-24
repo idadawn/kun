@@ -65,22 +65,8 @@ worn by kun himself during idle windows picks the next item.
 <!-- KN-SELF-012 moved to ## Done on 2026-04-24 (executor head 4554c8d) -->
 
 
-### P2 — KN-SELF-013: end-to-end `validating-commands.md` guide + Kun.Validation AGENTS refresh
+<!-- KN-SELF-013 moved to ## Done on 2026-04-24 (executor head e3e9e45) -->
 
-- **Status**: in-flight — see `kun/.autonomy/active-task.md`
-- **Size**: S (target 2 commits)
-- **Why**: KN-SELF-007 + KN-SELF-012 shipped both variants of
-  `ValidationResultPipelineBehavior` (generic + non-generic).
-  `docs/guides/` has no end-to-end guide for "how to validate
-  a command with `Result`", so a consumer has to triangulate
-  from ADR-011 + ADR-014 + Kun.Validation AGENTS.md +
-  CHANGELOG. Close the gap with one guide + a surgical AGENTS
-  refresh.
-- **AC**: new `docs/guides/validating-commands.md` with
-  decision tree + two worked examples (generic + non-generic)
-  + anti-patterns + see-also footer. `src/Kun.Validation/AGENTS.md`
-  "Two pipeline behaviors ship" subsection updated to mention
-  the non-generic variant and cross-link the new guide.
 
 ### P3 — KN-SELF-006-legacy: `Kun.Saga.EntityFrameworkCore` split (long-parked)
 
@@ -93,6 +79,28 @@ worn by kun himself during idle windows picks the next item.
 ---
 
 ## Done
+
+- **KN-SELF-013** — end-to-end `validating-commands.md` guide +
+  Kun.Validation AGENTS refresh — executor head `e3e9e45`
+  (1 new-guide + 1 AGENTS-refresh commit — hit the 2-commit
+  estimate exactly) — 2026-04-24. Two ACs shipped: new
+  `docs/guides/validating-commands.md` (~170 lines, Chinese
+  prose matching sibling guides, English code blocks)
+  surfacing the now-complete validation story with a 3-row
+  decision tree, two worked examples (CreateOrderCommand for
+  the generic `Result<TValue>` path + DeleteUserCommand for
+  the non-generic `Result` path shipped by KN-SELF-012), three
+  anti-patterns (double-register, throw-inside-Result-handler,
+  DB-in-Validator), and a see-also footer cross-linking
+  ADR-011 / ADR-014 / Kun.Validation AGENTS / Kun.Testing
+  AGENTS / when-to-use-currentuser; plus a surgical refresh
+  of `src/Kun.Validation/AGENTS.md` "Two pipeline behaviors
+  ship" subsection (→ "Three"), new bullet describing the
+  non-generic variant + its single-type-param DI overload,
+  inline ADR-014 §F1 resolution marker, guide cross-link,
+  front-matter "Updated: 2026-04-24" bump. All relative-link
+  targets + type/extension names verified before push.
+  Doc-only; build/AOT gates not applicable.
 
 - **KN-SELF-012** — non-generic `Result` variant of
   `ValidationResultPipelineBehavior` (ADR-014 §F1) — executor

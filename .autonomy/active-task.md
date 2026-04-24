@@ -1,11 +1,12 @@
 ---
 id: KN-SELF-013
 title: docs/guides/validating-commands.md end-to-end guide + Kun.Validation AGENTS refresh
-status: in-flight
-planner_commit: <fill after commit>
-executor_head: <fill after first executor commit>
+status: done
+planner_commit: e9fe67a
+executor_head: e3e9e45
 estimated_commits: 2
 started: 2026-04-24
+finished: 2026-04-24
 ---
 
 # KN-SELF-013 — end-to-end validation guide + AGENTS refresh
@@ -134,15 +135,21 @@ clarity matches the "one-commit-per-sub-step" cadence rule.)
 Doc-only task — the code/AOT gates do not apply. The
 discipline checks are:
 
-- [ ] `dotnet format --verify-no-changes` (no formatter
-      noise from the doc files landing; markdown isn't
-      covered by the formatter, but a sanity check
-      doesn't hurt).
-- [ ] Every relative link in the new guide resolves
-      (manually scan each `[…](…)` target).
-- [ ] No code snippets in the guide reference a type that
-      doesn't exist in `src/Kun.Validation/` as of HEAD
-      (quickly grep each type name before committing).
+- [x] Doc-only change; `dotnet format` not applicable
+      (markdown is not part of the formatter scope).
+- [x] All relative links in the guide verified before
+      commit: ADR-011, ADR-014, src/Kun.Validation/AGENTS.md,
+      src/Kun.Testing/AGENTS.md,
+      docs/architecture/when-to-use-currentuser.md.
+- [x] All referenced type and extension-method names
+      grepped against HEAD: `IRequest<>`, `Result`,
+      `Result<>`, `Error.Validation`, `ErrorType.Validation`,
+      `IValidator<>`, `ValidationResult.Failure`,
+      `ValidationError`, `AddValidator<,>`,
+      `AddValidationResultBehavior<TRequest>`,
+      `AddValidationResultBehavior<TRequest, TValue>`,
+      `AddKunMediator`, `AddRequestHandler`,
+      `ResultAssertions.ShouldBeFailure/ShouldBeSuccess`.
 
 ## Out of scope
 
@@ -158,6 +165,18 @@ discipline checks are:
 
 - 2026-04-24 10c4a9a KN-SELF-012 closed + archived; planner
   hat on for KN-SELF-013 pick.
+- 2026-04-24 e9fe67a planner pick + active-task brief (role 1).
+- 2026-04-24 5f63663 executor commit 1 (AC-1): new
+  docs/guides/validating-commands.md (~170 lines) — decision
+  tree, CreateOrderCommand generic Result example,
+  DeleteUserCommand non-generic Result example, anti-patterns,
+  see-also footer. All cross-links + API names verified
+  before push.
+- 2026-04-24 e3e9e45 executor commit 2 (AC-2): surgical refresh
+  of src/Kun.Validation/AGENTS.md — "Two pipeline behaviors
+  ship" → "Three", new non-generic bullet, ADR-014 + guide
+  cross-link, front-matter bump.
+- 2026-04-24 hit 2-commit estimate exactly. Closing.
 
 ## When done
 
