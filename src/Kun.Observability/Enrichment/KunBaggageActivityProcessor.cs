@@ -19,7 +19,8 @@ namespace Kun.Observability.Enrichment;
 /// <c>docs/architecture/ADR-013-Kun.Observability-enricher.md</c>
 /// for the full rationale — why baggage (AsyncLocal-safe) over
 /// scoped DI (lifetime mismatch for background-issued activities),
-/// why <see cref="BaseProcessor{T}.OnStart"/> (tags land before the
+/// why <see cref="BaseProcessor{T}.OnEnd"/> (captures baggage set
+/// anywhere during the activity's lifespan; tags land before the
 /// exporter serialises the span), and why the key set is
 /// deliberately small.
 /// </remarks>
@@ -32,7 +33,7 @@ internal sealed class KunBaggageActivityProcessor : BaseProcessor<Activity>
         _kunSources = new HashSet<string>(KunActivitySources.All, StringComparer.Ordinal);
     }
 
-    public override void OnStart(Activity data)
+    public override void OnEnd(Activity data)
     {
         ArgumentNullException.ThrowIfNull(data);
         if (!_kunSources.Contains(data.Source.Name)) return;
