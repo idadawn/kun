@@ -1,125 +1,141 @@
 ---
-id: KN-SELF-006
-title: Kun.Observability baggage-driven log-record enricher (ADR-013 F1)
-status: done
-planner_commit: 8823650
-executor_head: c02d190
+id: KN-SELF-007
+title: Kun.Validation Result-returning pipeline behavior (ADR-011 consumer)
+status: in-flight
+planner_commit: <fill after commit>
+executor_head: <fill after first executor commit>
 estimated_commits: 5
-actual_commits: 5
 started: 2026-04-24
-finished: 2026-04-24
 ---
 
-# KN-SELF-006 — `Kun.Observability` log-record enricher
+# KN-SELF-007 — `Kun.Validation` Result-returning pipeline behavior
 
 ## Why
 
-ADR-013 landed the span enricher that mirrors baggage
-(`tenant.id`, `user.id`, `outbox.message_id`) onto Kun-sourced
-activity tags. The companion work — mirroring the **same keys** onto
-`LogRecord.Attributes` — was deferred as ADR-013 §F1. Without it,
-operators filter spans by `tenant.id` in Aspire's trace UI but have
-to fall back to hand-joining log records, because those same log
-entries carry no `tenant.id` attribute.
+`src/Kun.Validation/Behaviors/ValidationPipelineBehavior.cs` ships
+today as an **exception-throwing** variant: if any validator reports
+errors, the pipeline throws `ValidationException`. Its own XML doc
+carries a TODO:
 
-Close the loop so a single Aspire / Jaeger / Kibana filter works
-across both pillars.
+> For Result-based semantics (returning `Result.Fail(Error.Validation(...))`
+> instead of throwing), compose this behavior inside a user-written
+> "ValidationResultAdapter" behavior — **shipped as a follow-up**.
+
+KN-SELF-001 landed the `Result<T>` composition extensions that make
+a Result-returning handler ergonomic. KN-SELF-007 ships the missing
+half: a `ValidationResultPipelineBehavior<TRequest, TValue>` that
+returns `Result<TValue>.Fail(Error.Validation(...))` instead of
+throwing, so handlers can stay exception-free.
 
 ## Specs to read first
 
-1. `kun/CLAUDE.md` — §Architectural constraints + §AOT-per-module
-2. `kun/docs/architecture/ADR-013-Kun.Observability-enricher.md` —
-   span enricher rationale; §F1 sets the scope of this task and
-   notes the OTel logs SDK surface differs from `Activity`.
-3. `kun/src/Kun.Observability/Enrichment/KunBaggageActivityProcessor.cs`
-   — mirror shape for the log-record version.
-4. `kun/src/Kun.Observability/Enrichment/KunBaggageKeys.cs` —
-   canonical key list (unchanged, shared with span enricher).
-5. `kun/src/Kun.Observability/Extensions/ServiceCollectionExtensions.cs`
-   — where `AddKunObservability` registers the logging pipeline.
-6. `kun/tests/Kun.Observability.Tests/BaggageEnrichmentTests.cs` —
-   test-shape precedent; reuse the ctor `Activity.Current = null`
-   reset and the "force-build pipeline" pattern.
-7. OTel 1.11.x `BaseProcessor<LogRecord>` surface — confirm
-   `LogRecord.AttributeStorage` (or equivalent) is writable from a
-   processor's `OnEnd`.
+1. `kun/CLAUDE.md` — §Architectural constraints; especially the
+   "business failures use `Result` / `Result<T>`, not exceptions"
+   rule — KN-SELF-007 is exactly the enablement for that rule at
+   the validation stage.
+2. `kun/docs/architecture/ADR-011-Result-async-extensions.md` —
+   Result<T> composition; this behavior's return value is the
+   input consumers chain against.
+3. `kun/src/Kun.Validation/Behaviors/ValidationPipelineBehavior.cs`
+   — the existing throwing variant; mirror its loop shape.
+4. `kun/src/Kun.Validation/IValidator.cs`, `ValidationResult.cs`,
+   `ValidationError.cs` — validator contract + error DTO.
+5. `kun/src/Kun.Validation/DependencyInjection/` — the registration
+   pattern (`AddValidator<TRequest, TValidator>` /
+   `AddValidationBehavior<TRequest, TResponse>`).
+6. `kun/src/Kun.Mediator/IPipelineBehavior.cs` — behavior contract;
+   `ValueTask<TResponse> Handle(TRequest, RequestHandlerDelegate<TResponse>, CancellationToken)`.
+7. `kun/src/Kun.Core/Results/Error.cs` — `Error.Validation(code,
+   message)` factory — where the failure Error comes from.
 
 ## Acceptance criteria
 
-- **AC-1**: ADR-013 gains a "§F1 resolved" section recording the
-  log-record-enricher design. Covers: why `OnEnd` again (same
-  semantics as span; processor chain differs per pillar but the
-  hook point is analogous), baggage-is-not-auto-on-LogRecord (the
-  processor reads `Activity.Current?.Baggage`), preserving existing
-  attributes (never overwrite a consumer-set `tenant.id` when the
-  log site set it first).
-- **AC-2**: `src/Kun.Observability/Enrichment/KunBaggageLogRecordProcessor.cs`
-  — internal `BaseProcessor<LogRecord>` that on `OnEnd` reads
-  `Activity.Current?.Baggage`, whitelists against
-  `KunBaggageKeys.All`, and adds missing attributes to the
-  `LogRecord`. Idempotent: if the log statement already set
-  `tenant.id`, do **not** overwrite.
-- **AC-3**: `KunObservabilityOptions.EnrichLogsFromBaggage` flag
-  (default `false`, opt-in — matches span-enricher posture) + wire
-  into `AddKunObservability` logging pipeline so setting the flag
-  registers the processor into `OpenTelemetryLoggerOptions`.
-- **AC-4**: `tests/Kun.Observability.Tests` gains a new
-  `LogBaggageEnrichmentTests.cs` using
-  `OpenTelemetry.Exporter.InMemory` for logs:
-  - baggage `tenant.id` present on `Activity.Current` → exported
-    `LogRecord.Attributes` contains `tenant.id`
-  - flag disabled → attribute not added
-  - log statement already set `tenant.id` → processor leaves the
-    caller's value alone
-  - no `Activity.Current` (background log without an active
-    trace) → processor passes through (no crash, no attrs added)
-- **AC-5**: `src/Kun.Observability/AGENTS.md` Key Types table gains
-  the new processor row; `CHANGELOG.md [Unreleased]` adds a
-  "### Added" subsection referencing ADR-013 §F1.
+- **AC-1**: `docs/architecture/ADR-014-Validation-Result-behavior.md`
+  accepted. Short ADR (~60 lines). Records:
+  - Design choice to ship **only the `Result<TValue>` variant** in
+    this task, not the non-generic `Result` variant. Rationale: most
+    commands return a value; the void case (a pure command with no
+    data to return) can stay on the throwing variant until demand
+    for a `Result`-only variant surfaces. Tracked as F1.
+  - Why the behavior requires explicit per-request-type DI
+    registration via `AddValidationResultBehavior<TRequest, TValue>()`
+    — generic-constraint-on-`TResponse` cannot be expressed at the
+    open-generic DI registration level; matches the existing
+    `AddValidator<TRequest, TValidator>` explicit-registration
+    pattern.
+  - Coexistence rule with the throwing `ValidationPipelineBehavior`:
+    register one or the other per request type, never both. If both
+    are registered, the first-seen wins and a diagnostic is
+    unfortunately not cheap to add — keep the guardrail as doc until
+    someone hits it in practice.
+  - AOT safety: no reflection, `typeof(TResponse)` is compile-time-
+    known per closed generic, `Error.Validation` is pure BCL.
+- **AC-2**: `src/Kun.Validation/Behaviors/ValidationResultPipelineBehavior.cs`
+  — sealed generic class `ValidationResultPipelineBehavior<TRequest, TValue>`
+  implementing `IPipelineBehavior<TRequest, Result<TValue>>` with
+  constraint `where TRequest : IRequest<Result<TValue>>`. Mirrors
+  the existing throwing variant's validator loop but returns
+  `Result<TValue>.Fail(Error.Validation("request.invalid", …))`
+  when errors are present. Empty-validators fast-path.
+- **AC-3**: `AddValidationResultBehavior<TRequest, TValue>()`
+  extension on `KunMediatorBuilder` — registers the closed-generic
+  behavior. Matches the style of `AddValidationBehavior<TRequest,
+  TResponse>` already in the module's DI extensions. PublicAPI
+  entry added in-commit.
+- **AC-4**: `tests/Kun.Validation.Tests` (or equivalent) gains
+  coverage:
+  - Empty validators → pass-through, handler result returned.
+  - Single validator reports 0 errors → handler result returned.
+  - Single validator reports N errors → `Result<TValue>.Fail` with
+    concatenated message + `request.invalid` code.
+  - Multiple validators all report errors → errors aggregated.
+  - Handler-level `Result<TValue>` failure (when validators all
+    pass) is NOT intercepted — the behavior returns `next()`'s
+    actual Result, not a derived failure.
+- **AC-5**: `src/Kun.Validation/AGENTS.md` gains a "Result vs
+  exception" subsection pointing at ADR-014; `CHANGELOG.md
+  [Unreleased]` gets a "### Added" entry.
 
 ## Commit plan
 
 | # | Commit subject | AC | Notes |
 |---|----------------|----|-------|
-| 1 | `docs(observability): ADR-013 §F1 resolved — log-record enricher` | AC-1 | ADR amendment in place; or new ADR-014 if amendment feels intrusive — decide in commit 1 |
-| 2 | `feat(observability): KunBaggageLogRecordProcessor` | AC-2 | idempotent OnEnd; reads Activity.Current.Baggage |
-| 3 | `feat(observability): EnrichLogsFromBaggage option + DI wiring` | AC-3 | registers against OpenTelemetryLoggerOptions |
-| 4 | `test(observability): InMemoryExporter covers log-record baggage-to-attribute` | AC-4 | 4 tests per AC-4 bullets |
-| 5 | `docs(observability): AGENTS + CHANGELOG for log-record enricher` | AC-5 | wrap-up |
+| 1 | `docs(validation): ADR-014 Result-returning validation behavior` | AC-1 | ADR-first |
+| 2 | `feat(validation): ValidationResultPipelineBehavior<TRequest, TValue>` | AC-2 | behavior class + PublicAPI.Unshipped entry |
+| 3 | `feat(validation): AddValidationResultBehavior DI extension` | AC-3 | KunMediatorBuilder extension + PublicAPI entry |
+| 4 | `test(validation): Result-returning behavior covers 5 scenarios` | AC-4 | xUnit v3, hand-rolled validator fakes, no Testcontainers |
+| 5 | `docs(validation): AGENTS + CHANGELOG for Result variant` | AC-5 | wrap-up |
 
 ## AOT / build gates
 
 - [ ] `dotnet format` on touched projects
 - [ ] `dotnet build Kun.sln -c Release -p:TreatWarningsAsErrors=true` 0/0
-- [ ] `dotnet test tests/Kun.Observability.Tests -c Release --no-build`
-      green (11 existing + 4 new = 15)
-- [ ] `dotnet publish src/Kun.Observability -c Release -r linux-x64
-      -p:PublishAot=true /warnaserror` ILC 0 warning (mirrors
-      KN-SELF-003 verification)
-- [ ] No new `<PackageReference>` on `Kun.Observability.csproj`
-- [ ] `CHANGELOG.md [Unreleased]` gains the section referencing
-      ADR-013 §F1
+- [ ] `dotnet test tests/Kun.Validation.Tests -c Release --no-build` green
+- [ ] `dotnet publish src/Kun.Validation -c Release -r linux-x64
+      -p:PublishAot=true /warnaserror` ILC 0 warning
+- [ ] No new `<PackageReference>` on `Kun.Validation.csproj`
+- [ ] Existing `ValidationPipelineBehavior` tests still green
+      (coexistence check)
 
 ## Out of scope
 
-- Mirroring baggage onto **metric dimensions** — most Kun metrics
-  are counters without labels; dimensional enrichment premature
-  (ADR-013 §Out of scope).
-- Aspire sample dashboard demo (ADR-013 F2).
-- Baggage propagation at request entry points — that's consumer
-  responsibility; framework just mirrors what's on the ambient
-  context.
+- `ValidationResultPipelineBehavior<TRequest>` for non-generic
+  `Result` response — tracked as ADR-014 F1; ships when demand
+  appears.
+- Automatic selection between throwing and Result-based variants —
+  consumers pick per request type.
+- Validation error **localization** — errors carry the message
+  strings the validators produce.
 
 ## Progress log
 
-- 2026-04-24 ff11848 KN-SELF-005 closed + KN-SELF-006 seeded into BACKLOG
+- 2026-04-24 4f6cd22 KN-SELF-006 closed (prior cycle)
 
 ## When done
 
 1. `status: done` + `executor_head` SHA.
-2. Move KN-SELF-006 in `BACKLOG.md` to `## Done`.
-3. `echo "KN-SELF-006 done (<SHA>) — Kun.Observability log-record enricher landed." > /home/dawn/project/neuroagent/.omc/state/claude-kun_KN-SELF-006_done.txt`
-4. Planner next pick: fresh BACKLOG pass — the Saga EF split
-   remains L-size parked; look for another M-sized item to seed
-   (candidates: Mediator `ValidationBehavior` migration to ADR-011
-   Result extensions; per-module PublicAPI flip sweep).
+2. Move KN-SELF-007 into BACKLOG `## Done`.
+3. `echo "KN-SELF-007 done (<SHA>) — Result-returning validation behavior landed." > /home/dawn/project/neuroagent/.omc/state/claude-kun_KN-SELF-007_done.txt`
+4. Planner next pick: per-module `HasPublicApi=true` flip sweep
+   (large, L-size, may need split), or look for a fresh M-sized
+   follow-up surfaced during this task.

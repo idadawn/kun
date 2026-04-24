@@ -47,7 +47,24 @@ worn by kun himself during idle windows picks the next item.
 <!-- KN-SELF-006 moved to ## Done on 2026-04-24 (executor head c02d190) -->
 
 
-### P3 — KN-SELF-006: `Kun.Saga.EntityFrameworkCore` split (long-parked)
+### P2 — KN-SELF-007: `Kun.Validation` Result-returning pipeline behavior (ADR-011 consumer)
+
+- **Status**: in-flight — see `kun/.autonomy/active-task.md`
+- **Size**: M (target 5 commits)
+- **Why**: The existing `ValidationPipelineBehavior` throws
+  `ValidationException` on validator failure. Its own XML doc flags
+  "Result-based semantics shipped as a follow-up" — consumers who
+  return `Result<T>` from handlers want validation failures to land
+  as `Result<T>.Fail(Error.Validation(...))` rather than throwing.
+  KN-SELF-001 made the `Result<T>` composition ergonomic; this is
+  the missing validation-stage enablement of the
+  "business-failures-use-Result-not-exceptions" rule from
+  `kun/CLAUDE.md` §Architectural constraints.
+- **AC**: ADR-014, `ValidationResultPipelineBehavior<TRequest, TValue>`,
+  `AddValidationResultBehavior<TRequest, TValue>()` extension,
+  test coverage for the 5 canonical scenarios, AGENTS + CHANGELOG.
+
+### P3 — KN-SELF-006-legacy: `Kun.Saga.EntityFrameworkCore` split (long-parked)
 
 - **Size**: L (≥10 commits, breaking change for consumers)
 - **Why**: AOT audit 2026-04-23 RED. Already tracked as
