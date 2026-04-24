@@ -8,59 +8,96 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 namespace Kun.Storage.DependencyInjection;
 
 /// <summary>
-/// Extension methods to register Kun.Storage services.
+/// Registration extensions for Kun.Storage.
 /// </summary>
 public static class KunStorageServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers <see cref="IFileStorage"/> and related services based on <see cref="StorageOptions"/>.
+    /// Registers <see cref="IFileStorage"/> using the provider specified in
+    /// <see cref="StorageOptions.Provider"/>. Prefer <see cref="AddS3Storage"/>
+    /// or <see cref="AddLocalStorage"/> for a clearer call site.
     /// </summary>
     public static IServiceCollection AddKunStorage(
         this IServiceCollection services,
+        Action<StorageOptions> configure)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(configure);
+
+        services.Configure(configure);
+
+        var snapshot = new StorageOptions();
+        configure(snapshot);
+
+        return snapshot.Provider switch
+        {
+            StorageProvider.S3 => services.AddS3Infrastructure(snapshot),
+            StorageProvider.Local => services.AddLocalInfrastructure(),
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(configure),
+                snapshot.Provider,
+                "Unknown StorageProvider."),
+        };
+    }
+
+    /// <summary>Registers <see cref="LocalFileStorage"/> as the <see cref="IFileStorage"/>.</summary>
+    public static IServiceCollection AddLocalStorage(
+        this IServiceCollection services,
         Action<StorageOptions>? configure = null)
     {
-        var options = new StorageOptions();
-        configure?.Invoke(options);
-
-        services.Configure<StorageOptions>(o =>
+        ArgumentNullException.ThrowIfNull(services);
+        return services.AddKunStorage(options =>
         {
-            o.Provider = options.Provider;
-            o.RootPath = options.RootPath;
-            o.BucketName = options.BucketName;
-            o.Endpoint = options.Endpoint;
-            o.AccessKey = options.AccessKey;
-            o.SecretKey = options.SecretKey;
-            o.Region = options.Region;
+            options.Provider = StorageProvider.Local;
+            configure?.Invoke(options);
         });
+    }
 
-        if (options.Provider == StorageProvider.S3)
+    /// <summary>Registers <see cref="S3FileStorage"/> as the <see cref="IFileStorage"/>.</summary>
+    public static IServiceCollection AddS3Storage(
+        this IServiceCollection services,
+        Action<StorageOptions> configure)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(configure);
+        return services.AddKunStorage(options =>
         {
-            services.TryAddSingleton<IAmazonS3>(_ =>
-            {
-                var config = new AmazonS3Config();
+            configure(options);
+            options.Provider = StorageProvider.S3;
+        });
+    }
 
-                if (!string.IsNullOrWhiteSpace(options.Endpoint))
-                {
-                    config.ServiceURL = options.Endpoint;
-                    config.ForcePathStyle = true;
-                }
-
-                if (!string.IsNullOrWhiteSpace(options.Region))
-                {
-                    config.RegionEndpoint = Amazon.RegionEndpoint.GetBySystemName(options.Region);
-                }
-
-                var credentials = new BasicAWSCredentials(options.AccessKey, options.SecretKey);
-                return new AmazonS3Client(credentials, config);
-            });
-
-            services.TryAddSingleton<IFileStorage, S3FileStorage>();
-        }
-        else
-        {
-            services.TryAddSingleton<IFileStorage, LocalFileStorage>();
-        }
-
+    private static IServiceCollection AddS3Infrastructure(
+        this IServiceCollection services,
+        StorageOptions snapshot)
+    {
+        services.TryAddSingleton<IAmazonS3>(_ => BuildS3Client(snapshot));
+        services.TryAddSingleton<IFileStorage, S3FileStorage>();
         return services;
+    }
+
+    private static IServiceCollection AddLocalInfrastructure(this IServiceCollection services)
+    {
+        services.TryAddSingleton<IFileStorage, LocalFileStorage>();
+        return services;
+    }
+
+    private static IAmazonS3 BuildS3Client(StorageOptions options)
+    {
+        var config = new AmazonS3Config();
+
+        if (!string.IsNullOrWhiteSpace(options.Endpoint))
+        {
+            config.ServiceURL = options.Endpoint;
+            config.ForcePathStyle = true;
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.Region))
+        {
+            config.RegionEndpoint = Amazon.RegionEndpoint.GetBySystemName(options.Region);
+        }
+
+        var credentials = new BasicAWSCredentials(options.AccessKey, options.SecretKey);
+        return new AmazonS3Client(credentials, config);
     }
 }
