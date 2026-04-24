@@ -68,32 +68,56 @@ worn by kun himself during idle windows picks the next item.
 <!-- KN-SELF-013 moved to ## Done on 2026-04-24 (executor head e3e9e45) -->
 
 
-### P2 — KN-SELF-014: `Kun.Testing.EntityFrameworkCore` Outbox assertion helpers (ADR-015 §F3)
+### P2 — KN-SELF-014-rescoped: Aspire Dashboard baggage demo (ADR-013 §F3)
 
 - **Status**: in-flight — see `kun/.autonomy/active-task.md`
-- **Size**: M (target 4 commits)
-- **Why**: ADR-015 §F3 deferred the EF-persisted Outbox test
-  helpers. Consumers writing "does my command stage the right
-  OutboxMessage in-transaction?" tests today hand-roll the
-  query + iterate + assert boilerplate at every call site.
-  Ship a sibling module to `Kun.Testing` that takes EF Core
-  as a dependency (non-AOT — matches `Kun.EntityFrameworkCore`)
-  and provides `ShouldHaveOutboxMessage` /
-  `ShouldHaveExactlyOneOutboxMessage` /
-  `ShouldNotHaveOutboxMessage` on both `DbContext` and
-  `IEnumerable<OutboxMessage>`.
-- **AC**: new `src/Kun.Testing.EntityFrameworkCore/` module
-  wired into `Kun.sln` + `OutboxAssertions` class + tests
-  project `tests/Kun.Testing.EntityFrameworkCore.Tests/` +
-  CHANGELOG entry + ADR-015 §F3 resolution marker + AGENTS
-  cross-links from `Kun.EventBus` and `Kun.Testing`.
-- **Rescope**: initial pick on 2026-04-24 `c3ad04d` was
-  `outbox-and-integration-events.md` guide (S, doc-only,
-  paralleled KN-SELF-013). User re-directed to pick from the
-  three KN-SELF-013-closeout candidates; ADR-015 §F3 has the
-  highest ROI of the three (ADR-013 §F2 blocked on no-metrics-
-  pipeline; ADR-013 §F3 Aspire demo stays as next-cycle
-  fallback).
+- **Size**: S (target 3 commits, user-specified scope)
+- **Why**: ADR-013 shipped `KunBaggageActivityProcessor` +
+  `KunBaggageLogRecordProcessor` (KN-SELF-003 / KN-SELF-006),
+  but no sample service actually enables them. Aspire Dashboard
+  (launched by `Kun.Sample.AppHost`) should show `tenant.id` /
+  `user.id` span tags so framework consumers see the enrichment
+  contract in action. Closes ADR-013 §F3 Aspire demo follow-up.
+- **AC**: Catalog sample swaps `Kun.Sample.Shared.AddKunObservability`
+  (the shared OTel wrapper) for the framework's
+  `Kun.Observability.Extensions.AddKunObservability` with
+  `EnrichActivitiesFromBaggage=true` + `EnrichLogsFromBaggage=true`;
+  `/health` endpoint sets `KunBaggageKeys.TenantId` +
+  `KunBaggageKeys.UserId` baggage so the activity enricher
+  mirrors them onto span tags for the Aspire Dashboard trace
+  view; solution build stays green.
+- **Rescope history**:
+  1. `c3ad04d` — first pick: `outbox-and-integration-events.md`
+     guide. Rescoped by user (out of closeout candidates).
+  2. `a0fe17e` — second pick: `Kun.Testing.EntityFrameworkCore`
+     Outbox helpers (ADR-015 §F3, M). Partial-shipped (scaffold
+     + `OutboxAssertions`) before rescope; tests + docs
+     deferred to KN-SELF-015-or-later.
+  3. (this) — third pick: Aspire Dashboard baggage demo
+     (ADR-013 §F3, S-M, matches user's explicit size
+     preference).
+
+### P3 — follow-up: complete `Kun.Testing.EntityFrameworkCore` tests + docs
+
+- **Status**: partial-shipped (scaffold `9999f63`..., awaiting
+  tests + docs). Next KN-SELF cycle picks this up.
+- **Size**: S (target 2 commits: tests project + CHANGELOG /
+  ADR-015 §F3 resolution marker).
+- **Why**: KN-SELF-014 was rescoped mid-execution. The
+  `src/Kun.Testing.EntityFrameworkCore/` module (csproj, AGENTS,
+  `OutboxAssertions` class, PublicAPI seed) is already on
+  develop and building clean, but has no test coverage yet and
+  the ADR-015 §F3 "resolved" marker + CHANGELOG entry have
+  not landed.
+- **AC**: `tests/Kun.Testing.EntityFrameworkCore.Tests/`
+  project scaffold + xUnit.v3 + FluentAssertions + tests for
+  each helper's pass and fail paths (both
+  `IEnumerable<OutboxMessage>` and `DbContext` overloads;
+  DbContext uses `UseInMemoryDatabase` fixture);
+  `CHANGELOG.md [Unreleased]` "Added" entry; ADR-015 §F3
+  bullet annotated "Resolved <date> (KN-SELF-015)";
+  `Kun.EventBus/AGENTS.md` + `Kun.Testing/AGENTS.md`
+  cross-links.
 
 ### P3 — KN-SELF-006-legacy: `Kun.Saga.EntityFrameworkCore` split (long-parked)
 
