@@ -1,4 +1,3 @@
-using System.Net.Http;
 using System.Text;
 using FluentAssertions;
 using Kun.IntegrationTests.Fixtures;

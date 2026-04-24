@@ -7,6 +7,10 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Kun.Security.S2SJwt;
 
+// RS0026 is suppressed for the same reason as IS2SJwtIssuer: the two IssueAsync
+// overloads are unambiguously resolved on the first parameter shape.
+#pragma warning disable RS0026
+
 /// <summary>
 /// ES256 implementation of <see cref="IS2SJwtIssuer"/>. Emits the SAD v3.0 §12 claim
 /// set (<c>sub</c>, <c>tenant_id</c>, <c>roles</c>, optional <c>membership_id</c>,
@@ -155,3 +159,5 @@ public sealed partial class S2SJwtIssuer : IS2SJwtIssuer
         public static partial void TokenIssued(ILogger logger, string userId, string issuer, string jti);
     }
 }
+
+#pragma warning restore RS0026

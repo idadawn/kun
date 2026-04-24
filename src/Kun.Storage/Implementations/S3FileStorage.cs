@@ -152,7 +152,7 @@ public sealed partial class S3FileStorage : IFileStorage
                     ct.ThrowIfCancellationRequested();
                     yield return new ObjectSummary(
                         item.Key,
-                        item.Size ?? 0,
+                        item.Size,
                         ToUtc(item.LastModified),
                         item.ETag);
                 }

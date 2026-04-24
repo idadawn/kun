@@ -1,10 +1,8 @@
 using FluentAssertions;
-using Kun.Audit;
 using Kun.Audit.Behaviors;
 using Kun.Core.Cqrs;
 using Kun.Core.MultiTenancy;
 using Kun.Core.Security;
-using Kun.Mediator;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Xunit;
@@ -105,8 +103,10 @@ public sealed class AuditLogPipelineBehaviorTests
     public async Task Handle_Sink_Failure_Does_Not_Break_Successful_Handler()
     {
         var sink = Substitute.For<IAuditSink>();
+#pragma warning disable CA2012 // NSubstitute Returns<ValueTask> is the canonical idiom for stubbing ValueTask-returning APIs.
         sink.WriteAsync(Arg.Any<AuditEntry>(), Arg.Any<CancellationToken>())
             .Returns<ValueTask>(_ => throw new InvalidOperationException("sink offline"));
+#pragma warning restore CA2012
         using var chain = new InMemoryAuditChainState();
 
         var behavior = new AuditLogPipelineBehavior<SampleCommand, string>(
@@ -130,8 +130,10 @@ public sealed class AuditLogPipelineBehaviorTests
     public async Task Handle_Sink_Failure_Does_Not_Replace_Original_Exception()
     {
         var sink = Substitute.For<IAuditSink>();
+#pragma warning disable CA2012 // NSubstitute Returns<ValueTask> is the canonical idiom for stubbing ValueTask-returning APIs.
         sink.WriteAsync(Arg.Any<AuditEntry>(), Arg.Any<CancellationToken>())
             .Returns<ValueTask>(_ => throw new InvalidOperationException("sink offline"));
+#pragma warning restore CA2012
         using var chain = new InMemoryAuditChainState();
 
         var behavior = new AuditLogPipelineBehavior<SampleCommand, string>(

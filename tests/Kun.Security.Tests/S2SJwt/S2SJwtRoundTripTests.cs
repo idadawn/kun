@@ -174,7 +174,7 @@ public sealed class S2SJwtRoundTripTests : IDisposable
         var principal = await verifier.VerifyAsync(token, "neuroagent-platform", _ct);
         principal.Should().NotBeNull();
         principal!.FindAll("roles").Select(c => c.Value)
-            .Should().BeEquivalentTo(new[] { "admin", "editor", "viewer" });
+            .Should().BeEquivalentTo(["admin", "editor", "viewer"]);
     }
 
     [Fact]
@@ -308,7 +308,7 @@ public sealed class S2SJwtRoundTripTests : IDisposable
             _ct);
 
         var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
-        jwt.Audiences.Should().BeEquivalentTo(new[] { "neuroagent-platform", "neuroagent-storage" });
+        jwt.Audiences.Should().BeEquivalentTo(["neuroagent-platform", "neuroagent-storage"]);
         // aud must live in payload, not header
         jwt.Header.Should().NotContainKey("aud");
     }

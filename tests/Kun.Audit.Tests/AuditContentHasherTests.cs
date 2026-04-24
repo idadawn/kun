@@ -1,5 +1,4 @@
 using FluentAssertions;
-using Kun.Audit;
 using Xunit;
 
 namespace Kun.Audit.Tests;

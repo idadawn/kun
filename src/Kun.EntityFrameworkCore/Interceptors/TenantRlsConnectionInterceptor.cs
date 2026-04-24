@@ -124,7 +124,7 @@ public sealed partial class TenantRlsConnectionInterceptor : DbConnectionInterce
         return result;
     }
 
-    private string BuildSetOrReset(string? tenantId)
+    private static string BuildSetOrReset(string? tenantId)
     {
         if (string.IsNullOrEmpty(tenantId))
         {

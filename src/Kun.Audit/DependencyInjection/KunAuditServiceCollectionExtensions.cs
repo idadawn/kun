@@ -2,7 +2,6 @@ using Kun.Audit.Abstractions;
 using Kun.Audit.Behaviors;
 using Kun.Core.Cqrs;
 using Kun.Mediator;
-using Kun.Mediator.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 

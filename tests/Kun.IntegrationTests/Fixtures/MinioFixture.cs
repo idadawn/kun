@@ -23,10 +23,10 @@ public sealed class MinioFixture : IAsyncLifetime
     public string Endpoint { get; private set; } = string.Empty;
 
     /// <summary>Access key (MinIO root user).</summary>
-    public string AccessKey => Username;
+    public static string AccessKey => Username;
 
     /// <summary>Secret key (MinIO root password).</summary>
-    public string SecretKey => Password;
+    public static string SecretKey => Password;
 
     /// <summary>Bucket provisioned for the fixture lifetime.</summary>
     public string BucketName { get; } = $"kun-test-{Guid.NewGuid():N}";
