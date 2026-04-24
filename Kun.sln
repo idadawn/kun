@@ -61,6 +61,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kun.Gateway.Tests", "tests\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kun.Grpc.Tests", "tests\Kun.Grpc.Tests\Kun.Grpc.Tests.csproj", "{A7131ED6-C88C-4A8B-9D41-B5D42099048C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kun.Audit.Tests", "tests\Kun.Audit.Tests\Kun.Audit.Tests.csproj", "{E4D3C2B1-A9F8-4E7D-9C6B-5A4B3C2D1E0F}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kun.Sample.Catalog", "samples\Kun.Sample.Catalog\Kun.Sample.Catalog.csproj", "{756D76FC-020E-491D-8868-DB61166A814A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kun.Sample.Order", "samples\Kun.Sample.Order\Kun.Sample.Order.csproj", "{DF365D7A-B041-4001-ACAA-F00B48BF6ECB}"
@@ -253,6 +255,18 @@ Global
 		{A100000E-0000-0000-0000-00000000000E}.Release|x64.Build.0 = Release|Any CPU
 		{A100000E-0000-0000-0000-00000000000E}.Release|x86.ActiveCfg = Release|Any CPU
 		{A100000E-0000-0000-0000-00000000000E}.Release|x86.Build.0 = Release|Any CPU
+		{E4D3C2B1-A9F8-4E7D-9C6B-5A4B3C2D1E0F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E4D3C2B1-A9F8-4E7D-9C6B-5A4B3C2D1E0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E4D3C2B1-A9F8-4E7D-9C6B-5A4B3C2D1E0F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E4D3C2B1-A9F8-4E7D-9C6B-5A4B3C2D1E0F}.Debug|x64.Build.0 = Debug|Any CPU
+		{E4D3C2B1-A9F8-4E7D-9C6B-5A4B3C2D1E0F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E4D3C2B1-A9F8-4E7D-9C6B-5A4B3C2D1E0F}.Debug|x86.Build.0 = Debug|Any CPU
+		{E4D3C2B1-A9F8-4E7D-9C6B-5A4B3C2D1E0F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E4D3C2B1-A9F8-4E7D-9C6B-5A4B3C2D1E0F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E4D3C2B1-A9F8-4E7D-9C6B-5A4B3C2D1E0F}.Release|x64.ActiveCfg = Release|Any CPU
+		{E4D3C2B1-A9F8-4E7D-9C6B-5A4B3C2D1E0F}.Release|x64.Build.0 = Release|Any CPU
+		{E4D3C2B1-A9F8-4E7D-9C6B-5A4B3C2D1E0F}.Release|x86.ActiveCfg = Release|Any CPU
+		{E4D3C2B1-A9F8-4E7D-9C6B-5A4B3C2D1E0F}.Release|x86.Build.0 = Release|Any CPU
 		{B1000001-0000-0000-0000-000000000001}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B1000001-0000-0000-0000-000000000001}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B1000001-0000-0000-0000-000000000001}.Debug|x64.ActiveCfg = Debug|Any CPU
