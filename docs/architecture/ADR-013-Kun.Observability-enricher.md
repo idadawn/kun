@@ -177,9 +177,9 @@ baggage".
 
 ## Follow-ups
 
-- **F1**: Log-record enricher that mirrors the same baggage keys
-  onto `LogRecord.Attributes`. Separate ADR because the
-  OpenTelemetry.Logs SDK surface differs from Activity.
+- **F1 — Resolved 2026-04-24 (KN-SELF-006)**: Log-record enricher
+  that mirrors the same baggage keys onto `LogRecord.Attributes`.
+  See §F1 resolution below.
 - **F2**: Expose baggage-tagging demo in `Kun.Sample.AppHost`
   Aspire dashboard when the samples move beyond placeholder.
 - **F3**: If a concrete consumer need surfaces for a non-baggage
@@ -196,3 +196,58 @@ Purely additive. `AddKunObservability` gains one optional flag
 (default off). `Kun.Observability.csproj` takes no new
 `PackageReference`. Existing Aspire / OTLP pipelines remain
 unchanged for consumers that do not flip the opt-in flag.
+
+---
+
+## §F1 resolution (2026-04-24, KN-SELF-006) — log-record enricher
+
+Span enrichment alone still forces operators to join spans ↔ logs
+by hand (e.g. `tenant.id` filter works in the Aspire trace UI but
+not in its log tab). KN-SELF-006 closes the loop by shipping a
+companion `KunBaggageLogRecordProcessor` that mirrors the same
+whitelisted baggage subset onto `LogRecord.Attributes`.
+
+### Shape, in one paragraph
+
+Internal `BaseProcessor<LogRecord>` hooked at `OnEnd`. Reads
+`Activity.Current?.Baggage` (logs, unlike activities, do **not**
+auto-carry baggage; baggage lives on the ambient
+`Activity.Current` instead). For each key in `KunBaggageKeys.All`
+that is present on baggage, **add** it as a `LogRecord` attribute
+if the attribute is not already there. Never overwrite a
+consumer-set attribute: the log statement's own `tenant.id=…`
+call wins.
+
+### Why `OnEnd`, not `OnStart`
+
+Same reason as the span enricher (see §Hook point above) — the
+ambient state we care about is finalised at `OnEnd`, not when the
+log call first enters the processor chain.
+
+### Why "add if missing" instead of "overwrite"
+
+A `LogRecord` that already carries `tenant.id` either came from
+(a) a consumer-written log statement that deliberately set a
+per-entity tenant for that record, or (b) an earlier instrumentation
+pipeline. In both cases overwriting would surprise the author of
+the log call. The enricher defers to the explicit set.
+
+### Opt-in flag
+
+New `KunObservabilityOptions.EnrichLogsFromBaggage` (default
+`false`). Mirrors the posture of `EnrichActivitiesFromBaggage` —
+explicit flip forces consumers to think about what baggage contract
+their service produces.
+
+### Tests
+
+`tests/Kun.Observability.Tests/LogBaggageEnrichmentTests.cs`
+covers: baggage-present → attribute mirrored; flag off → no mirror;
+log-statement already set the key → kept; no `Activity.Current` →
+no crash, no attrs added.
+
+### AOT safety
+
+`BaseProcessor<LogRecord>` + `Activity.Baggage` enumeration + the
+LogRecord attribute API are all reflection-free. `Kun.Observability`
+keeps `IsAotCandidate=true`; ILC pass stays 0-warning.
