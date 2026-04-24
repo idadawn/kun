@@ -1,11 +1,13 @@
 ---
 id: KN-SELF-005
 title: IAuthenticatedUser vs ICurrentUser — guidance doc + XML cross-links
-status: in-flight
-planner_commit: <fill after commit>
-executor_head: <fill after first executor commit>
+status: done
+planner_commit: 7bddaeb
+executor_head: d5d9b68
 estimated_commits: 2
+actual_commits: 2
 started: 2026-04-24
+finished: 2026-04-24
 ---
 
 # KN-SELF-005 — `IAuthenticatedUser` vs `ICurrentUser` naming-consistency sweep

@@ -42,19 +42,26 @@ worn by kun himself during idle windows picks the next item.
 <!-- KN-SELF-004 moved to ## Done on 2026-04-24 (executor head 674a323) -->
 
 
-### P2 — KN-SELF-005: Naming-consistency sweep on `IAuthenticatedUser`
+<!-- KN-SELF-005 moved to ## Done on 2026-04-24 (executor head d5d9b68) -->
 
-- **Status**: in-flight — see `kun/.autonomy/active-task.md`
-- **Size**: S (target 3–5 commits — plan cut to 2 after picking the
-  guidance-doc option from the three BACKLOG alternatives)
-- **Why**: ADR-010 introduced `IAuthenticatedUser` alongside
-  `ICurrentUser`. The two must not drift in future edits —
-  add compile-time tests / analyzer-like checks (or at minimum an ADR
-  § on when to use which) to prevent a third adapter from being
-  invented next sprint.
-- **AC**: either an `.editorconfig` rule, an `ArchUnitNET` (or
-  hand-rolled reflection-at-test-time) rule, or a doc
-  `docs/architecture/when-to-use-currentuser.md`.
+### P2 — KN-SELF-006: `Kun.Observability` log-record enricher (ADR-013 F1)
+
+- **Size**: M (target 5–7 commits)
+- **Why**: ADR-013 landed the span enricher that mirrors baggage
+  (`tenant.id`, `user.id`, `outbox.message_id`) onto Kun-sourced
+  activity tags. The companion work — mirroring the same keys onto
+  `LogRecord.Attributes` — was deferred as ADR-013 §F1. Without it,
+  operators still have to correlate spans ↔ logs by hand: same
+  tenant filter runs over two different attribute surfaces. Close
+  the loop so Aspire log queries can filter by the same keys the
+  trace UI filters on.
+- **AC**: new `KunBaggageLogRecordProcessor` (internal
+  `BaseProcessor<LogRecord>`), new
+  `KunObservabilityOptions.EnrichLogsFromBaggage` flag (default
+  `false`, opt-in), in-memory exporter test asserts
+  tenant.id/user.id/outbox.message_id land as `LogRecord`
+  attributes, AGENTS + CHANGELOG, ADR-013 amendment recording the
+  mirror design (OTel logs processor chain differs from Activity).
 
 ### P3 — KN-SELF-006: `Kun.Saga.EntityFrameworkCore` split (long-parked)
 
@@ -68,6 +75,17 @@ worn by kun himself during idle windows picks the next item.
 
 ## Done
 
+- **KN-SELF-005** — `IAuthenticatedUser` vs `ICurrentUser` naming-
+  consistency sweep — executor head `d5d9b68` (2 doc commits) —
+  2026-04-24. Two ACs shipped: new
+  `docs/architecture/when-to-use-currentuser.md` guidance doc with
+  decision table + extension rules + anti-patterns; XML
+  `<remarks>` cross-links added to `ICurrentUser.cs` and
+  `IAuthenticatedUser.cs` so IDEs surface the guidance at the code
+  site. BACKLOG's three alternatives (editorconfig rule / reflection-
+  at-test-time rule / doc) reduced to doc-only — other two needed a
+  maintained allow-list with the same drift shape we were trying to
+  close.
 - **KN-SELF-004** — `Kun.Dapper` AOT intent cleanup —
   executor head `674a323` (2 doc commits) — 2026-04-24.
   Two ACs shipped: `src/Kun.Dapper/AGENTS.md` gains the AOT-intent
