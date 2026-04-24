@@ -162,9 +162,15 @@ extension is the short-term surface; an SG can wrap it later.
 
 - **F1**: Non-generic `Result` variant —
   `ValidationResultPipelineBehavior<TRequest>` for
-  `IRequest<Result>`. Ships when a consumer returns `Result` from
-  a command often enough to be worth the doubled registration
-  surface.
+  `IRequest<Result>`. **Resolved 2026-04-24 (KN-SELF-012)** —
+  shipped as a sibling class in the same file as the generic
+  variant, registered via the single-type-param overload
+  `AddValidationResultBehavior<TRequest>()` on `KunMediatorBuilder`.
+  The "doubled registration surface" concern from §Scope
+  (`Result<TValue>` only) turned out to be a single DI-extension
+  overload; the per-request-type explicit-registration pattern
+  was already the dominant surface, so the incremental cost
+  was small.
 - **F2**: Structured error payload (`Error.Validation` subtype
   carrying a per-field error dict). Defer until consumers have a
   concrete need past the joined-message default.

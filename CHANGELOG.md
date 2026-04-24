@@ -6,6 +6,40 @@
 
 ## [Unreleased]
 
+### Added — Non-generic `Result` variant of ValidationResultPipelineBehavior (2026-04-24)
+
+- **KN-SELF-012** closes **ADR-014 §F1** — the deferred
+  non-generic `Result` variant of the Result-returning validation
+  pipeline behavior originally shipped by KN-SELF-007.
+- **`Kun.Validation.Behaviors.ValidationResultPipelineBehavior<TRequest>`** —
+  new sibling class in the same file as the generic
+  `ValidationResultPipelineBehavior<TRequest, TValue>`, constrained
+  as `IPipelineBehavior<TRequest, Result>` where
+  `TRequest : IRequest<Result>`. Same validator loop, same
+  `"; "`-joined `Error.Validation("request.invalid", …)` shape;
+  returns `Result.Fail(...)` instead of `Result<TValue>.Fail(...)`.
+- **`KunMediatorBuilder.AddValidationResultBehavior<TRequest>()`** —
+  new single-type-param overload on
+  `KunValidationServiceCollectionExtensions`, closing for
+  `IRequest<Result>` specifically. Mirrors the existing
+  two-type-param overload's registration pattern.
+- **Consumer impact**: void-returning commands (e.g.
+  `DeleteUserCommand : IRequest<Result>`) that want validation
+  failures surfaced as `Result.Fail` no longer need to either
+  throw `ValidationException` (via the legacy
+  `ValidationPipelineBehavior`) or hand-roll a try/catch
+  adapter. Register per-request exactly like the generic
+  variant: `builder.AddValidator<DeleteUserCommand, DeleteUserValidator>()
+  .AddValidationResultBehavior<DeleteUserCommand>();`.
+- **Tests**: `tests/Kun.Validation.Tests/ValidationResultPipelineBehaviorTests.cs`
+  picks up 3 new scenarios mirroring the generic-variant path —
+  validator-fail → `Result.Fail(request.invalid)`, multi-validator
+  aggregation, and handler-level `Result.Fail` preserved
+  untouched. 20/20 Kun.Validation tests pass (17 existing + 3 new).
+- **AOT**: behavior and DI overload are both AOT-safe — no
+  reflection, closed generics compile-time-known,
+  `Kun.Validation` ILC 0-warning.
+
 ### Changed — HasPublicApi sweep complete across all framework modules (2026-04-24)
 
 - **KN-SELF-010** finished the pilot started by KN-SELF-008
