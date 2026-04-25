@@ -4,6 +4,7 @@ obj/
 out/
 publish/
 artifacts/
+BenchmarkDotNet.Artifacts/
 *.user
 *.suo
 *.userosscache
@@ -69,3 +70,6 @@ Thumbs.db
 
 # Gateway dev-mode RSA key pair (auto-generated on first launch)
 src/Kun.Gateway/certs/
+
+# Clawhip local state
+.clawhip/

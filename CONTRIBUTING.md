@@ -114,6 +114,26 @@ and triggers compensation for instances where TimeoutAt < UtcNow.
 Closes #42
 ```
 
+## 🔀 分支策略（Hard rule）
+
+**`main` 不是开发分支。任何人、任何时候、任何理由都不在 `main` 上直接 `commit` 或 `push`**——包括小范围文档修改、紧急修复、"就一条 commit" 都不行。
+
+所有改动走 `develop`：
+
+| 角色 | 动作 |
+|------|------|
+| 开发者 | 从 `develop` 切出 `feat/xxx` / `fix/xxx` / `docs/xxx` / `chore/xxx` 分支 |
+| 开发者 | 在特性分支上提交、push |
+| 开发者 | 向 **`develop`** 提 PR，链接相关 Issue，填写 PR 模板 |
+| CI | `build` / `test` / `dotnet format` / AOT publish / layering 全部绿 |
+| 维护者 | 至少一位 Approve |
+| 维护者 | Squash / rebase merge 到 `develop` |
+| 维护者（发版时） | 从 `develop` 开一个 **release PR** 合入 `main`，然后从 `main` 打稳定 tag |
+
+**为什么**：下游消费方（`neuroagent-csharp` 等）把 `main` 当稳定锚点做 rebase / cherry-pick。任何直接 `main` commit 都会立刻触发下游的合并地狱。该策略同时是 P2 阶段要开启的 GitHub 分支保护（PR-required + status-checks-required）的编码契约：**规则先于工具落地**，工具开启前也不得违反。
+
+**AI Agent 特别提醒**：会话启动前先跑 `git branch --show-current`；如果是 `main`，第一步必须是 `git checkout develop && git pull && git checkout -b <type>/<task>`；从未 commit 过主分支。
+
 ## 🏷️ 发布与版本规范
 
 Tag 与分支强绑定，**CI 会强制校验**（见 `.github/workflows/release.yml`）：
@@ -132,7 +152,7 @@ Tag 与分支强绑定，**CI 会强制校验**（见 `.github/workflows/release
 
 ## 🔀 Pull Request 流程
 
-1. **Fork 仓库**，从 `main` 切出特性分支：`feat/xxx` / `fix/xxx` / `docs/xxx`
+1. **Fork 仓库**（或用内部分支），从 `develop` 切出特性分支：`feat/xxx` / `fix/xxx` / `docs/xxx` / `chore/xxx` — **绝不从 `main` 切**
 2. **编写代码 + 测试**。任何新功能必须附带测试。
 3. **本地验证**：
    ```bash

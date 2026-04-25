@@ -1,0 +1,121 @@
+#nullable enable
+const Kun.Sandbox.Implementations.SupervisorSandboxProvider.HttpClientName = "Kun.Sandbox.Supervisor" -> string!
+Kun.Sandbox.Abstractions.BrowserSessionConfig
+Kun.Sandbox.Abstractions.BrowserSessionConfig.BrowserSessionConfig() -> void
+Kun.Sandbox.Abstractions.BrowserSessionConfig.Enabled.get -> bool
+Kun.Sandbox.Abstractions.BrowserSessionConfig.Enabled.init -> void
+Kun.Sandbox.Abstractions.BrowserSessionConfig.ResumeSessionId.get -> string?
+Kun.Sandbox.Abstractions.BrowserSessionConfig.ResumeSessionId.init -> void
+Kun.Sandbox.Abstractions.FileEntry
+Kun.Sandbox.Abstractions.FileEntry.FileEntry() -> void
+Kun.Sandbox.Abstractions.FileEntry.ModifiedAt.get -> System.DateTimeOffset?
+Kun.Sandbox.Abstractions.FileEntry.ModifiedAt.init -> void
+Kun.Sandbox.Abstractions.FileEntry.Path.get -> string!
+Kun.Sandbox.Abstractions.FileEntry.Path.init -> void
+Kun.Sandbox.Abstractions.FileEntry.SizeBytes.get -> long
+Kun.Sandbox.Abstractions.FileEntry.SizeBytes.init -> void
+Kun.Sandbox.Abstractions.FileEntry.Type.get -> string!
+Kun.Sandbox.Abstractions.FileEntry.Type.init -> void
+Kun.Sandbox.Abstractions.IFiles
+Kun.Sandbox.Abstractions.IFiles.DeleteAsync(string! path, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Sandbox.Abstractions.IFiles.ListAsync(string! path, bool recursive = false, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Kun.Sandbox.Abstractions.FileEntry!>!>!
+Kun.Sandbox.Abstractions.IFiles.ReadAsync(string! path, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<byte[]!>!
+Kun.Sandbox.Abstractions.IFiles.WriteAsync(string! path, byte[]! content, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Sandbox.Abstractions.IProcesses
+Kun.Sandbox.Abstractions.IProcesses.RunAsync(string! command, Kun.Sandbox.Abstractions.ProcessRunOptions? options = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Sandbox.Abstractions.ProcessResult!>!
+Kun.Sandbox.Abstractions.IProcesses.RunAsync(string![]! command, Kun.Sandbox.Abstractions.ProcessRunOptions? options = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Sandbox.Abstractions.ProcessResult!>!
+Kun.Sandbox.Abstractions.ISandboxHandle
+Kun.Sandbox.Abstractions.ISandboxHandle.EndAt.get -> System.DateTimeOffset
+Kun.Sandbox.Abstractions.ISandboxHandle.Files.get -> Kun.Sandbox.Abstractions.IFiles!
+Kun.Sandbox.Abstractions.ISandboxHandle.KillAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Sandbox.Abstractions.ISandboxHandle.Processes.get -> Kun.Sandbox.Abstractions.IProcesses!
+Kun.Sandbox.Abstractions.ISandboxHandle.SandboxId.get -> string!
+Kun.Sandbox.Abstractions.ISandboxHandle.StartedAt.get -> System.DateTimeOffset
+Kun.Sandbox.Abstractions.ISandboxHandle.State.get -> Kun.Sandbox.Abstractions.SandboxState
+Kun.Sandbox.Abstractions.ISandboxHandle.TemplateId.get -> string!
+Kun.Sandbox.Abstractions.ISandboxProvider
+Kun.Sandbox.Abstractions.ISandboxProvider.CreateAsync(Kun.Sandbox.Abstractions.SandboxCreateOptions! options, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Sandbox.Abstractions.ISandboxHandle!>!
+Kun.Sandbox.Abstractions.NeuroagentSandboxExtension
+Kun.Sandbox.Abstractions.NeuroagentSandboxExtension.Browser.get -> Kun.Sandbox.Abstractions.BrowserSessionConfig?
+Kun.Sandbox.Abstractions.NeuroagentSandboxExtension.Browser.init -> void
+Kun.Sandbox.Abstractions.NeuroagentSandboxExtension.MaxCommands.get -> int?
+Kun.Sandbox.Abstractions.NeuroagentSandboxExtension.MaxCommands.init -> void
+Kun.Sandbox.Abstractions.NeuroagentSandboxExtension.NetworkPolicy.get -> string?
+Kun.Sandbox.Abstractions.NeuroagentSandboxExtension.NetworkPolicy.init -> void
+Kun.Sandbox.Abstractions.NeuroagentSandboxExtension.NeuroagentSandboxExtension() -> void
+Kun.Sandbox.Abstractions.NeuroagentSandboxExtension.SecretScope.get -> Kun.Sandbox.Abstractions.SecretScopeConfig?
+Kun.Sandbox.Abstractions.NeuroagentSandboxExtension.SecretScope.init -> void
+Kun.Sandbox.Abstractions.ProcessResult
+Kun.Sandbox.Abstractions.ProcessResult.DurationMs.get -> long
+Kun.Sandbox.Abstractions.ProcessResult.DurationMs.init -> void
+Kun.Sandbox.Abstractions.ProcessResult.ExitCode.get -> int
+Kun.Sandbox.Abstractions.ProcessResult.ExitCode.init -> void
+Kun.Sandbox.Abstractions.ProcessResult.ProcessId.get -> string!
+Kun.Sandbox.Abstractions.ProcessResult.ProcessId.init -> void
+Kun.Sandbox.Abstractions.ProcessResult.ProcessResult() -> void
+Kun.Sandbox.Abstractions.ProcessResult.Stderr.get -> string!
+Kun.Sandbox.Abstractions.ProcessResult.Stderr.init -> void
+Kun.Sandbox.Abstractions.ProcessResult.Stdout.get -> string!
+Kun.Sandbox.Abstractions.ProcessResult.Stdout.init -> void
+Kun.Sandbox.Abstractions.ProcessResult.Truncated.get -> bool
+Kun.Sandbox.Abstractions.ProcessResult.Truncated.init -> void
+Kun.Sandbox.Abstractions.ProcessRunOptions
+Kun.Sandbox.Abstractions.ProcessRunOptions.Background.get -> bool
+Kun.Sandbox.Abstractions.ProcessRunOptions.Background.init -> void
+Kun.Sandbox.Abstractions.ProcessRunOptions.Cwd.get -> string?
+Kun.Sandbox.Abstractions.ProcessRunOptions.Cwd.init -> void
+Kun.Sandbox.Abstractions.ProcessRunOptions.Envs.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>?
+Kun.Sandbox.Abstractions.ProcessRunOptions.Envs.init -> void
+Kun.Sandbox.Abstractions.ProcessRunOptions.ProcessRunOptions() -> void
+Kun.Sandbox.Abstractions.ProcessRunOptions.Stdin.get -> string?
+Kun.Sandbox.Abstractions.ProcessRunOptions.Stdin.init -> void
+Kun.Sandbox.Abstractions.ProcessRunOptions.TimeoutMs.get -> int?
+Kun.Sandbox.Abstractions.ProcessRunOptions.TimeoutMs.init -> void
+Kun.Sandbox.Abstractions.SandboxCreateOptions
+Kun.Sandbox.Abstractions.SandboxCreateOptions.CpuCount.get -> int
+Kun.Sandbox.Abstractions.SandboxCreateOptions.CpuCount.init -> void
+Kun.Sandbox.Abstractions.SandboxCreateOptions.DiskMB.get -> int?
+Kun.Sandbox.Abstractions.SandboxCreateOptions.DiskMB.init -> void
+Kun.Sandbox.Abstractions.SandboxCreateOptions.Envs.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>?
+Kun.Sandbox.Abstractions.SandboxCreateOptions.Envs.init -> void
+Kun.Sandbox.Abstractions.SandboxCreateOptions.MemoryMB.get -> int
+Kun.Sandbox.Abstractions.SandboxCreateOptions.MemoryMB.init -> void
+Kun.Sandbox.Abstractions.SandboxCreateOptions.Metadata.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>?
+Kun.Sandbox.Abstractions.SandboxCreateOptions.Metadata.init -> void
+Kun.Sandbox.Abstractions.SandboxCreateOptions.NeuroagentExtension.get -> Kun.Sandbox.Abstractions.NeuroagentSandboxExtension?
+Kun.Sandbox.Abstractions.SandboxCreateOptions.NeuroagentExtension.init -> void
+Kun.Sandbox.Abstractions.SandboxCreateOptions.SandboxCreateOptions() -> void
+Kun.Sandbox.Abstractions.SandboxCreateOptions.TemplateId.get -> string!
+Kun.Sandbox.Abstractions.SandboxCreateOptions.TemplateId.init -> void
+Kun.Sandbox.Abstractions.SandboxCreateOptions.TimeoutMs.get -> int
+Kun.Sandbox.Abstractions.SandboxCreateOptions.TimeoutMs.init -> void
+Kun.Sandbox.Abstractions.SandboxState
+Kun.Sandbox.Abstractions.SandboxState.Creating = 1 -> Kun.Sandbox.Abstractions.SandboxState
+Kun.Sandbox.Abstractions.SandboxState.Failed = 4 -> Kun.Sandbox.Abstractions.SandboxState
+Kun.Sandbox.Abstractions.SandboxState.Killed = 3 -> Kun.Sandbox.Abstractions.SandboxState
+Kun.Sandbox.Abstractions.SandboxState.Running = 2 -> Kun.Sandbox.Abstractions.SandboxState
+Kun.Sandbox.Abstractions.SandboxState.TimedOut = 5 -> Kun.Sandbox.Abstractions.SandboxState
+Kun.Sandbox.Abstractions.SandboxState.Unknown = 0 -> Kun.Sandbox.Abstractions.SandboxState
+Kun.Sandbox.Abstractions.SecretScopeConfig
+Kun.Sandbox.Abstractions.SecretScopeConfig.Scopes.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Kun.Sandbox.Abstractions.SecretScopeConfig.Scopes.init -> void
+Kun.Sandbox.Abstractions.SecretScopeConfig.SecretScopeConfig() -> void
+Kun.Sandbox.Extensions.KunSandboxOptions
+Kun.Sandbox.Extensions.KunSandboxOptions.KunSandboxOptions() -> void
+Kun.Sandbox.Extensions.KunSandboxOptions.UseE2BCloud(string! apiKey, string! teamId) -> Kun.Sandbox.Extensions.KunSandboxOptions!
+Kun.Sandbox.Extensions.KunSandboxOptions.UseInMemory(System.Func<System.Collections.Generic.IReadOnlyList<string!>!, Kun.Sandbox.Abstractions.ProcessRunOptions?, Kun.Sandbox.Abstractions.ProcessResult!>? runScript = null) -> Kun.Sandbox.Extensions.KunSandboxOptions!
+Kun.Sandbox.Extensions.KunSandboxOptions.UseSupervisor(System.Uri! baseUrl, System.Security.Cryptography.X509Certificates.X509Certificate2? clientCertificate = null, System.Action<System.Net.Http.HttpClient!>? configureClient = null) -> Kun.Sandbox.Extensions.KunSandboxOptions!
+Kun.Sandbox.Extensions.KunSandboxServiceCollectionExtensions
+Kun.Sandbox.Implementations.E2BCloudSandboxProvider
+Kun.Sandbox.Implementations.E2BCloudSandboxProvider.ApiKey.get -> string!
+Kun.Sandbox.Implementations.E2BCloudSandboxProvider.CreateAsync(Kun.Sandbox.Abstractions.SandboxCreateOptions! options, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Sandbox.Abstractions.ISandboxHandle!>!
+Kun.Sandbox.Implementations.E2BCloudSandboxProvider.E2BCloudSandboxProvider(string! apiKey, string! teamId) -> void
+Kun.Sandbox.Implementations.E2BCloudSandboxProvider.TeamId.get -> string!
+Kun.Sandbox.Implementations.InMemorySandboxProvider
+Kun.Sandbox.Implementations.InMemorySandboxProvider.CreateAsync(Kun.Sandbox.Abstractions.SandboxCreateOptions! options, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Sandbox.Abstractions.ISandboxHandle!>!
+Kun.Sandbox.Implementations.InMemorySandboxProvider.InMemorySandboxProvider() -> void
+Kun.Sandbox.Implementations.InMemorySandboxProvider.InMemorySandboxProvider(System.Func<System.Collections.Generic.IReadOnlyList<string!>!, Kun.Sandbox.Abstractions.ProcessRunOptions?, Kun.Sandbox.Abstractions.ProcessResult!>? runScript) -> void
+Kun.Sandbox.Implementations.SupervisorSandboxProvider
+Kun.Sandbox.Implementations.SupervisorSandboxProvider.CreateAsync(Kun.Sandbox.Abstractions.SandboxCreateOptions! options, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Sandbox.Abstractions.ISandboxHandle!>!
+Kun.Sandbox.Implementations.SupervisorSandboxProvider.SupervisorSandboxProvider(System.Net.Http.HttpClient! httpClient) -> void
+static Kun.Sandbox.Extensions.KunSandboxServiceCollectionExtensions.AddKunSandbox(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.Sandbox.Extensions.KunSandboxOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!

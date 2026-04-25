@@ -33,6 +33,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Publishing API with non-AOT-compatible patterns in an `IsAotCandidate=true` module without updating the csproj flag and justifying in the PR.
 - Inventing a new cross-cutting concern (auth / audit / multi-tenancy / eventbus) without an ADR in `docs/architecture/`.
 - Committing without running `dotnet format --verify-no-changes` locally — CI enforces this.
+- **Committing or pushing directly to `main`** — all work flows through `develop` via PR. See §Branch workflow below.
 
 **Task-dispatch contract** (for the main coordinator dispatching to `claude-kun`):
 
@@ -124,6 +125,8 @@ In `Kun.EntityFrameworkCore`'s `UnitOfWork.SaveChangesAsync`:
 
 Consumers are wrapped in `IdempotentConsumerDecorator<T>` backed by `IProcessedMessageStore` (Redis `SETNX + EX` by default). Delivery is at-least-once — consumer handlers must be safe to call repeatedly.
 
+> **Design rationale** (type surface, publisher pump, rejected alternatives): see [ADR-015 Outbox pattern design](./docs/architecture/ADR-015-Outbox-pattern.md). The rules above are normative; the ADR explains *why*.
+
 ### Saga: Orchestration only
 
 `Kun.Saga` is Orchestration (central coordinator), not Choreography. An `ISaga<TContext>` is an ordered list of `ISagaStep<TContext>` with `ExecuteAsync` and `CompensateAsync`. The orchestrator persists `SagaInstance` + enqueues the first step in the same EF transaction as the triggering command. Step execution and compensation run off a background executor driven by the Outbox. Compensation runs **in reverse order from the failed step** and must itself be idempotent (steps that never ran must still be safe to compensate).
@@ -179,6 +182,19 @@ Downstream services must extract identity (`sub`, `tenant_id`) from the S2S JWT 
 
 Conventional Commits: `<type>(<scope>): <subject>`. Scope is the module name without the `Kun.` prefix (`mediator`, `saga`, `eventbus`, `security`, `gateway`, etc.). Example: `feat(saga): add timeout detection background service`.
 
+## Branch workflow (hard rule)
+
+**`main` is never the development branch. Nobody commits or pushes to `main` directly — no exceptions, no "small docs fix", no "just one commit".** All work flows through `develop`:
+
+1. Cut a feature branch **from `develop`** (naming: `feat/xxx` / `fix/xxx` / `docs/xxx` / `chore/xxx`).
+2. Develop and commit on the feature branch.
+3. Open a PR **into `develop`**. CI must be green and at least one maintainer must approve before merge.
+4. `develop → main` happens **only at release time**, via a dedicated release PR — not as an ongoing workflow.
+
+Rationale: downstream consumers (`neuroagent-csharp` and others) treat `main` as the stable integration anchor. Direct commits to `main` create the divergence class of problems and break downstream rebase/cherry-pick workflows. Enforcement target (P2 task): GitHub branch protection on `main` with PR-required + status-checks-required.
+
+Agent-specific: if `git status` at session start shows you on `main`, your first action is `git checkout develop && git pull && git checkout -b feat/<task>`. Never `git commit` while `git branch --show-current` reports `main`.
+
 ## Release & versioning policy
 
 Tag suffix is bound to the branch — the `Release` workflow (`.github/workflows/release.yml`) rejects mismatches:
@@ -186,4 +202,4 @@ Tag suffix is bound to the branch — the `Release` workflow (`.github/workflows
 - `main` → stable, **no suffix** (`v0.2.0`)
 - `develop` → prerelease, **`-beta` suffix** (`v0.2.0-beta`)
 
-Cut stable releases by merging `develop → main` first, then tagging from `main`. Do not re-tag a `-beta` commit as stable — tag the merge commit on `main`. See `CONTRIBUTING.md` §发布与版本规范 for details.
+Cut stable releases by merging `develop → main` first (release PR), then tagging from `main`. Do not re-tag a `-beta` commit as stable — tag the merge commit on `main`. See `CONTRIBUTING.md` §发布与版本规范 for details.

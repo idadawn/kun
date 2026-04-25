@@ -1,0 +1,67 @@
+name: Benchmarks
+
+# Run the BenchmarkDotNet microbenchmarks on a weekly schedule plus any PR that
+# carries the "benchmarks" label. Results are uploaded as build artifacts so
+# reviewers can diff allocation / Mean without running benchmarks locally.
+#
+# Intentionally NOT on every push to develop/main — benchmarks take several
+# minutes, dominate CI queue time, and are signal rather than gate. See the
+# methodology doc at docs/benchmarks/grpc-aot.md.
+
+on:
+  schedule:
+    # Mondays 06:00 UTC.
+    - cron: '0 6 * * 1'
+  pull_request:
+    types: [labeled, synchronize]
+  workflow_dispatch:
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  run-benchmarks:
+    name: BenchmarkDotNet (${{ matrix.runtime }})
+    # Only run on PRs if they carry the "benchmarks" label. Weekly cron +
+    # manual dispatch always run. Prevents accidental CI thrash.
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'benchmarks')
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        runtime: [jit]
+        # Part 2 follow-up (tracked in docs/benchmarks/grpc-aot.md): add 'aot'
+        # to the matrix once the AOT-publish variant of Kun.Benchmarks.Grpc is
+        # ready. Requires a duplicate csproj with <PublishAot>true</PublishAot>
+        # or a conditional property in the existing one.
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore benchmarks project
+        run: dotnet restore benchmarks/Kun.Benchmarks.Grpc
+
+      - name: Build benchmarks project
+        run: dotnet build benchmarks/Kun.Benchmarks.Grpc -c Release --no-restore
+
+      - name: Run benchmarks
+        working-directory: benchmarks/Kun.Benchmarks.Grpc
+        # --filter "*" runs all benchmarks. BenchmarkDotNet writes
+        # BenchmarkDotNet.Artifacts/results/ with .html, .md, .csv outputs.
+        run: dotnet run -c Release --no-build -- --filter '*' --exporters json markdown
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmarks-${{ matrix.runtime }}-${{ github.run_number }}
+          path: benchmarks/Kun.Benchmarks.Grpc/BenchmarkDotNet.Artifacts/**
+          if-no-files-found: warn
+          retention-days: 30

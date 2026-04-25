@@ -27,14 +27,34 @@ Closes #
 
 ## Self-Review Checklist
 
+### Build & test
+
 - [ ] `dotnet build -c Release /warnaserror` passes locally
 - [ ] `dotnet test -c Release` is fully green
+- [ ] New behavior covered by unit tests; integration tests added if infra (EF / RabbitMQ / Redis) is involved
+
+### Framework conventions
+
+- [ ] Follows four-layer dependency rules (Core → Abstraction → Infrastructure → Host); see `CLAUDE.md`
+- [ ] `Kun.Core` still has no third-party `PackageReference` (`scripts/check-layering.sh` passes)
+- [ ] New public API has XML doc comments; `PublicAPI.Unshipped.txt` updated for any shipped module
+
+### AOT hygiene
+
 - [ ] AOT-candidate modules: `dotnet publish -p:PublishAot=true /warnaserror` zero warnings
-- [ ] Follows four-layer dependency rules (see `CLAUDE.md`)
-- [ ] New public API has XML doc comments
-- [ ] Integration events have a stable event ID registered in `IEventTypeRegistry`
-- [ ] New behavior covered by unit tests; integration tests added if infra is involved
+- [ ] New module: `<IsAotCandidate>` is declared explicitly (true or false); `.github/workflows/ci.yml` `aot-audit` matrix updated if needed
+- [ ] Flipping a module's AOT status: `docs/architecture/AOT-audit-2026-04-23.md` and `docs/architecture/module-map.md` are both updated
+
+### Events & sagas
+
+- [ ] Integration events have a stable event ID registered in `IEventTypeRegistry` (format `{context}.{name}.v{version}`)
+- [ ] New sagas: compensation order documented + timeout value justified
+
+### Docs
+
 - [ ] `CHANGELOG.md` `[Unreleased]` section updated if this is a user-facing change
+- [ ] Adding / renaming a module: `docs/architecture/module-map.md` Phase 1 matrix + top-level `README.md` 📦 模块矩阵 refreshed
+- [ ] Cross-cutting decision: a new `docs/architecture/ADR-*.md` exists (and is linked from `docs/whitepaper.md` §13 for Phase 1-era ADRs)
 
 ## Testing Notes
 

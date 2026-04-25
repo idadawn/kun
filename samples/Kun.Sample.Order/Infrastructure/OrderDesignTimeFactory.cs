@@ -1,4 +1,5 @@
 using Kun.Core.MultiTenancy;
+using Kun.EntityFrameworkCore.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
@@ -15,6 +16,7 @@ internal sealed class OrderDesignTimeFactory : IDesignTimeDbContextFactory<Order
     {
         var options = new DbContextOptionsBuilder<OrderDbContext>()
             .UseNpgsql("Host=localhost;Database=order_design;Username=postgres;Password=postgres")
+            .UseKunSchema("order")
             .Options;
 
         return new OrderDbContext(options, NullTenantContext.Instance);

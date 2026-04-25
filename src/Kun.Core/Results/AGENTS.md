@@ -30,7 +30,7 @@ Unit tests live in `tests/Kun.Core.Tests`. Cover: construction invariants (succe
 
 ### Common Patterns
 
-- Handler style:
+- Handler style (without extensions — still valid for simple cases):
   ```csharp
   var order = await _repo.GetByIdAsync(cmd.OrderId);
   if (order is null) return Error.NotFound("order.notFound", "Order not found");
@@ -38,6 +38,47 @@ Unit tests live in `tests/Kun.Core.Tests`. Cover: construction invariants (succe
   await _uow.SaveChangesAsync(ct);
   return Result.Ok();
   ```
+
+- Railway composition via the ADR-011 extensions. Use `Map` / `Bind` /
+  `Tap` / `Ensure` / `Match` (and their `*Async` counterparts on
+  `Task<Result<T>>` / `ValueTask<Result<T>>` sources) when a handler
+  has 2+ sequential steps with short-circuit semantics. Failure
+  inputs bypass the delegate; the carried `Error` is preserved.
+  ```csharp
+  // Multi-step async handler using the Task<Result<T>> extensions.
+  return await _users.GetAsync(cmd.UserId, ct)              // Task<Result<User>>
+      .EnsureAsync(u => u.IsActive, Error.Forbidden("user.inactive", "…"))
+      .BindAsync((u, c) => _policy.EvaluateAsync(u, c), ct) // Task<Result<Policy>>
+      .MapAsync(p => new SessionDto(p.Scope));              // Task<Result<SessionDto>>
+  ```
+
+- Side-effects (logging, metrics) go through `Tap` / `TapAsync` —
+  they return the input unchanged so the chain continues:
+  ```csharp
+  return Result<int>.Ok(42)
+      .Tap(v => _logger.LogInformation("produced {Value}", v))
+      .Map(v => v * 2);
+  ```
+
+- `Match` / `MatchAsync` are terminal folds — return a single value
+  for both branches (e.g. mapping to `IResult` at a Minimal API
+  boundary):
+  ```csharp
+  return await command.HandleAsync(ct).MatchAsync(
+      onSuccess: () => Results.Ok(),
+      onFailure: err => Results.BadRequest(err.Code));
+  ```
+
+- **`CancellationToken` is required on async-delegate variants.** Pass
+  `default` or `CancellationToken.None` if you truly have no token to
+  forward. See ADR-011 §CancellationToken semantics for the RS0026
+  rationale.
+
+- **Pick the right source type**: `Task<Result<T>>` is the standard;
+  `ValueTask<Result<T>>` is for hot-path Mediator handlers / Saga
+  step executors that want to avoid `Task` heap allocation. The two
+  extension families are **not interchangeable** — you cannot mix
+  `.TaskResultExtensions.MapAsync` against a `ValueTask<…>` source.
 
 ## Dependencies
 

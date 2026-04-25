@@ -17,6 +17,7 @@ namespace Kun.Sample.Catalog.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
+                .HasDefaultSchema("catalog")
                 .HasAnnotation("ProductVersion", "10.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
@@ -70,7 +71,7 @@ namespace Kun.Sample.Catalog.Infrastructure.Migrations
                     b.HasIndex("Status", "OccurredAt")
                         .HasDatabaseName("IX_outbox_messages_status_occurredAt");
 
-                    b.ToTable("outbox_messages", (string)null);
+                    b.ToTable("outbox_messages", "catalog");
                 });
 
             modelBuilder.Entity("Kun.Sample.Catalog.Domain.Product", b =>
@@ -124,7 +125,7 @@ namespace Kun.Sample.Catalog.Infrastructure.Migrations
                     b.HasIndex("IsDeleted")
                         .HasDatabaseName("IX_catalog_products_is_deleted");
 
-                    b.ToTable("catalog_products", (string)null);
+                    b.ToTable("catalog_products", "catalog");
                 });
 #pragma warning restore 612, 618
         }

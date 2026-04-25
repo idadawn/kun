@@ -19,6 +19,9 @@ public sealed class CatalogDbContext : KunDbContext
     }
 
     /// <inheritdoc/>
+    protected override string? DefaultSchema => "catalog";
+
+    /// <inheritdoc/>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

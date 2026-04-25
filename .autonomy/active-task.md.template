@@ -1,0 +1,75 @@
+<!-- COPY TO active-task.md AND FILL IN. -->
+<!-- Delete comment-only lines once committed to reduce noise. -->
+
+---
+id: KN-SELF-XXX
+title: <short imperative title>
+status: in-flight           # in-flight | paused | done
+planner_commit: <SHA of the plan(autonomy): pick commit — fill after commit>
+executor_head: <SHA of latest executor commit — update as work progresses>
+estimated_commits: <n>      # target 5–9
+started: YYYY-MM-DD
+---
+
+# KN-SELF-XXX — <title>
+
+## Why
+
+<1–3 sentences. What hurts today, who feels the pain, why now. Cite the
+BACKLOG rationale verbatim if unchanged.>
+
+## Specs to read first (non-negotiable)
+
+Required by `kun/CLAUDE.md` §Specs-first. Read each before coding:
+
+1. `kun/CLAUDE.md` — §Specs-first + §Architectural constraints
+2. `kun/AGENTS.md`
+3. `kun/CONTRIBUTING.md` — commit + PR convention
+4. `kun/docs/architecture/<relevant ADRs>.md`
+5. `kun/docs/guides/<relevant guides>.md` (if any)
+6. `kun/src/<module>/AGENTS.md` for every module you will touch
+7. `kun/tests/<module>.Tests/AGENTS.md` if adding tests
+8. `kun/Directory.Build.props` + `kun/Directory.Packages.props` + `kun/global.json`
+9. Relevant existing sample(s) under `kun/samples/`
+
+## Acceptance criteria
+
+List 3–10 AC. Each AC should map to roughly one commit (splits allowed
+if an AC is large). Number them so commit subjects can reference AC-N.
+
+- **AC-1**: <…>
+- **AC-2**: <…>
+- **AC-3**: <…>
+- **AC-4**: <…>
+- **AC-5**: <…>
+
+## Commit plan
+
+| # | Commit subject (Conventional Commits) | AC | Notes |
+|---|---------------------------------------|----|-------|
+| 1 | `docs(<scope>): …`                    | AC-1 | ADR-first if behavior-changing |
+| 2 | `feat(<scope>): …`                    | AC-2 | |
+| 3 | `feat(<scope>): …`                    | AC-3 | |
+| 4 | `test(<scope>): …`                    | AC-4 | |
+| 5 | `docs(<scope>): …`                    | AC-5 | CHANGELOG + PublicAPI.Unshipped |
+
+## AOT / build gates that must stay green
+
+- [ ] `dotnet format --verify-no-changes`
+- [ ] `dotnet build Kun.sln -c Release -p:TreatWarningsAsErrors=true` (0 errors)
+- [ ] `dotnet test -c Release --no-build` (green or Assert.Skip for Docker-gated)
+- [ ] `dotnet publish <AOT-candidate touched> -c Release -p:PublishAot=true /warnaserror` (if applicable)
+- [ ] `PublicAPI.Unshipped.txt` updated (if public API changed)
+- [ ] `CHANGELOG.md [Unreleased]` updated (if behavior-visible)
+
+## Progress log
+
+<Append short lines as you land commits. Format:>
+- 2026-04-XX <SHA> AC-N — <one-line note>
+
+## When done
+
+1. Set `status: done` and `executor_head` to the final commit SHA.
+2. Move the BACKLOG entry to `## Done` with SHA + date.
+3. `echo "KN-SELF-XXX done (<final SHA>) — <summary>" > /home/dawn/project/neuroagent/.omc/state/kun_done.txt`
+4. Return to 角色1 and pick the next BACKLOG item.

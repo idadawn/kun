@@ -301,7 +301,7 @@ public sealed partial class LocalFileStorage : IFileStorage
         return RandomNumberGenerator.GetBytes(32);
     }
 
-    private async Task<ObjectMetadata> LoadMetadataAsync(string fullPath, CancellationToken ct)
+    private static async Task<ObjectMetadata> LoadMetadataAsync(string fullPath, CancellationToken ct)
     {
         var sidecar = fullPath + SidecarSuffix;
         var info = new FileInfo(fullPath);

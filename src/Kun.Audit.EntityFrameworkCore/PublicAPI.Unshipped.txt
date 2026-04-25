@@ -1,0 +1,16 @@
+#nullable enable
+Kun.Audit.EntityFrameworkCore.AuditLogConfiguration
+Kun.Audit.EntityFrameworkCore.AuditLogConfiguration.AuditLogConfiguration() -> void
+Kun.Audit.EntityFrameworkCore.AuditLogConfiguration.Configure(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Kun.Audit.AuditLog!>! builder) -> void
+Kun.Audit.EntityFrameworkCore.AuditSaveChangesInterceptor
+Kun.Audit.EntityFrameworkCore.AuditSaveChangesInterceptor.AuditSaveChangesInterceptor(Kun.Audit.Abstractions.IAuditWriter! writer, Kun.Core.MultiTenancy.ITenantContext! tenantContext, Kun.Core.Security.ICurrentUser! currentUser, Kun.Core.Time.ISystemClock! clock, Microsoft.Extensions.Options.IOptions<Kun.Audit.DependencyInjection.KunAuditOptions!>! options, Microsoft.Extensions.Logging.ILogger<Kun.Audit.EntityFrameworkCore.AuditSaveChangesInterceptor!>! logger) -> void
+Kun.Audit.EntityFrameworkCore.DependencyInjection.KunAuditEntityFrameworkCoreServiceCollectionExtensions
+Kun.Audit.EntityFrameworkCore.EfAuditWriter<TDbContext>
+Kun.Audit.EntityFrameworkCore.EfAuditWriter<TDbContext>.EfAuditWriter(TDbContext! dbContext) -> void
+Kun.Audit.EntityFrameworkCore.EfAuditWriter<TDbContext>.WriteAsync(Kun.Audit.AuditLog! entry, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+override Kun.Audit.EntityFrameworkCore.AuditSaveChangesInterceptor.SaveChangesFailed(Microsoft.EntityFrameworkCore.Diagnostics.DbContextErrorEventData! eventData) -> void
+override Kun.Audit.EntityFrameworkCore.AuditSaveChangesInterceptor.SaveChangesFailedAsync(Microsoft.EntityFrameworkCore.Diagnostics.DbContextErrorEventData! eventData, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+override Kun.Audit.EntityFrameworkCore.AuditSaveChangesInterceptor.SavedChangesAsync(Microsoft.EntityFrameworkCore.Diagnostics.SaveChangesCompletedEventData! eventData, int result, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<int>
+override Kun.Audit.EntityFrameworkCore.AuditSaveChangesInterceptor.SavingChangesAsync(Microsoft.EntityFrameworkCore.Diagnostics.DbContextEventData! eventData, Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult<int> result, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult<int>>
+static Kun.Audit.EntityFrameworkCore.DependencyInjection.KunAuditEntityFrameworkCoreServiceCollectionExtensions.AddKunAuditEntityFrameworkCore(this Kun.Audit.DependencyInjection.KunAuditBuilder! builder) -> Kun.Audit.DependencyInjection.KunAuditBuilder!
+static Kun.Audit.EntityFrameworkCore.DependencyInjection.KunAuditEntityFrameworkCoreServiceCollectionExtensions.UseEntityFramework<TDbContext>(this Kun.Audit.DependencyInjection.KunAuditBuilder! builder) -> Kun.Audit.DependencyInjection.KunAuditBuilder!

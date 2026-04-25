@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsAotCandidate>false</IsAotCandidate>
+    <IsPackable>false</IsPackable>
+    <HasPublicApi>false</HasPublicApi>
+    <!-- BenchmarkDotNet conventions: benchmarks are instance methods even when they
+         don't touch instance state (runner uses a single instance per benchmark),
+         and benchmark classes don't need XML docs on every method. -->
+    <NoWarn>$(NoWarn);CA1822;CS1591</NoWarn>
+    <Description>Kun Framework — BenchmarkDotNet microbenchmarks for Kun.Grpc interceptor hot paths.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Kun.Core\Kun.Core.csproj" />
+    <ProjectReference Include="..\..\src\Kun.Grpc\Kun.Grpc.csproj" />
+    <PackageReference Include="BenchmarkDotNet" />
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Grpc.AspNetCore" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,164 @@
+#nullable enable
+Kun.Identity.Abstractions.IAuthenticatedUser
+Kun.Identity.Abstractions.IAuthenticatedUser.Email.get -> string?
+Kun.Identity.Abstractions.IAuthenticatedUser.Name.get -> string?
+Kun.Identity.Abstractions.IAuthenticatedUser.Principal.get -> System.Security.Claims.ClaimsPrincipal?
+Kun.Identity.Abstractions.IAuthenticatedUser.TenantId.get -> string?
+Kun.Identity.Abstractions.IJwtIssuer
+Kun.Identity.Abstractions.IJwtIssuer.Issue(System.Collections.Generic.IEnumerable<System.Security.Claims.Claim!>! claims, System.TimeSpan? lifetime = null) -> string!
+Kun.Identity.Abstractions.IJwtValidator
+Kun.Identity.Abstractions.IJwtValidator.ValidateAsync(string! token, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Security.Claims.ClaimsPrincipal?>!
+Kun.Identity.Abstractions.IOidcClient
+Kun.Identity.Abstractions.IOidcClient.DiscoverAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Identity.Abstractions.OidcConfiguration!>!
+Kun.Identity.Abstractions.IOidcClient.ExchangeCodeAsync(string! code, string! redirectUri, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Identity.Abstractions.OidcTokenResponse!>!
+Kun.Identity.Abstractions.IOidcClient.Name.get -> string!
+Kun.Identity.Abstractions.OidcConfiguration
+Kun.Identity.Abstractions.OidcConfiguration.AuthorizationEndpoint.get -> string!
+Kun.Identity.Abstractions.OidcConfiguration.AuthorizationEndpoint.init -> void
+Kun.Identity.Abstractions.OidcConfiguration.Issuer.get -> string!
+Kun.Identity.Abstractions.OidcConfiguration.Issuer.init -> void
+Kun.Identity.Abstractions.OidcConfiguration.JwksUri.get -> string!
+Kun.Identity.Abstractions.OidcConfiguration.JwksUri.init -> void
+Kun.Identity.Abstractions.OidcConfiguration.OidcConfiguration(string! Issuer, string! AuthorizationEndpoint, string! TokenEndpoint, string? UserInfoEndpoint, string! JwksUri) -> void
+Kun.Identity.Abstractions.OidcConfiguration.TokenEndpoint.get -> string!
+Kun.Identity.Abstractions.OidcConfiguration.TokenEndpoint.init -> void
+Kun.Identity.Abstractions.OidcConfiguration.UserInfoEndpoint.get -> string?
+Kun.Identity.Abstractions.OidcConfiguration.UserInfoEndpoint.init -> void
+Kun.Identity.Abstractions.OidcTokenResponse
+Kun.Identity.Abstractions.OidcTokenResponse.AccessToken.get -> string!
+Kun.Identity.Abstractions.OidcTokenResponse.AccessToken.init -> void
+Kun.Identity.Abstractions.OidcTokenResponse.ExpiresIn.get -> int
+Kun.Identity.Abstractions.OidcTokenResponse.ExpiresIn.init -> void
+Kun.Identity.Abstractions.OidcTokenResponse.IdToken.get -> string?
+Kun.Identity.Abstractions.OidcTokenResponse.IdToken.init -> void
+Kun.Identity.Abstractions.OidcTokenResponse.OidcTokenResponse(string! AccessToken, string? IdToken, string? RefreshToken, string! TokenType, int ExpiresIn) -> void
+Kun.Identity.Abstractions.OidcTokenResponse.RefreshToken.get -> string?
+Kun.Identity.Abstractions.OidcTokenResponse.RefreshToken.init -> void
+Kun.Identity.Abstractions.OidcTokenResponse.TokenType.get -> string!
+Kun.Identity.Abstractions.OidcTokenResponse.TokenType.init -> void
+Kun.Identity.Abstractions.Session.ISessionStore
+Kun.Identity.Abstractions.Session.ISessionStore.DeleteAsync(string! sessionId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Identity.Abstractions.Session.ISessionStore.GetAsync(string! sessionId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Identity.Abstractions.Session.SessionData?>!
+Kun.Identity.Abstractions.Session.ISessionStore.SetAsync(string! sessionId, Kun.Identity.Abstractions.Session.SessionData! data, System.TimeSpan ttl, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Identity.Abstractions.Session.SessionData
+Kun.Identity.Abstractions.Session.SessionData.AccessToken.get -> string!
+Kun.Identity.Abstractions.Session.SessionData.AccessToken.init -> void
+Kun.Identity.Abstractions.Session.SessionData.Email.get -> string?
+Kun.Identity.Abstractions.Session.SessionData.Email.init -> void
+Kun.Identity.Abstractions.Session.SessionData.ExpiresAt.get -> System.DateTimeOffset
+Kun.Identity.Abstractions.Session.SessionData.ExpiresAt.init -> void
+Kun.Identity.Abstractions.Session.SessionData.Name.get -> string?
+Kun.Identity.Abstractions.Session.SessionData.Name.init -> void
+Kun.Identity.Abstractions.Session.SessionData.RefreshToken.get -> string?
+Kun.Identity.Abstractions.Session.SessionData.RefreshToken.init -> void
+Kun.Identity.Abstractions.Session.SessionData.Roles.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Kun.Identity.Abstractions.Session.SessionData.Roles.init -> void
+Kun.Identity.Abstractions.Session.SessionData.SessionData(string! UserId, string? TenantId, string? Email, string? Name, System.Collections.Generic.IReadOnlyList<string!>! Roles, string! AccessToken, string? RefreshToken, System.DateTimeOffset ExpiresAt) -> void
+Kun.Identity.Abstractions.Session.SessionData.TenantId.get -> string?
+Kun.Identity.Abstractions.Session.SessionData.TenantId.init -> void
+Kun.Identity.Abstractions.Session.SessionData.UserId.get -> string!
+Kun.Identity.Abstractions.Session.SessionData.UserId.init -> void
+Kun.Identity.Configuration.KunCookieAuthOptions
+Kun.Identity.Configuration.KunCookieAuthOptions.CookieName.get -> string!
+Kun.Identity.Configuration.KunCookieAuthOptions.CookieName.set -> void
+Kun.Identity.Configuration.KunCookieAuthOptions.Domain.get -> string?
+Kun.Identity.Configuration.KunCookieAuthOptions.Domain.set -> void
+Kun.Identity.Configuration.KunCookieAuthOptions.HttpOnly.get -> bool
+Kun.Identity.Configuration.KunCookieAuthOptions.HttpOnly.set -> void
+Kun.Identity.Configuration.KunCookieAuthOptions.KunCookieAuthOptions() -> void
+Kun.Identity.Configuration.KunCookieAuthOptions.Path.get -> string!
+Kun.Identity.Configuration.KunCookieAuthOptions.Path.set -> void
+Kun.Identity.Configuration.KunCookieAuthOptions.SameSite.get -> Kun.Identity.Configuration.KunSameSiteMode
+Kun.Identity.Configuration.KunCookieAuthOptions.SameSite.set -> void
+Kun.Identity.Configuration.KunCookieAuthOptions.Secure.get -> Kun.Identity.Configuration.KunCookieSecurePolicy
+Kun.Identity.Configuration.KunCookieAuthOptions.Secure.set -> void
+Kun.Identity.Configuration.KunCookieAuthOptions.SessionTtl.get -> System.TimeSpan
+Kun.Identity.Configuration.KunCookieAuthOptions.SessionTtl.set -> void
+Kun.Identity.Configuration.KunCookieAuthOptions.SlidingExpiration.get -> bool
+Kun.Identity.Configuration.KunCookieAuthOptions.SlidingExpiration.set -> void
+Kun.Identity.Configuration.KunCookieSecurePolicy
+Kun.Identity.Configuration.KunCookieSecurePolicy.Always = 0 -> Kun.Identity.Configuration.KunCookieSecurePolicy
+Kun.Identity.Configuration.KunCookieSecurePolicy.None = 1 -> Kun.Identity.Configuration.KunCookieSecurePolicy
+Kun.Identity.Configuration.KunCookieSecurePolicy.SameAsRequest = 2 -> Kun.Identity.Configuration.KunCookieSecurePolicy
+Kun.Identity.Configuration.KunCookieSessionBuilder
+Kun.Identity.Configuration.KunCookieSessionBuilder.KunCookieSessionBuilder(Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> void
+Kun.Identity.Configuration.KunCookieSessionBuilder.UseInMemoryStore() -> Kun.Identity.Configuration.KunCookieSessionBuilder!
+Kun.Identity.Configuration.KunCookieSessionBuilder.UseRedisStore() -> Kun.Identity.Configuration.KunCookieSessionBuilder!
+Kun.Identity.Configuration.KunIdentityBuilder
+Kun.Identity.Configuration.KunIdentityBuilder.AddCookieSession(System.Action<Kun.Identity.Configuration.KunCookieSessionBuilder!>! configure) -> Kun.Identity.Configuration.KunIdentityBuilder!
+Kun.Identity.Configuration.KunIdentityBuilder.AddJwtBearer(System.Action<Kun.Identity.Configuration.KunJwtBearerOptions!>! configure) -> Kun.Identity.Configuration.KunIdentityBuilder!
+Kun.Identity.Configuration.KunIdentityBuilder.AddOidcClient(string! name, System.Action<Kun.Identity.Configuration.KunOidcClientOptions!>! configure) -> Kun.Identity.Configuration.KunIdentityBuilder!
+Kun.Identity.Configuration.KunIdentityBuilder.AddS2SIssuer(System.Action<Kun.Identity.Configuration.KunJwtIssuerOptions!>! configure) -> Kun.Identity.Configuration.KunIdentityBuilder!
+Kun.Identity.Configuration.KunIdentityBuilder.KunIdentityBuilder(Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> void
+Kun.Identity.Configuration.KunIdentityBuilder.Services.get -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Kun.Identity.Configuration.KunJwtBearerOptions
+Kun.Identity.Configuration.KunJwtBearerOptions.Audience.get -> string!
+Kun.Identity.Configuration.KunJwtBearerOptions.Audience.set -> void
+Kun.Identity.Configuration.KunJwtBearerOptions.ClockSkew.get -> System.TimeSpan
+Kun.Identity.Configuration.KunJwtBearerOptions.ClockSkew.set -> void
+Kun.Identity.Configuration.KunJwtBearerOptions.Issuer.get -> string!
+Kun.Identity.Configuration.KunJwtBearerOptions.Issuer.set -> void
+Kun.Identity.Configuration.KunJwtBearerOptions.IssuerSigningKeys.get -> System.Collections.Generic.IList<Microsoft.IdentityModel.Tokens.SecurityKey!>!
+Kun.Identity.Configuration.KunJwtBearerOptions.JwksUri.get -> string?
+Kun.Identity.Configuration.KunJwtBearerOptions.JwksUri.set -> void
+Kun.Identity.Configuration.KunJwtBearerOptions.KunJwtBearerOptions() -> void
+Kun.Identity.Configuration.KunJwtBearerOptions.RequireExpirationTime.get -> bool
+Kun.Identity.Configuration.KunJwtBearerOptions.RequireExpirationTime.set -> void
+Kun.Identity.Configuration.KunJwtBearerOptions.ValidateSignature.get -> bool
+Kun.Identity.Configuration.KunJwtBearerOptions.ValidateSignature.set -> void
+Kun.Identity.Configuration.KunJwtIssuerOptions
+Kun.Identity.Configuration.KunJwtIssuerOptions.Algorithm.get -> string!
+Kun.Identity.Configuration.KunJwtIssuerOptions.Algorithm.set -> void
+Kun.Identity.Configuration.KunJwtIssuerOptions.Audience.get -> string!
+Kun.Identity.Configuration.KunJwtIssuerOptions.Audience.set -> void
+Kun.Identity.Configuration.KunJwtIssuerOptions.DefaultLifetime.get -> System.TimeSpan
+Kun.Identity.Configuration.KunJwtIssuerOptions.DefaultLifetime.set -> void
+Kun.Identity.Configuration.KunJwtIssuerOptions.Issuer.get -> string!
+Kun.Identity.Configuration.KunJwtIssuerOptions.Issuer.set -> void
+Kun.Identity.Configuration.KunJwtIssuerOptions.KeyId.get -> string?
+Kun.Identity.Configuration.KunJwtIssuerOptions.KeyId.set -> void
+Kun.Identity.Configuration.KunJwtIssuerOptions.KunJwtIssuerOptions() -> void
+Kun.Identity.Configuration.KunJwtIssuerOptions.SigningKey.get -> Microsoft.IdentityModel.Tokens.SecurityKey?
+Kun.Identity.Configuration.KunJwtIssuerOptions.SigningKey.set -> void
+Kun.Identity.Configuration.KunJwtIssuerOptions.SigningKeyPem.get -> string?
+Kun.Identity.Configuration.KunJwtIssuerOptions.SigningKeyPem.set -> void
+Kun.Identity.Configuration.KunOidcClientOptions
+Kun.Identity.Configuration.KunOidcClientOptions.Authority.get -> string!
+Kun.Identity.Configuration.KunOidcClientOptions.Authority.set -> void
+Kun.Identity.Configuration.KunOidcClientOptions.ClientId.get -> string!
+Kun.Identity.Configuration.KunOidcClientOptions.ClientId.set -> void
+Kun.Identity.Configuration.KunOidcClientOptions.ClientSecret.get -> string!
+Kun.Identity.Configuration.KunOidcClientOptions.ClientSecret.set -> void
+Kun.Identity.Configuration.KunOidcClientOptions.KunOidcClientOptions() -> void
+Kun.Identity.Configuration.KunOidcClientOptions.Name.get -> string!
+Kun.Identity.Configuration.KunOidcClientOptions.Name.set -> void
+Kun.Identity.Configuration.KunSameSiteMode
+Kun.Identity.Configuration.KunSameSiteMode.Lax = 1 -> Kun.Identity.Configuration.KunSameSiteMode
+Kun.Identity.Configuration.KunSameSiteMode.None = 0 -> Kun.Identity.Configuration.KunSameSiteMode
+Kun.Identity.Configuration.KunSameSiteMode.Strict = 2 -> Kun.Identity.Configuration.KunSameSiteMode
+Kun.Identity.Configuration.KunSameSiteMode.Unspecified = -1 -> Kun.Identity.Configuration.KunSameSiteMode
+Kun.Identity.DependencyInjection.KunIdentityServiceCollectionExtensions
+Kun.Identity.Implementations.KunJwtIssuer
+Kun.Identity.Implementations.KunJwtIssuer.Issue(System.Collections.Generic.IEnumerable<System.Security.Claims.Claim!>! claims, System.TimeSpan? lifetime = null) -> string!
+Kun.Identity.Implementations.KunJwtIssuer.KunJwtIssuer(Microsoft.Extensions.Options.IOptions<Kun.Identity.Configuration.KunJwtIssuerOptions!>! options) -> void
+Kun.Identity.Implementations.KunJwtValidator
+Kun.Identity.Implementations.KunJwtValidator.KunJwtValidator(Microsoft.Extensions.Options.IOptions<Kun.Identity.Configuration.KunJwtBearerOptions!>! options, Microsoft.Extensions.Logging.ILogger<Kun.Identity.Implementations.KunJwtValidator!>! logger) -> void
+Kun.Identity.Implementations.KunJwtValidator.ValidateAsync(string! token, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Security.Claims.ClaimsPrincipal?>!
+Kun.Identity.Implementations.KunOidcClient
+Kun.Identity.Implementations.KunOidcClient.DiscoverAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Identity.Abstractions.OidcConfiguration!>!
+Kun.Identity.Implementations.KunOidcClient.Dispose() -> void
+Kun.Identity.Implementations.KunOidcClient.ExchangeCodeAsync(string! code, string! redirectUri, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Identity.Abstractions.OidcTokenResponse!>!
+Kun.Identity.Implementations.KunOidcClient.KunOidcClient(Kun.Identity.Configuration.KunOidcClientOptions! options, System.Net.Http.IHttpClientFactory! httpClientFactory) -> void
+Kun.Identity.Implementations.KunOidcClient.Name.get -> string!
+Kun.Identity.Implementations.Session.InMemorySessionStore
+Kun.Identity.Implementations.Session.InMemorySessionStore.DeleteAsync(string! sessionId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Identity.Implementations.Session.InMemorySessionStore.GetAsync(string! sessionId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Identity.Abstractions.Session.SessionData?>!
+Kun.Identity.Implementations.Session.InMemorySessionStore.InMemorySessionStore() -> void
+Kun.Identity.Implementations.Session.InMemorySessionStore.InMemorySessionStore(System.TimeProvider! timeProvider) -> void
+Kun.Identity.Implementations.Session.InMemorySessionStore.SetAsync(string! sessionId, Kun.Identity.Abstractions.Session.SessionData! data, System.TimeSpan ttl, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Identity.Implementations.Session.RedisSessionStore
+Kun.Identity.Implementations.Session.RedisSessionStore.DeleteAsync(string! sessionId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Identity.Implementations.Session.RedisSessionStore.GetAsync(string! sessionId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Identity.Abstractions.Session.SessionData?>!
+Kun.Identity.Implementations.Session.RedisSessionStore.RedisSessionStore(Kun.Caching.Abstractions.IKunCache! cache) -> void
+Kun.Identity.Implementations.Session.RedisSessionStore.SetAsync(string! sessionId, Kun.Identity.Abstractions.Session.SessionData! data, System.TimeSpan ttl, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+static Kun.Identity.DependencyInjection.KunIdentityServiceCollectionExtensions.AddKunIdentity(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.Identity.Configuration.KunIdentityBuilder!>! configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!

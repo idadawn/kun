@@ -23,6 +23,9 @@ public sealed class OrderDbContext : KunDbContext
     }
 
     /// <inheritdoc/>
+    protected override string? DefaultSchema => "order";
+
+    /// <inheritdoc/>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

@@ -23,10 +23,10 @@ public sealed class MinioFixture : IAsyncLifetime
     public string Endpoint { get; private set; } = string.Empty;
 
     /// <summary>Access key (MinIO root user).</summary>
-    public string AccessKey => Username;
+    public static string AccessKey => Username;
 
     /// <summary>Secret key (MinIO root password).</summary>
-    public string SecretKey => Password;
+    public static string SecretKey => Password;
 
     /// <summary>Bucket provisioned for the fixture lifetime.</summary>
     public string BucketName { get; } = $"kun-test-{Guid.NewGuid():N}";
@@ -74,6 +74,13 @@ public sealed class MinioFixture : IAsyncLifetime
     }
 
     /// <summary>Builds a new <see cref="IAmazonS3"/> client aimed at the running MinIO container.</summary>
+    /// <remarks>
+    /// MinIO inside Testcontainers listens on plain HTTP. Setting <c>UseHttp = true</c> tells
+    /// the AWS SDK that the target endpoint supports HTTP, so presigned URLs are emitted with
+    /// the <c>http://</c> scheme (the SDK default is <c>https://</c>, which would make any
+    /// downstream HttpClient attempt a TLS handshake against a plain-text server and fail
+    /// with "Cannot determine the frame size" on the wire).
+    /// </remarks>
     public IAmazonS3 CreateClient() =>
         new AmazonS3Client(
             new BasicAWSCredentials(AccessKey, SecretKey),
@@ -81,5 +88,6 @@ public sealed class MinioFixture : IAsyncLifetime
             {
                 ServiceURL = Endpoint,
                 ForcePathStyle = true,
+                UseHttp = true,
             });
 }

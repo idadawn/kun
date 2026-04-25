@@ -4,6 +4,7 @@ using Kun.Core.Time;
 using Kun.EntityFrameworkCore;
 using Kun.EntityFrameworkCore.Behaviors;
 using Kun.EntityFrameworkCore.DependencyInjection;
+using Kun.EntityFrameworkCore.Extensions;
 using Kun.EventBus;
 using Kun.EventBus.Background;
 using Kun.EventBus.DependencyInjection;
@@ -37,7 +38,8 @@ var connectionString = builder.Configuration.GetConnectionString("OrderDb")
     ?? "Host=localhost;Database=order_sample;Username=postgres;Password=postgres";
 
 builder.Services.AddDbContext<OrderDbContext>(opt =>
-    opt.UseNpgsql(connectionString));
+    opt.UseNpgsql(connectionString)
+       .UseKunSchema("order"));
 
 // Register OrderDbContext as KunDbContext so framework infrastructure can resolve it.
 builder.Services.AddScoped<KunDbContext>(sp => sp.GetRequiredService<OrderDbContext>());

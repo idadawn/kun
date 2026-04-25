@@ -1,4 +1,5 @@
 using Kun.Core.MultiTenancy;
+using Kun.EntityFrameworkCore.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
@@ -15,6 +16,7 @@ internal sealed class CatalogDesignTimeFactory : IDesignTimeDbContextFactory<Cat
     {
         var options = new DbContextOptionsBuilder<CatalogDbContext>()
             .UseNpgsql("Host=localhost;Database=catalog_design;Username=postgres;Password=postgres")
+            .UseKunSchema("catalog")
             .Options;
 
         return new CatalogDbContext(options, NullTenantContext.Instance);

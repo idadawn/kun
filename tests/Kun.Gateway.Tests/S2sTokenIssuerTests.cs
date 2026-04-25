@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using FluentAssertions;
 using Kun.Gateway.Configuration;
+using Kun.Gateway.Identity;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -46,7 +47,7 @@ public sealed class S2sTokenIssuerTests : IDisposable
             PublicKeyPath = _publicKeyPath,
         });
 
-        _issuer = new S2sTokenIssuer(options, CreateDevEnv());
+        _issuer = new S2sTokenIssuer(options, CreateDevEnv(), NoOpS2sPrincipalResolver.Instance);
 
         // Build validation params using the public key
         var rsaForValidation = RSA.Create();
@@ -201,7 +202,7 @@ public sealed class S2sTokenIssuerTests : IDisposable
         var prodEnv = CreateProdEnv();
 
         // Act
-        var act = () => new S2sTokenIssuer(options, prodEnv);
+        var act = () => new S2sTokenIssuer(options, prodEnv, NoOpS2sPrincipalResolver.Instance);
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
@@ -228,7 +229,7 @@ public sealed class S2sTokenIssuerTests : IDisposable
         try
         {
             // Act — should succeed and auto-generate the key pair
-            var issuer = new S2sTokenIssuer(options, CreateDevEnv());
+            var issuer = new S2sTokenIssuer(options, CreateDevEnv(), NoOpS2sPrincipalResolver.Instance);
 
             // Assert — key files created and IssueFor produces a valid JWT
             File.Exists(privatePath).Should().BeTrue("private key should be generated");

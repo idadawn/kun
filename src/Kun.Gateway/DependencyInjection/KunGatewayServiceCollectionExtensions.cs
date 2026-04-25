@@ -1,4 +1,6 @@
 using Kun.Gateway.Configuration;
+using Kun.Gateway.Identity;
+using Kun.Gateway.Jwks;
 using Kun.Gateway.RateLimiting.Resolvers;
 using Kun.Gateway.Transforms;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -41,6 +43,16 @@ public static class KunGatewayServiceCollectionExtensions
 
         services.AddOptions<KunGatewayOptions>()
             .Configure(configure);
+
+        // Default no-op resolver; consumers wanting enrichment register their own
+        // IS2sPrincipalResolver before AddKunGateway runs (TryAddSingleton below is a no-op
+        // when the slot is already filled).
+        services.TryAddSingleton<IS2sPrincipalResolver, NoOpS2sPrincipalResolver>();
+
+        // Shared cache for the public + internal JWKS endpoints; rebuilds only when the
+        // PEM file's last-write time changes, so a key rotation still propagates but
+        // every request outside rotation windows is a single stat call.
+        services.TryAddSingleton<JwksResponseBuilder>();
 
         services.TryAddSingleton<S2sTokenIssuer>();
 

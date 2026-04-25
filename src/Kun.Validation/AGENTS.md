@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-04-18 | Updated: 2026-04-18 -->
+<!-- Generated: 2026-04-18 | Updated: 2026-04-24 -->
 
 # Kun.Validation
 
@@ -18,7 +18,35 @@ Source-generated request validation. Validators emit validation logic at compile
 ### Working In This Directory
 
 - **Validators are written per-command type** and annotated/discovered by the source generator. Runtime reflection-based validator discovery (e.g. `ValidatorRegistry.Scan()`) is not allowed — the generator builds the registry at compile time.
-- **Validation failures return `Result.Fail(Error.Validation(...))`, not exceptions.** The pipeline behavior converts validator results into the Mediator response before the handler runs.
+- **Three pipeline behaviors ship** — pick one per request type:
+  - `ValidationPipelineBehavior<TRequest, TResponse>` throws
+    `ValidationException` on validator failure. Handlers either
+    return their plain response or let the exception escape to
+    ASP.NET / gRPC translation middleware.
+  - `ValidationResultPipelineBehavior<TRequest, TValue>` returns
+    `Result<TValue>.Fail(Error.Validation("request.invalid", ...))`
+    instead of throwing. Constrained as `TRequest : IRequest<Result<TValue>>`.
+    Preferred for handlers that compose via `Result<T>` — matches
+    the framework-wide "business failures use `Result`, not
+    exceptions" rule in `kun/CLAUDE.md` §Architectural constraints.
+  - `ValidationResultPipelineBehavior<TRequest>` (non-generic
+    sibling, lives in the same file as the generic variant) —
+    same behaviour but constrained as `TRequest : IRequest<Result>`
+    for void-returning commands (e.g. delete / mark-read). Returns
+    `Result.Fail(Error.Validation("request.invalid", ...))`.
+    Registered via the single-type-param overload
+    `AddValidationResultBehavior<TRequest>()`; the two-type-param
+    overload `AddValidationResultBehavior<TRequest, TValue>()`
+    stays the entry point for the generic variant.
+    See [ADR-014](../../docs/architecture/ADR-014-Validation-Result-behavior.md)
+    for design (§F1 resolved 2026-04-24) or
+    [docs/guides/validating-commands.md](../../docs/guides/validating-commands.md)
+    for a consumer-facing walkthrough with worked examples for
+    both Result variants.
+  - **Do not register both for the same request type** — picking
+    both produces double-wrapping of validation messages. Runtime
+    diagnostic was deemed too expensive for a rare misconfiguration;
+    doc guardrail only.
 - Keep validator logic pure (no DB calls). Semantic validation that needs data belongs in the handler, not here.
 
 ### Testing Requirements

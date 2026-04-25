@@ -15,7 +15,7 @@ public static class KunEventBusServiceCollectionExtensions
         var builder = new KunEventBusBuilder(services);
         configure?.Invoke(builder);
 
-        var registry = new EventTypeRegistry(builder.EventTypeMap);
+        var registry = new EventTypeRegistry(builder.EventTypeMap, builder.JsonTypeInfoMap);
         services.TryAddSingleton<IEventTypeRegistry>(registry);
         services.TryAddScoped<IntegrationEventBuffer>();
         services.TryAddScoped<IIntegrationEventOutbox>(sp => sp.GetRequiredService<IntegrationEventBuffer>());

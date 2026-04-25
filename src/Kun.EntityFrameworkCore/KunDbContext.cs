@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using Kun.Core.Domain;
 using Kun.Core.MultiTenancy;
+using Kun.EntityFrameworkCore.Interceptors;
 using Kun.EventBus.Outbox;
 using Microsoft.EntityFrameworkCore;
 
@@ -43,6 +44,19 @@ public abstract class KunDbContext : DbContext
     /// </para>
     /// </remarks>
     protected virtual string? DefaultSchema { get; }
+
+    /// <inheritdoc/>
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        base.OnConfiguring(optionsBuilder);
+
+        // Always register SchemaConsistencyInterceptor so that services which override
+        // DefaultSchema but forget UseKunSchema(schema) fail fast at the first
+        // SaveChangesAsync with a clear remediation message, rather than silently
+        // writing business tables under the service schema while __ef_migrations_history
+        // stays in "public" (the M5 M5 mis-wired-migrations hazard).
+        optionsBuilder.AddInterceptors(new SchemaConsistencyInterceptor());
+    }
 
     /// <inheritdoc/>
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)

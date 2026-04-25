@@ -4,14 +4,21 @@
     <IsAotCandidate>true</IsAotCandidate>
     <IsPackable>true</IsPackable>
     <HasPublicApi>true</HasPublicApi>
-    <Description>Kun Framework audit log: tamper-evident hash-chained operation audit for CQRS commands via a Mediator pipeline behaviour, with pluggable sinks. Implements the SAD v3.0 §15.5 audit.operations contract.</Description>
+    <Description>Kun Framework audit module. Provides both (a) an audit-log writer/reader abstraction (IAuditWriter / IAuditReader / AuditableAttribute) with NullAuditWriter + EventBusAuditWriter (EF Core adapter lives in Kun.Audit.EntityFrameworkCore), and (b) a tamper-evident hash-chained operation audit behaviour (IAuditSink + IAuditChainState + AuditLogPipelineBehavior) implementing the SAD v3.0 §15.5 audit.operations contract.</Description>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Kun.Core\Kun.Core.csproj" />
     <ProjectReference Include="..\Kun.Mediator\Kun.Mediator.csproj" />
+    <ProjectReference Include="..\Kun.EventBus\Kun.EventBus.csproj" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Kun.Audit.Tests" />
+    <InternalsVisibleTo Include="Kun.Audit.EntityFrameworkCore" />
   </ItemGroup>
 
 </Project>

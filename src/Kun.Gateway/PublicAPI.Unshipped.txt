@@ -40,13 +40,76 @@ Kun.Gateway.RateLimiting.Resolvers.IpRateLimitPartitionResolver.ResolvePartition
 Kun.Gateway.RateLimiting.Resolvers.TenantRateLimitPartitionResolver
 Kun.Gateway.RateLimiting.Resolvers.TenantRateLimitPartitionResolver.ResolvePartitionKey(Microsoft.AspNetCore.Http.HttpContext! context) -> string!
 Kun.Gateway.RateLimiting.Resolvers.TenantRateLimitPartitionResolver.TenantRateLimitPartitionResolver() -> void
+Kun.Gateway.RateLimiting.Resolvers.UserPrincipalRateLimitPartitionResolver
+Kun.Gateway.RateLimiting.Resolvers.UserPrincipalRateLimitPartitionResolver.UserPrincipalRateLimitPartitionResolver() -> void
+Kun.Gateway.RateLimiting.Resolvers.UserPrincipalRateLimitPartitionResolver.ResolvePartitionKey(Microsoft.AspNetCore.Http.HttpContext! context) -> string!
 Kun.Gateway.S2sTokenIssuer
 Kun.Gateway.S2sTokenIssuer.IssueFor(System.Security.Claims.ClaimsPrincipal! externalPrincipal) -> string!
 Kun.Gateway.Configuration.KunGatewayOptions.EmitTraceIdClaim.get -> bool
 Kun.Gateway.Configuration.KunGatewayOptions.EmitTraceIdClaim.set -> void
-Kun.Gateway.S2sTokenIssuer.S2sTokenIssuer(Microsoft.Extensions.Options.IOptions<Kun.Gateway.Configuration.KunGatewayOptions!>! options, Microsoft.Extensions.Hosting.IHostEnvironment! env, Microsoft.AspNetCore.Http.IHttpContextAccessor? httpContextAccessor = null) -> void
+Kun.Gateway.Configuration.KunGatewayOptions.ExposeInternalJwks.get -> bool
+Kun.Gateway.Configuration.KunGatewayOptions.ExposeInternalJwks.set -> void
+Kun.Gateway.Jwks.KunInternalJwksEndpoint
+const Kun.Gateway.Jwks.KunInternalJwksEndpoint.DefaultPattern = "/internal/.well-known/jwks.json" -> string!
+static Kun.Gateway.Jwks.KunInternalJwksEndpoint.MapKunInternalJwks(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, string! pattern = "/internal/.well-known/jwks.json", System.Func<Microsoft.AspNetCore.Http.HttpContext!, bool>? additionalGate = null) -> Microsoft.AspNetCore.Builder.IEndpointConventionBuilder!
+static Kun.Gateway.Endpoints.JwksEndpoint.MapKunJwks(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, System.Func<Microsoft.AspNetCore.Http.HttpContext!, bool>? additionalGate = null) -> Microsoft.AspNetCore.Builder.IEndpointConventionBuilder!
+Kun.Gateway.Jwks.JwksResponseBuilder
+Kun.Gateway.Jwks.JwksResponseBuilder.JwksResponseBuilder() -> void
+Kun.Gateway.Jwks.JwksResponseBuilder.Build(string! publicKeyPath) -> Kun.Gateway.Endpoints.JwksResponse!
+Kun.Gateway.S2sTokenIssuer.S2sTokenIssuer(Microsoft.Extensions.Options.IOptions<Kun.Gateway.Configuration.KunGatewayOptions!>! options, Microsoft.Extensions.Hosting.IHostEnvironment! env, Microsoft.AspNetCore.Http.IHttpContextAccessor? httpContextAccessor) -> void
+Kun.Gateway.S2sTokenIssuer.S2sTokenIssuer(Microsoft.Extensions.Options.IOptions<Kun.Gateway.Configuration.KunGatewayOptions!>! options, Microsoft.Extensions.Hosting.IHostEnvironment! env, Kun.Gateway.Identity.IS2sPrincipalResolver! resolver, Microsoft.AspNetCore.Http.IHttpContextAccessor? httpContextAccessor = null) -> void
+Kun.Gateway.S2sTokenIssuer.IssueForAsync(System.Security.Claims.ClaimsPrincipal! externalPrincipal, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<string!>!
+Kun.Gateway.Identity.IS2sPrincipalResolver
+Kun.Gateway.Identity.IS2sPrincipalResolver.ResolveAsync(System.Security.Claims.ClaimsPrincipal! externalPrincipal, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Security.Claims.ClaimsPrincipal!>!
+Kun.Gateway.Identity.NoOpS2sPrincipalResolver
+Kun.Gateway.Identity.NoOpS2sPrincipalResolver.NoOpS2sPrincipalResolver() -> void
+Kun.Gateway.Identity.NoOpS2sPrincipalResolver.ResolveAsync(System.Security.Claims.ClaimsPrincipal! externalPrincipal, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Security.Claims.ClaimsPrincipal!>!
+static Kun.Gateway.Identity.NoOpS2sPrincipalResolver.Instance.get -> Kun.Gateway.Identity.NoOpS2sPrincipalResolver!
 Program
 Program.Program() -> void
 static Kun.Gateway.DependencyInjection.KunGatewayServiceCollectionExtensions.AddKunGateway(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.Gateway.Configuration.KunGatewayOptions!>! configure, Microsoft.Extensions.Configuration.IConfiguration? reverseProxyConfig = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
-static Kun.Gateway.Endpoints.JwksEndpoint.MapKunJwks(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Builder.IEndpointConventionBuilder!
 static Kun.Gateway.RateLimiting.KunRateLimiterExtensions.AddKunRateLimiter(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Microsoft.AspNetCore.RateLimiting.RateLimiterOptions!>? configure = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+const Kun.Gateway.RateLimiting.KunRateLimiterExtensions.SlidingWindowPolicyName = "kun-sliding-window" -> string!
+const Kun.Gateway.RateLimiting.KunRateLimiterExtensions.TokenBucketPolicyName = "kun-token-bucket" -> string!
+static Kun.Gateway.RateLimiting.KunRateLimiterExtensions.AddKunSlidingWindowRateLimiter(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.Gateway.RateLimiting.KunSlidingWindowOptions!>? configureKun = null, System.Action<Microsoft.AspNetCore.RateLimiting.RateLimiterOptions!>? configureHost = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Kun.Gateway.RateLimiting.KunRateLimiterExtensions.AddKunTokenBucketRateLimiter(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.Gateway.RateLimiting.KunTokenBucketOptions!>? configureKun = null, System.Action<Microsoft.AspNetCore.RateLimiting.RateLimiterOptions!>? configureHost = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Kun.Gateway.RateLimiting.KunSlidingWindowOptions
+Kun.Gateway.RateLimiting.KunSlidingWindowOptions.KunSlidingWindowOptions() -> void
+Kun.Gateway.RateLimiting.KunSlidingWindowOptions.PermitLimit.get -> int
+Kun.Gateway.RateLimiting.KunSlidingWindowOptions.PermitLimit.set -> void
+Kun.Gateway.RateLimiting.KunSlidingWindowOptions.Window.get -> System.TimeSpan
+Kun.Gateway.RateLimiting.KunSlidingWindowOptions.Window.set -> void
+Kun.Gateway.RateLimiting.KunSlidingWindowOptions.SegmentsPerWindow.get -> int
+Kun.Gateway.RateLimiting.KunSlidingWindowOptions.SegmentsPerWindow.set -> void
+Kun.Gateway.RateLimiting.KunSlidingWindowOptions.QueueLimit.get -> int
+Kun.Gateway.RateLimiting.KunSlidingWindowOptions.QueueLimit.set -> void
+Kun.Gateway.RateLimiting.KunTokenBucketOptions
+Kun.Gateway.RateLimiting.KunTokenBucketOptions.KunTokenBucketOptions() -> void
+Kun.Gateway.RateLimiting.KunTokenBucketOptions.TokenLimit.get -> int
+Kun.Gateway.RateLimiting.KunTokenBucketOptions.TokenLimit.set -> void
+Kun.Gateway.RateLimiting.KunTokenBucketOptions.TokensPerPeriod.get -> int
+Kun.Gateway.RateLimiting.KunTokenBucketOptions.TokensPerPeriod.set -> void
+Kun.Gateway.RateLimiting.KunTokenBucketOptions.ReplenishmentPeriod.get -> System.TimeSpan
+Kun.Gateway.RateLimiting.KunTokenBucketOptions.ReplenishmentPeriod.set -> void
+Kun.Gateway.RateLimiting.KunTokenBucketOptions.QueueLimit.get -> int
+Kun.Gateway.RateLimiting.KunTokenBucketOptions.QueueLimit.set -> void
+Kun.Gateway.RateLimiting.KunTokenBucketOptions.AutoReplenishment.get -> bool
+Kun.Gateway.RateLimiting.KunTokenBucketOptions.AutoReplenishment.set -> void
+Kun.Gateway.RateLimiting.IRedisRateLimitStore
+Kun.Gateway.RateLimiting.IRedisRateLimitStore.HitAsync(string! partitionKey, System.TimeSpan window, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Gateway.RateLimiting.RateLimitHitResult>!
+Kun.Gateway.RateLimiting.RateLimitHitResult
+Kun.Gateway.RateLimiting.RateLimitHitResult.RateLimitHitResult() -> void
+Kun.Gateway.RateLimiting.RateLimitHitResult.RateLimitHitResult(long Count, System.TimeSpan ResetsIn) -> void
+Kun.Gateway.RateLimiting.RateLimitHitResult.Count.get -> long
+Kun.Gateway.RateLimiting.RateLimitHitResult.Count.init -> void
+Kun.Gateway.RateLimiting.RateLimitHitResult.ResetsIn.get -> System.TimeSpan
+Kun.Gateway.RateLimiting.RateLimitHitResult.ResetsIn.init -> void
+Kun.Gateway.RateLimiting.RedisRateLimitStoreOptions
+Kun.Gateway.RateLimiting.RedisRateLimitStoreOptions.RedisRateLimitStoreOptions() -> void
+Kun.Gateway.RateLimiting.RedisRateLimitStoreOptions.KeyPrefix.get -> string!
+Kun.Gateway.RateLimiting.RedisRateLimitStoreOptions.KeyPrefix.set -> void
+const Kun.Gateway.RateLimiting.RedisRateLimitStoreOptions.SectionName = "Kun:Gateway:RateLimit:Redis" -> string!
+Kun.Gateway.RateLimiting.RedisFixedWindowRateLimitStore
+Kun.Gateway.RateLimiting.RedisFixedWindowRateLimitStore.RedisFixedWindowRateLimitStore(StackExchange.Redis.IConnectionMultiplexer! redis, Microsoft.Extensions.Options.IOptions<Kun.Gateway.RateLimiting.RedisRateLimitStoreOptions!>! options) -> void
+Kun.Gateway.RateLimiting.RedisFixedWindowRateLimitStore.HitAsync(string! partitionKey, System.TimeSpan window, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Gateway.RateLimiting.RateLimitHitResult>!
+static Kun.Gateway.RateLimiting.KunRateLimiterExtensions.AddKunRedisRateLimitStore(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.Gateway.RateLimiting.RedisRateLimitStoreOptions!>? configure = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!

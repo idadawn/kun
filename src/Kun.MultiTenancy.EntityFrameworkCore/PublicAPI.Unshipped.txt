@@ -1,0 +1,14 @@
+#nullable enable
+Kun.MultiTenancy.EntityFrameworkCore.DependencyInjection.KunMultiTenancyEntityFrameworkCoreServiceCollectionExtensions
+Kun.MultiTenancy.EntityFrameworkCore.IKunMultiTenantDbContext
+Kun.MultiTenancy.EntityFrameworkCore.IKunMultiTenantDbContext.TenantIdForModelCacheKey.get -> string?
+Kun.MultiTenancy.EntityFrameworkCore.KunMultiTenancyModelBuilderExtensions
+Kun.MultiTenancy.EntityFrameworkCore.KunMultiTenantModelCacheKeyFactory
+Kun.MultiTenancy.EntityFrameworkCore.KunMultiTenantModelCacheKeyFactory.Create(Microsoft.EntityFrameworkCore.DbContext! context, bool designTime) -> object!
+Kun.MultiTenancy.EntityFrameworkCore.KunMultiTenantModelCacheKeyFactory.KunMultiTenantModelCacheKeyFactory() -> void
+Kun.MultiTenancy.EntityFrameworkCore.KunTenantSaveChangesInterceptor
+Kun.MultiTenancy.EntityFrameworkCore.KunTenantSaveChangesInterceptor.KunTenantSaveChangesInterceptor(Kun.Core.MultiTenancy.ITenantContext! tenantContext, Microsoft.Extensions.Logging.ILogger<Kun.MultiTenancy.EntityFrameworkCore.KunTenantSaveChangesInterceptor!>! logger) -> void
+override Kun.MultiTenancy.EntityFrameworkCore.KunTenantSaveChangesInterceptor.SavingChanges(Microsoft.EntityFrameworkCore.Diagnostics.DbContextEventData! eventData, Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult<int> result) -> Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult<int>
+override Kun.MultiTenancy.EntityFrameworkCore.KunTenantSaveChangesInterceptor.SavingChangesAsync(Microsoft.EntityFrameworkCore.Diagnostics.DbContextEventData! eventData, Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult<int> result, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult<int>>
+static Kun.MultiTenancy.EntityFrameworkCore.DependencyInjection.KunMultiTenancyEntityFrameworkCoreServiceCollectionExtensions.AddKunMultiTenancyEntityFrameworkCore(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Kun.MultiTenancy.EntityFrameworkCore.KunMultiTenancyModelBuilderExtensions.ApplyKunMultiTenantFilters(this Microsoft.EntityFrameworkCore.ModelBuilder! modelBuilder, Kun.Core.MultiTenancy.ITenantContext! tenantContext) -> Microsoft.EntityFrameworkCore.ModelBuilder!

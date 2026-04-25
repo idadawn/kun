@@ -1079,4 +1079,96 @@ CI 流水线中对所有应当走 AOT 的服务执行 `dotnet publish -p:Publish
 
 ---
 
+## 13. Phase 1 Deliverables（`0.1.0-phase1` 交付清单）
+
+§12 的 Phase 1 描述的是**方向**；本章记录 `0.1.0-phase1` tag 实际**交付**的内容，供下游（NeuroAgent Phase 1）作为消费清单。
+
+### 13.1 Phase 1 交付的新模块
+
+§3 与 §12 确立的 M1–M6 奠基模块之外，Phase 1 在 `develop` 分支上新落地了 10 个下游服务直接依赖的新模块，全部 AOT 候选，全部接入 Directory.Build.props 统一的 trim/AOT 策略。
+
+| 模块 | 入口 API | 简介 |
+|---|---|---|
+| `Kun.Storage` | `AddKunStorage()` → `KunStorageBuilder` | 7-method `IFileStorage` 契约 + 本地磁盘 / S3 两个官方实现 |
+| `Kun.Security` | `AddKunSecurity()` / `AddKunServiceAuthentication()` | S2S JWT 签发/校验 + JWKS + `ICurrentUser` / `ITracedCurrentUser` |
+| `Kun.Identity` | `AddKunIdentity()` | 外部 OIDC 客户端抽象 + JWT validator/issuer；不重新发明 user store |
+| `Kun.MultiTenancy` | `AddKunMultiTenancy()` / `UseKunMultiTenancy()` | `ITenantContext` + EF 查询过滤器 + SaveChanges 拦截器 |
+| `Kun.Audit` | `AddKunAudit()` → `KunAuditBuilder.UseEventBus()` | 审计写入器抽象 + Null/EventBus 实现；EF 持久化在 `Kun.Audit.EntityFrameworkCore` |
+| `Kun.RateLimit` | `AddKunRateLimit()` | 按租户分区限流器（基于 `.NET 10 RateLimiter`）+ 网关侧 IP fallback |
+| `Kun.Caching` | `AddKunCaching()` → `KunCachingBuilder` | 统一 `IKunCache` 抽象 + `MemoryCache` / `StackExchange.Redis` 后端 |
+| `Kun.Observability` | `AddKunObservability(name)` | 一键装配 OTel traces + metrics + logs，注册全部 Kun ActivitySource |
+| `Kun.Configuration` | `AddKunOptions<T>()` | 强类型 Options + DataAnnotations + fail-fast 启动校验 |
+| `Kun.Sandbox` | `AddKunSandbox(o => o.UseSupervisor / UseE2BCloud / UseInMemory)` | E2B v2 兼容 sandbox 抽象；Supervisor 自研后端 + E2B Cloud 占位 + 内存伪实现 |
+
+配套测试覆盖：Storage 23 / Security 15 / Identity 11 / MultiTenancy 12 / Audit 13 / RateLimit 6 / Caching 12 / Observability 5 / Configuration 13 / Sandbox 27（facts + theories 计数），全部绿色。
+
+### 13.2 最小集成示例：Sandbox + Audit + Security 组合根
+
+这是 NeuroAgent Phase 1 `csharp` 消费侧最常见的组合：外部 JWT 由网关校验，内部 S2S JWT 由下游 `Kun.Security` 认证，业务操作记入 `Kun.Audit`，并在 `Kun.Sandbox` 里执行不可信代码。
+
+```csharp
+using Kun.Audit.DependencyInjection;
+using Kun.Observability;
+using Kun.Sandbox.Extensions;
+using Kun.Security.Authentication;
+using Kun.Security.DependencyInjection;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// 1) 观测：traces + metrics + logs，一条调用栈贯穿全部模块
+builder.Services.AddKunObservability("neuroagent-agent");
+
+// 2) 零信任：校验网关签发的 S2S JWT，注入 ITenantContext + ICurrentUser
+builder.Services
+    .AddAuthentication()
+    .AddKunServiceAuthentication(o =>
+    {
+        o.Audience = "kun-internal";
+        o.JwksUri = new Uri("https://gateway.internal/.well-known/jwks.json");
+    });
+builder.Services.AddKunSecurity();
+
+// 3) 审计：业务侧通过 IAuditWriter 记录"谁在何时对什么做了什么"；
+//    UseEventBus() 会把审计条目作为集成事件经 Outbox 发出，NullAuditWriter 是默认 fallback
+builder.Services.AddKunAudit().UseEventBus();
+
+// 4) Sandbox：NeuroAgent 调用远端 Supervisor 起沙箱执行 agent 产出的代码
+builder.Services.AddKunSandbox(opts => opts.UseSupervisor(
+    baseUrl: new Uri("https://sandbox-supervisor.internal:8443/")));
+
+var app = builder.Build();
+app.UseAuthentication();
+app.UseAuthorization();
+app.Run();
+```
+
+> 完整示例请见 `samples/Kun.Sample.Catalog/Program.cs`（已演示 `AddKunAudit()` + `AddKunSandbox(... UseInMemory())`）。
+
+### 13.3 AOT 一致性状态
+
+`0.1.0-phase1` 通过 `docs/architecture/AOT-audit-2026-04-23.md` 做了一次全仓扫描：18 个 AOT 候选模块 ILC 零 trim/AOT warning；非 AOT 模块（`Kun.AspNetCore` / `Kun.EntityFrameworkCore` 家族 / `Kun.Dapper` / `Kun.Saga`）均有记录的技术原因。CI 的 `aot-audit` 矩阵 job 对这 18 个模块分别执行 `dotnet publish -p:PublishAot=true -p:TreatWarningsAsErrors=true`；`sample-aot-integration` job 对 `Kun.Sample.Minimal` 做 end-to-end 原生 publish + 执行验证。
+
+### 13.4 Phase 1 ADR / 设计文档索引
+
+| ADR / 文档 | 主题 |
+|---|---|
+| [ADR-001 — Kun.Identity 决策](architecture/ADR-001-Kun.Identity-module-decision.md) | 是否新增 `Kun.Identity`（最终接受为外部 OIDC 客户端抽象） |
+| [ADR-003 — Kun.Audit 模块](architecture/ADR-003-Kun.Audit-module.md) | 审计写入器抽象 + EF/EventBus 后端拆分 |
+| [ADR-004 — Kun.Observability 模块](architecture/ADR-004-Kun.Observability-module.md) | 为什么把 OTel 从 `Kun.Sample.Shared` 抽出来 |
+| [ADR-005 — Kun.Caching 模块](architecture/ADR-005-Kun.Caching-module.md) | 统一 `IKunCache` vs 直接 `IMemoryCache` / `IDistributedCache` 的权衡 |
+| [ADR-006 — Kun.RateLimit 模块](architecture/ADR-006-Kun.RateLimit-module.md) | 基于 `.NET 10 RateLimiter` 的租户分区策略 |
+| [ADR-007 — Kun.MultiTenancy 模块](architecture/ADR-007-Kun.MultiTenancy-module.md) | 租户过滤器在 EF Core 全局查询过滤器里实现 |
+| [ADR-008 — Kun.Identity 模块](architecture/ADR-008-Kun.Identity-module.md) | `Kun.Identity` 实际模块落地与 ADR-001 的关系 |
+| [ADR-009 — Kun.Configuration 模块](architecture/ADR-009-Kun.Configuration-module.md) | 强类型 Options 的 fail-fast 验证策略 |
+| [ADR-S02 — Kun.Sandbox 模块](architecture/ADR-S02-Kun.Sandbox-module.md) | E2B v2 兼容 abstraction 与 Supervisor 后端 |
+| [AOT 一致性审计 2026-04-23](architecture/AOT-audit-2026-04-23.md) | 全模块 AOT 状态矩阵 + CI 矩阵的来源 |
+
+### 13.5 消费侧对接清单（neuroagent-csharp）
+
+- 在 `Directory.Packages.props` 里固定 `Kun.*` 包版本到 `0.1.0-phase1`。
+- 任何需要框架变更的工作单独派任务到 `claude-kun`（见 `neuroagent/CLAUDE.md` §路由边界铁律），**不要**在 `neuroagent-csharp` 里 fork Kun 抽象。
+- 集成事件在 Phase 1 固定通过 `IEventTypeRegistry` 注册稳定 ID；Phase 2 的事件版本迁移由 `kun-outbox-events` skill 指导。
+
+---
+
 > **Kun Framework** —— 化繁为简，助您的 .NET 架构如鲲鹏般扶摇直上九万里。

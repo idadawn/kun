@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsAotCandidate>true</IsAotCandidate>
+    <IsPackable>true</IsPackable>
+    <HasPublicApi>true</HasPublicApi>
+    <Description>Kun Framework testing helpers: fluent assertion extensions for Result&lt;T&gt; and IAggregateRoot domain events. Framework-agnostic — throws KunAssertionException on mismatch so consumers with xUnit, NUnit, or MSTest all surface failures uniformly. Depends on Kun.Core only.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Kun.Core\Kun.Core.csproj" />
+  </ItemGroup>
+
+</Project>

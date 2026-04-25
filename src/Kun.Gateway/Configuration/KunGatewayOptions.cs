@@ -53,4 +53,19 @@ public sealed class KunGatewayOptions
     /// Set to <see langword="false"/> to suppress trace propagation via JWT (e.g. for compliance).
     /// </summary>
     public bool EmitTraceIdClaim { get; set; } = true;
+
+    /// <summary>
+    /// When <see langword="true"/>, the gateway exposes the internal JWKS endpoint
+    /// <c>/internal/.well-known/jwks.json</c> in non-Development environments. Defaults to
+    /// <see langword="false"/> so the internal endpoint returns 404 in production unless the
+    /// operator deliberately opts in. The public endpoint <c>/.well-known/jwks.json</c>
+    /// remains always-on; this option only gates the internal-network variant.
+    /// </summary>
+    /// <remarks>
+    /// Keep <see langword="false"/> in internet-facing Kubernetes deployments and rely on
+    /// NetworkPolicy / service-mesh egress rules to isolate the internal route. Flip to
+    /// <see langword="true"/> only when JWKS fetching from internal pods must bypass the
+    /// public path (e.g. rate-limiting sidecars that reshape external traffic).
+    /// </remarks>
+    public bool ExposeInternalJwks { get; set; }
 }

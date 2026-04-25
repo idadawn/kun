@@ -174,7 +174,7 @@ public sealed class S2SJwtRoundTripTests : IDisposable
         var principal = await verifier.VerifyAsync(token, "neuroagent-platform", _ct);
         principal.Should().NotBeNull();
         principal!.FindAll("roles").Select(c => c.Value)
-            .Should().BeEquivalentTo(new[] { "admin", "editor", "viewer" });
+            .Should().BeEquivalentTo(["admin", "editor", "viewer"]);
     }
 
     [Fact]
@@ -248,14 +248,15 @@ public sealed class S2SJwtRoundTripTests : IDisposable
     }
 
     [Fact]
-    public async Task DefaultLifetime_IsFifteenMinutes_WhenOptionsLeaveItUnset()
+    public async Task DefaultLifetime_IsFiveMinutes_WhenOptionsLeaveItUnset()
     {
         var defaultOptions = new S2SJwtOptions
         {
             SigningKeyPem = _privateKeyPem,
             KeyId = "test-key-1",
             Issuer = "neuroagent-edge",
-            // DefaultLifetimeSeconds left at the type default (900s = 15 minutes)
+            // DefaultLifetimeSeconds left at the type default (300s = 5 minutes,
+            // upper bound of whitepaper §9.6 zero-trust TTL range).
         };
         var issuer = CreateIssuer(defaultOptions);
 
@@ -269,8 +270,8 @@ public sealed class S2SJwtRoundTripTests : IDisposable
         var after = DateTime.UtcNow;
 
         var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
-        var expectedMin = before.AddMinutes(15).AddSeconds(-5);
-        var expectedMax = after.AddMinutes(15).AddSeconds(5);
+        var expectedMin = before.AddMinutes(5).AddSeconds(-5);
+        var expectedMax = after.AddMinutes(5).AddSeconds(5);
         jwt.ValidTo.Should().BeOnOrAfter(expectedMin).And.BeOnOrBefore(expectedMax);
     }
 
@@ -307,7 +308,7 @@ public sealed class S2SJwtRoundTripTests : IDisposable
             _ct);
 
         var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
-        jwt.Audiences.Should().BeEquivalentTo(new[] { "neuroagent-platform", "neuroagent-storage" });
+        jwt.Audiences.Should().BeEquivalentTo(["neuroagent-platform", "neuroagent-storage"]);
         // aud must live in payload, not header
         jwt.Header.Should().NotContainKey("aud");
     }

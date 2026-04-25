@@ -44,6 +44,7 @@ A .NET 10 cloud-native microservice framework with an AOT-first lean: strict DDD
 - **Status is "M1–M6 code done, validation pending"**: new features land as incremental commits; refactors must preserve the four-layer dependency flow and the `PublicAPI.Shipped.txt` / `PublicAPI.Unshipped.txt` tracked surface.
 - **Do not edit `Directory.Build.props` or `Directory.Packages.props` without reason** — target framework, nullable, analyzer settings, package versions are centralized there. Never duplicate them in individual csproj files.
 - **Every subtask commits independently**. Project convention (see `TODO.md` note and `TODO-remaining.md`): one commit per task, Conventional Commits with `scope` = module name minus `Kun.` prefix (e.g. `feat(audit): ...`, `fix(saga): ...`).
+- **Branch rule (hard)**: never commit or push to `main`. All work flows through `develop` via PR. If a session starts on `main`, run `git checkout develop && git checkout -b <type>/<task>` before any `git commit`. See `CLAUDE.md` §Branch workflow.
 
 ### Testing Requirements
 

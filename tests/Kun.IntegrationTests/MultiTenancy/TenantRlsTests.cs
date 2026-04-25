@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 using Testcontainers.PostgreSql;
 using Xunit;
 
@@ -42,8 +43,13 @@ internal sealed class RlsTestDbContext : KunDbContext
         {
             b.ToTable("rls_test_orders");
             b.HasKey(o => o.Id);
-            b.Property(o => o.Name).HasMaxLength(200).IsRequired();
-            b.Property(o => o.TenantId).HasMaxLength(100).IsRequired();
+            // Column names must match the RLS policy literal "tenant_id".
+            // EF default PascalCase would emit "TenantId" and the policy's
+            // USING (tenant_id = ...) clause would error with
+            // 42703: column "tenant_id" does not exist.
+            b.Property(o => o.Id).HasColumnName("id");
+            b.Property(o => o.Name).HasColumnName("name").HasMaxLength(200).IsRequired();
+            b.Property(o => o.TenantId).HasColumnName("tenant_id").HasMaxLength(100).IsRequired();
         });
     }
 }
@@ -53,6 +59,7 @@ public sealed class TenantRlsTests : IAsyncLifetime
     private PostgreSqlContainer _postgres = null!;
     private IServiceProvider _providerA = null!;
     private IServiceProvider _providerB = null!;
+    private string _appConnectionString = string.Empty;
 
     public async ValueTask InitializeAsync()
     {
@@ -75,23 +82,76 @@ public sealed class TenantRlsTests : IAsyncLifetime
 
         await _postgres.StartAsync(ct);
 
+        // Provision a non-superuser NOBYPASSRLS role. The default Testcontainers user
+        // is a SUPERUSER — FORCE ROW LEVEL SECURITY does not bind superusers, so the
+        // RLS policy below would be silently invisible without this extra role.
+        await ProvisionAppRoleAsync(ct);
+        _appConnectionString = BuildAppConnectionString(_postgres.GetConnectionString());
+
+        // Bootstrap: DDL runs under the superuser connection so CREATE POLICY /
+        // ALTER TABLE / GRANT succeed. Table owner is the superuser; FORCE RLS is
+        // required so the owner path still evaluates the policy.
+        await BootstrapSchemaAsync(ct);
+
+        // Tenant-scoped providers query as kun_app (non-superuser). That's the
+        // connection identity the RLS policy actually binds to.
         _providerA = BuildProvider("tenant-a");
         _providerB = BuildProvider("tenant-b");
+    }
 
-        // Bootstrap: create the table under tenant-a's provider then attach the
-        // RLS policy. FORCE RLS is critical — without it, the table owner bypasses
-        // RLS and the test would see all rows regardless of current_tenant_id.
-        await using var bootstrap = _providerA.CreateAsyncScope();
-        var db = bootstrap.ServiceProvider.GetRequiredService<RlsTestDbContext>();
+    private async Task ProvisionAppRoleAsync(CancellationToken ct)
+    {
+        const string ddl = """
+            DO $$
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'kun_app') THEN
+                    CREATE ROLE kun_app LOGIN PASSWORD 'app_secret' NOSUPERUSER NOBYPASSRLS;
+                END IF;
+            END $$;
+            GRANT ALL ON DATABASE kun_rls_test TO kun_app;
+            GRANT ALL ON SCHEMA public TO kun_app;
+            ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO kun_app;
+            """;
+        await using var conn = new NpgsqlConnection(_postgres.GetConnectionString());
+        await conn.OpenAsync(ct);
+        await using var cmd = new NpgsqlCommand(ddl, conn);
+        await cmd.ExecuteNonQueryAsync(ct);
+    }
+
+    private async Task BootstrapSchemaAsync(CancellationToken ct)
+    {
+        var services = new ServiceCollection()
+            .AddLogging()
+            .AddSingleton<ITenantContext>(new StubTenantContext("bootstrap"))
+            .AddKunMediator(_ => { })
+            .AddKunEventBus(_ => { })
+            .AddKunEntityFrameworkCore()
+            .AddDbContext<RlsTestDbContext>(opts =>
+                opts.UseNpgsql(_postgres.GetConnectionString()))
+            .AddScoped<KunDbContext>(sp => sp.GetRequiredService<RlsTestDbContext>())
+            .BuildServiceProvider();
+
+        await using var scope = services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<RlsTestDbContext>();
         await db.Database.EnsureCreatedAsync(ct);
-
         await db.Database.ExecuteSqlRawAsync("""
             ALTER TABLE rls_test_orders ENABLE ROW LEVEL SECURITY;
             ALTER TABLE rls_test_orders FORCE ROW LEVEL SECURITY;
             CREATE POLICY rls_tenant_scope ON rls_test_orders
                 USING      (tenant_id = current_setting('app.current_tenant_id', true))
                 WITH CHECK (tenant_id = current_setting('app.current_tenant_id', true));
+            GRANT SELECT, INSERT, UPDATE, DELETE ON rls_test_orders TO kun_app;
             """, ct);
+    }
+
+    private static string BuildAppConnectionString(string superuserConnectionString)
+    {
+        var b = new NpgsqlConnectionStringBuilder(superuserConnectionString)
+        {
+            Username = "kun_app",
+            Password = "app_secret",
+        };
+        return b.ConnectionString;
     }
 
     public async ValueTask DisposeAsync()
@@ -112,7 +172,9 @@ public sealed class TenantRlsTests : IAsyncLifetime
         services.AddKunEntityFrameworkCore();
         services.AddDbContext<RlsTestDbContext>((sp, opts) =>
         {
-            opts.UseNpgsql(_postgres.GetConnectionString());
+            // Non-superuser connection — the kun_app role has NOBYPASSRLS, so FORCE
+            // ROW LEVEL SECURITY binds it and the policy actually isolates rows.
+            opts.UseNpgsql(_appConnectionString);
             opts.AddInterceptors(sp.GetRequiredService<TenantRlsConnectionInterceptor>());
             // Per-tenant model cache — same rationale as TenantFilterTests.
             opts.ReplaceService<IModelCacheKeyFactory, TenantAwareModelCacheKeyFactory>();
@@ -193,7 +255,7 @@ public sealed class TenantRlsTests : IAsyncLifetime
             .AddKunEntityFrameworkCore()
             .AddDbContext<RlsTestDbContext>((sp, opts) =>
             {
-                opts.UseNpgsql(_postgres.GetConnectionString());
+                opts.UseNpgsql(_appConnectionString);
                 opts.AddInterceptors(sp.GetRequiredService<TenantRlsConnectionInterceptor>());
                 opts.ReplaceService<IModelCacheKeyFactory, TenantAwareModelCacheKeyFactory>();
             })

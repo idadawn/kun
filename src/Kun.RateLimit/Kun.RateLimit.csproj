@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsAotCandidate>true</IsAotCandidate>
+    <IsPackable>true</IsPackable>
+    <HasPublicApi>true</HasPublicApi>
+    <Description>Kun Framework unified rate limiting: AddKunRateLimit configures Microsoft.AspNetCore.RateLimiting with per-tenant / per-user / per-IP partitioning, multiple named windows, 429 + Retry-After semantics, and a pluggable OnRejected hook.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Kun.RateLimit.Tests" />
+  </ItemGroup>
+
+</Project>

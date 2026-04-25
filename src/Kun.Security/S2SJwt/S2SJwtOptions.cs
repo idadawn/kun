@@ -22,9 +22,10 @@ public sealed class S2SJwtOptions
     public string Issuer { get; init; } = "neuroagent-edge";
 
     /// <summary>
-    /// Default token lifetime. Defaults to 900 seconds (15 minutes) per SAD v3.0 §12.
-    /// Individual calls to <see cref="IS2SJwtIssuer.IssueAsync"/> can override via
-    /// <see cref="S2SJwtIssueRequest.Lifetime"/>.
+    /// Default token lifetime. Defaults to 300 seconds (5 minutes), the upper bound of the
+    /// whitepaper §9.6 range ("60 秒到 5 分钟"). Individual calls to
+    /// <see cref="IS2SJwtIssuer.IssueAsync(S2SJwtIssueRequest, System.Threading.CancellationToken)"/>
+    /// may tighten this via <see cref="S2SJwtIssueRequest.Lifetime"/>.
     /// </summary>
-    public int DefaultLifetimeSeconds { get; init; } = 900;
+    public int DefaultLifetimeSeconds { get; init; } = 300;
 }

@@ -1,0 +1,25 @@
+#nullable enable
+Kun.RateLimit.Abstractions.KunRateLimitOptions
+Kun.RateLimit.Abstractions.KunRateLimitOptions.AddWindow(string! name, System.Action<Kun.RateLimit.Abstractions.WindowRule!>! configure) -> Kun.RateLimit.Abstractions.KunRateLimitOptions!
+Kun.RateLimit.Abstractions.KunRateLimitOptions.KunRateLimitOptions() -> void
+Kun.RateLimit.Abstractions.KunRateLimitOptions.OnRejected.get -> System.Func<Microsoft.AspNetCore.RateLimiting.OnRejectedContext!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>?
+Kun.RateLimit.Abstractions.KunRateLimitOptions.OnRejected.set -> void
+Kun.RateLimit.Abstractions.KunRateLimitOptions.Windows.get -> System.Collections.Generic.Dictionary<string!, Kun.RateLimit.Abstractions.WindowRule!>!
+Kun.RateLimit.Abstractions.RateLimitPartitionKey
+Kun.RateLimit.Abstractions.RateLimitPartitionKey.Ip = 2 -> Kun.RateLimit.Abstractions.RateLimitPartitionKey
+Kun.RateLimit.Abstractions.RateLimitPartitionKey.Tenant = 0 -> Kun.RateLimit.Abstractions.RateLimitPartitionKey
+Kun.RateLimit.Abstractions.RateLimitPartitionKey.User = 1 -> Kun.RateLimit.Abstractions.RateLimitPartitionKey
+Kun.RateLimit.Abstractions.WindowRule
+Kun.RateLimit.Abstractions.WindowRule.AutoReplenishment.get -> bool
+Kun.RateLimit.Abstractions.WindowRule.AutoReplenishment.set -> void
+Kun.RateLimit.Abstractions.WindowRule.PartitionKey.get -> Kun.RateLimit.Abstractions.RateLimitPartitionKey
+Kun.RateLimit.Abstractions.WindowRule.PartitionKey.set -> void
+Kun.RateLimit.Abstractions.WindowRule.Period.get -> System.TimeSpan
+Kun.RateLimit.Abstractions.WindowRule.Period.set -> void
+Kun.RateLimit.Abstractions.WindowRule.PermitLimit.get -> int
+Kun.RateLimit.Abstractions.WindowRule.PermitLimit.set -> void
+Kun.RateLimit.Abstractions.WindowRule.QueueLimit.get -> int
+Kun.RateLimit.Abstractions.WindowRule.QueueLimit.set -> void
+Kun.RateLimit.Abstractions.WindowRule.WindowRule() -> void
+Kun.RateLimit.Extensions.KunRateLimitServiceCollectionExtensions
+static Kun.RateLimit.Extensions.KunRateLimitServiceCollectionExtensions.AddKunRateLimit(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.RateLimit.Abstractions.KunRateLimitOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!

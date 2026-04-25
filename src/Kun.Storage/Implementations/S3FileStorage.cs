@@ -152,7 +152,7 @@ public sealed partial class S3FileStorage : IFileStorage
                     ct.ThrowIfCancellationRequested();
                     yield return new ObjectSummary(
                         item.Key,
-                        item.Size ?? 0,
+                        item.Size,
                         ToUtc(item.LastModified),
                         item.ETag);
                 }
@@ -178,6 +178,7 @@ public sealed partial class S3FileStorage : IFileStorage
             Key = path,
             Verb = HttpVerb.PUT,
             Expires = expiresAt.UtcDateTime,
+            Protocol = ResolveProtocol(),
         };
         if (!string.IsNullOrEmpty(request.ContentType))
         {
@@ -224,6 +225,7 @@ public sealed partial class S3FileStorage : IFileStorage
             Key = path,
             Verb = HttpVerb.GET,
             Expires = expiresAt.UtcDateTime,
+            Protocol = ResolveProtocol(),
         };
         if (!string.IsNullOrEmpty(dispositionOverride))
         {
@@ -270,6 +272,19 @@ public sealed partial class S3FileStorage : IFileStorage
         value.HasValue
             ? new DateTimeOffset(DateTime.SpecifyKind(value.Value, DateTimeKind.Utc))
             : DateTimeOffset.UtcNow;
+
+    /// <summary>
+    /// Resolves the presigned URL scheme from the underlying S3 client's ServiceURL.
+    /// AWS SDK defaults <see cref="GetPreSignedUrlRequest.Protocol"/> to HTTPS regardless of
+    /// <c>AmazonS3Config.UseHttp</c>, so MinIO / LocalStack setups with an <c>http://</c>
+    /// ServiceURL would otherwise emit <c>https://</c> URLs that fail a real HttpClient
+    /// request with "Cannot determine the frame size".
+    /// </summary>
+    private Protocol ResolveProtocol() =>
+        _s3.Config.ServiceURL is { } su
+        && su.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+            ? Protocol.HTTP
+            : Protocol.HTTPS;
 
     private static partial class Log
     {

@@ -1,14 +1,19 @@
+using System.Diagnostics;
 using Kun.AspNetCore.DependencyInjection;
 using Kun.AspNetCore.Endpoints;
+using Kun.Audit.DependencyInjection;
 using Kun.Core.Domain;
 using Kun.Core.MultiTenancy;
 using Kun.Dapper;
 using Kun.EntityFrameworkCore;
 using Kun.EntityFrameworkCore.Behaviors;
 using Kun.EntityFrameworkCore.DependencyInjection;
+using Kun.EntityFrameworkCore.Extensions;
 using Kun.EventBus.DependencyInjection;
 using Kun.Grpc.DependencyInjection;
 using Kun.Mediator.DependencyInjection;
+using Kun.Observability.Enrichment;
+using Kun.Observability.Extensions;
 using Kun.Sample.Catalog;
 using Kun.Sample.Catalog.Application.Commands;
 using Kun.Sample.Catalog.Application.DomainEventHandlers;
@@ -16,14 +21,19 @@ using Kun.Sample.Catalog.Application.Queries;
 using Kun.Sample.Catalog.Contracts;
 using Kun.Sample.Catalog.Grpc;
 using Kun.Sample.Catalog.Infrastructure;
-using Kun.Sample.Shared;
+using Kun.Sandbox.Extensions;
 using Kun.Validation.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ── OpenTelemetry (traces + metrics via OTLP) ─────────────────────────────────
-builder.Services.AddKunObservability("catalog");
+// ── OpenTelemetry (traces + metrics + logs via OTLP, with baggage enrichment) ─
+builder.Services.AddKunObservability(o =>
+{
+    o.ServiceName = "catalog";
+    o.EnrichActivitiesFromBaggage = true;
+    o.EnrichLogsFromBaggage = true;
+});
 
 // ── Connection strings ────────────────────────────────────────────────────────
 var writeCs = builder.Configuration.GetConnectionString("CatalogDb")
@@ -44,7 +54,8 @@ builder.Services.AddSingleton<IDomainEventDispatcher, MediatorDomainEventDispatc
 // ── EF Core (write side) ─────────────────────────────────────────────────────
 // Register CatalogDbContext so it can be injected directly by command handlers.
 builder.Services.AddDbContext<CatalogDbContext>(opt =>
-    opt.UseNpgsql(writeCs));
+    opt.UseNpgsql(writeCs)
+       .UseKunSchema("catalog"));
 
 // EfUnitOfWork resolves KunDbContext, so forward the scoped registration.
 builder.Services.AddScoped<KunDbContext>(sp => sp.GetRequiredService<CatalogDbContext>());
@@ -91,13 +102,37 @@ builder.Services.AddKunMediator(m =>
 // Validator for CreateProductCommand
 builder.Services.AddValidator<CreateProductCommand, CreateProductCommandValidator>();
 
+// ── Audit (Kun.Audit) ─────────────────────────────────────────────────────────
+// Wires IAuditWriter with the NullAuditWriter fallback. Call
+// .UseEventBus() to route audit entries through the Outbox, or register
+// Kun.Audit.EntityFrameworkCore to persist them to a dedicated table.
+// This sample sticks with the null backend so the minimal wiring shape
+// is visible without a schema migration.
+builder.Services.AddKunAudit();
+
+// ── Sandbox (Kun.Sandbox) ─────────────────────────────────────────────────────
+// Demonstrates the in-memory backend — zero network, zero isolation —
+// suitable for developer-loop smoke tests and unit tests. Production
+// wiring would call UseSupervisor(baseUrl) or UseE2BCloud(apiKey, teamId).
+builder.Services.AddKunSandbox(opts => opts.UseInMemory());
+
 // ── gRPC ──────────────────────────────────────────────────────────────────────
 builder.Services.AddKunGrpc();
+
+// ── OpenAPI (ASP.NET Core 10 built-in, source-gen-friendly) ──────────────────
+// Exposed at /openapi/v1.json; gated by environment below so production hosts
+// don't leak the document without an explicit opt-in.
+builder.Services.AddOpenApi();
 
 // ── Build ─────────────────────────────────────────────────────────────────────
 var app = builder.Build();
 
 app.UseExceptionHandler();
+
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+}
 
 // ── Database initialisation (apply EF migrations on startup) ─────────────────
 using (var scope = app.Services.CreateScope())
@@ -123,7 +158,15 @@ app.MapGet("/products/{id:guid}", async (Guid id, Kun.Mediator.ISender sender, C
     return dto is null ? Results.NotFound() : Results.Ok(dto);
 });
 
-app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
+// Demo: set tenant.id + user.id baggage so Kun.Observability's activity enricher
+// mirrors them onto span tags — visible in the Aspire Dashboard trace view.
+// Real services populate these from the S2S JWT claims in a middleware.
+app.MapGet("/health", () =>
+{
+    Activity.Current?.SetBaggage(KunBaggageKeys.TenantId, "demo-tenant-0001");
+    Activity.Current?.SetBaggage(KunBaggageKeys.UserId, "demo-user-0001");
+    return Results.Ok(new { status = "healthy" });
+});
 
 app.MapGrpcService<CatalogGrpcService>();
 

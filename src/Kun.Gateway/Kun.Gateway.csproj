@@ -16,6 +16,7 @@
     <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" />
     <PackageReference Include="Microsoft.IdentityModel.Tokens" />
     <PackageReference Include="Grpc.AspNetCore.Web" />
+    <PackageReference Include="StackExchange.Redis" />
   </ItemGroup>
 
 </Project>

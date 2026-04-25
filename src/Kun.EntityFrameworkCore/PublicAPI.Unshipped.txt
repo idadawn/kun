@@ -19,6 +19,7 @@ Kun.EntityFrameworkCore.Behaviors.UnitOfWorkPipelineBehavior<TRequest, TResponse
 Kun.EntityFrameworkCore.Behaviors.UnitOfWorkPipelineBehavior<TRequest, TResponse>.Handle(TRequest request, Kun.Mediator.RequestHandlerDelegate<TResponse>! next, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<TResponse>
 Kun.EntityFrameworkCore.DependencyInjection.KunEntityFrameworkCoreServiceCollectionExtensions
 static Kun.EntityFrameworkCore.DependencyInjection.KunEntityFrameworkCoreServiceCollectionExtensions.AddKunEntityFrameworkCore(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Kun.EntityFrameworkCore.DependencyInjection.KunEntityFrameworkCoreServiceCollectionExtensions.AddKunTenantRls(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 Kun.EntityFrameworkCore.EfUnitOfWork
 Kun.EntityFrameworkCore.EfUnitOfWork.EfUnitOfWork(Kun.EntityFrameworkCore.KunDbContext! dbContext, Kun.Core.Domain.IDomainEventDispatcher! domainEvents, Kun.EventBus.Outbox.IntegrationEventBuffer! integrationBuffer) -> void
 Kun.EntityFrameworkCore.EfUnitOfWork.SaveChangesAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<int>!
@@ -33,6 +34,7 @@ Kun.EntityFrameworkCore.KunDbContext.KunDbContext(Microsoft.EntityFrameworkCore.
 Kun.EntityFrameworkCore.KunDbContext.OutboxMessages.get -> Microsoft.EntityFrameworkCore.DbSet<Kun.EventBus.Outbox.OutboxMessage!>!
 virtual Kun.EntityFrameworkCore.KunDbContext.DefaultSchema.get -> string?
 override Kun.EntityFrameworkCore.KunDbContext.ConfigureConventions(Microsoft.EntityFrameworkCore.ModelConfigurationBuilder! configurationBuilder) -> void
+override Kun.EntityFrameworkCore.KunDbContext.OnConfiguring(Microsoft.EntityFrameworkCore.DbContextOptionsBuilder! optionsBuilder) -> void
 override Kun.EntityFrameworkCore.KunDbContext.OnModelCreating(Microsoft.EntityFrameworkCore.ModelBuilder! modelBuilder) -> void
 Kun.EntityFrameworkCore.NoOpDomainEventDispatcher
 Kun.EntityFrameworkCore.NoOpDomainEventDispatcher.NoOpDomainEventDispatcher() -> void
@@ -40,6 +42,17 @@ Kun.EntityFrameworkCore.NoOpDomainEventDispatcher.DispatchAsync(System.Collectio
 Kun.EntityFrameworkCore.OutboxMessageConfiguration
 Kun.EntityFrameworkCore.OutboxMessageConfiguration.OutboxMessageConfiguration() -> void
 Kun.EntityFrameworkCore.OutboxMessageConfiguration.Configure(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Kun.EventBus.Outbox.OutboxMessage!>! builder) -> void
+Kun.EntityFrameworkCore.Extensions.KunDbContextOptionsBuilderExtensions
+static Kun.EntityFrameworkCore.Extensions.KunDbContextOptionsBuilderExtensions.UseKunSchema(this Microsoft.EntityFrameworkCore.DbContextOptionsBuilder! builder, string! schema) -> Microsoft.EntityFrameworkCore.DbContextOptionsBuilder!
+static Kun.EntityFrameworkCore.Extensions.KunDbContextOptionsBuilderExtensions.UseKunSchema<TContext>(this Microsoft.EntityFrameworkCore.DbContextOptionsBuilder<TContext!>! builder, string! schema) -> Microsoft.EntityFrameworkCore.DbContextOptionsBuilder<TContext!>!
+Kun.EntityFrameworkCore.Interceptors.SchemaConsistencyInterceptor
+Kun.EntityFrameworkCore.Interceptors.SchemaConsistencyInterceptor.SchemaConsistencyInterceptor() -> void
+Kun.EntityFrameworkCore.Interceptors.SchemaConsistencyInterceptor.SavingChangesAsync(Microsoft.EntityFrameworkCore.Diagnostics.DbContextEventData! eventData, Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult<int> result, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult<int>>
+Kun.EntityFrameworkCore.Interceptors.SchemaConsistencyInterceptor.SavingChanges(Microsoft.EntityFrameworkCore.Diagnostics.DbContextEventData! eventData, Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult<int> result) -> Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult<int>
+Kun.EntityFrameworkCore.Interceptors.TenantRlsTransactionInterceptor
+Kun.EntityFrameworkCore.Interceptors.TenantRlsTransactionInterceptor.TenantRlsTransactionInterceptor(Kun.Core.MultiTenancy.ITenantContext! tenantContext, Microsoft.Extensions.Logging.ILogger<Kun.EntityFrameworkCore.Interceptors.TenantRlsTransactionInterceptor!>? logger = null) -> void
+override Kun.EntityFrameworkCore.Interceptors.TenantRlsTransactionInterceptor.TransactionStartedAsync(System.Data.Common.DbConnection! connection, Microsoft.EntityFrameworkCore.Diagnostics.TransactionEndEventData! eventData, System.Data.Common.DbTransaction! result, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Data.Common.DbTransaction!>
+override Kun.EntityFrameworkCore.Interceptors.TenantRlsTransactionInterceptor.TransactionStarted(System.Data.Common.DbConnection! connection, Microsoft.EntityFrameworkCore.Diagnostics.TransactionEndEventData! eventData, System.Data.Common.DbTransaction! result) -> System.Data.Common.DbTransaction!
 Kun.EntityFrameworkCore.Interceptors.TenantRlsConnectionInterceptor
 Kun.EntityFrameworkCore.Interceptors.TenantRlsConnectionInterceptor.TenantRlsConnectionInterceptor(Kun.Core.MultiTenancy.ITenantContext! tenantContext, Microsoft.Extensions.Logging.ILogger<Kun.EntityFrameworkCore.Interceptors.TenantRlsConnectionInterceptor!>! logger) -> void
 const Kun.EntityFrameworkCore.Interceptors.TenantRlsConnectionInterceptor.SafeTenantIdPattern = "^[A-Za-z0-9._-]{1,128}$" -> string!
@@ -47,3 +60,34 @@ override Kun.EntityFrameworkCore.Interceptors.TenantRlsConnectionInterceptor.Con
 override Kun.EntityFrameworkCore.Interceptors.TenantRlsConnectionInterceptor.ConnectionOpenedAsync(System.Data.Common.DbConnection! connection, Microsoft.EntityFrameworkCore.Diagnostics.ConnectionEndEventData! eventData, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 override Kun.EntityFrameworkCore.Interceptors.TenantRlsConnectionInterceptor.ConnectionClosing(System.Data.Common.DbConnection! connection, Microsoft.EntityFrameworkCore.Diagnostics.ConnectionEventData! eventData, Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult result) -> Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult
 override Kun.EntityFrameworkCore.Interceptors.TenantRlsConnectionInterceptor.ConnectionClosingAsync(System.Data.Common.DbConnection! connection, Microsoft.EntityFrameworkCore.Diagnostics.ConnectionEventData! eventData, Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult result) -> System.Threading.Tasks.ValueTask<Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult>
+Kun.EntityFrameworkCore.MultiTenancy.ITenantDbContextFactory<TContext>
+Kun.EntityFrameworkCore.MultiTenancy.ITenantDbContextFactory<TContext>.CreateForTenant(string! tenantId) -> TContext!
+Kun.EntityFrameworkCore.MultiTenancy.KunMultiTenancyOptions
+Kun.EntityFrameworkCore.MultiTenancy.KunMultiTenancyOptions.KunMultiTenancyOptions() -> void
+Kun.EntityFrameworkCore.MultiTenancy.KunMultiTenancyOptions.AllowDestructiveDeprovision.get -> bool
+Kun.EntityFrameworkCore.MultiTenancy.KunMultiTenancyOptions.AllowDestructiveDeprovision.set -> void
+Kun.EntityFrameworkCore.MultiTenancy.KunMultiTenancyOptions.Strategy.get -> Kun.Core.MultiTenancy.TenantIsolationStrategy
+Kun.EntityFrameworkCore.MultiTenancy.KunMultiTenancyOptions.Strategy.set -> void
+Kun.EntityFrameworkCore.MultiTenancy.KunMultiTenancyServiceCollectionExtensions
+static Kun.EntityFrameworkCore.MultiTenancy.KunMultiTenancyServiceCollectionExtensions.AddKunMultiTenancy<TContext>(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.EntityFrameworkCore.MultiTenancy.KunMultiTenancyOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Kun.EntityFrameworkCore.MultiTenancy.SchemaPerTenantProvisioner<TContext>
+Kun.EntityFrameworkCore.MultiTenancy.SchemaPerTenantProvisioner<TContext>.SchemaPerTenantProvisioner(Kun.EntityFrameworkCore.MultiTenancy.ITenantDbContextFactory<TContext!>! factory, Microsoft.Extensions.Options.IOptions<Kun.EntityFrameworkCore.MultiTenancy.KunMultiTenancyOptions!>! options, Microsoft.Extensions.Logging.ILogger<Kun.EntityFrameworkCore.MultiTenancy.SchemaPerTenantProvisioner<TContext!>!>? logger = null) -> void
+Kun.EntityFrameworkCore.MultiTenancy.SchemaPerTenantProvisioner<TContext>.ProvisionAsync(Kun.Core.MultiTenancy.TenantInfo! tenant, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.EntityFrameworkCore.MultiTenancy.SchemaPerTenantProvisioner<TContext>.DeprovisionAsync(string! tenantId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.EntityFrameworkCore.MultiTenancy.TenantAwareModelCacheKeyFactory
+Kun.EntityFrameworkCore.MultiTenancy.TenantAwareModelCacheKeyFactory.TenantAwareModelCacheKeyFactory() -> void
+Kun.EntityFrameworkCore.MultiTenancy.TenantAwareModelCacheKeyFactory.Create(Microsoft.EntityFrameworkCore.DbContext! context, bool designTime) -> object!
+Kun.EntityFrameworkCore.MultiTenancy.IDbConnectionResolver
+Kun.EntityFrameworkCore.MultiTenancy.IDbConnectionResolver.ResolveConnectionString(string! tenantId) -> string!
+Kun.EntityFrameworkCore.MultiTenancy.TenantsConnectionOptions
+Kun.EntityFrameworkCore.MultiTenancy.TenantsConnectionOptions.TenantsConnectionOptions() -> void
+Kun.EntityFrameworkCore.MultiTenancy.TenantsConnectionOptions.ConnectionStrings.get -> System.Collections.Generic.IDictionary<string!, string!>!
+Kun.EntityFrameworkCore.MultiTenancy.TenantsConnectionOptions.ConnectionStrings.set -> void
+const Kun.EntityFrameworkCore.MultiTenancy.TenantsConnectionOptions.SectionName = "Kun:MultiTenancy:Tenants" -> string!
+Kun.EntityFrameworkCore.MultiTenancy.OptionsBasedTenantConnectionResolver
+Kun.EntityFrameworkCore.MultiTenancy.OptionsBasedTenantConnectionResolver.OptionsBasedTenantConnectionResolver(Microsoft.Extensions.Options.IOptionsMonitor<Kun.EntityFrameworkCore.MultiTenancy.TenantsConnectionOptions!>! options) -> void
+Kun.EntityFrameworkCore.MultiTenancy.OptionsBasedTenantConnectionResolver.ResolveConnectionString(string! tenantId) -> string!
+Kun.EntityFrameworkCore.MultiTenancy.DatabasePerTenantProvisioner<TContext>
+Kun.EntityFrameworkCore.MultiTenancy.DatabasePerTenantProvisioner<TContext>.DatabasePerTenantProvisioner(Kun.EntityFrameworkCore.MultiTenancy.ITenantDbContextFactory<TContext!>! factory, Microsoft.Extensions.Logging.ILogger<Kun.EntityFrameworkCore.MultiTenancy.DatabasePerTenantProvisioner<TContext!>!>? logger = null) -> void
+virtual Kun.EntityFrameworkCore.MultiTenancy.DatabasePerTenantProvisioner<TContext>.ProvisionAsync(Kun.Core.MultiTenancy.TenantInfo! tenant, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+virtual Kun.EntityFrameworkCore.MultiTenancy.DatabasePerTenantProvisioner<TContext>.DeprovisionAsync(string! tenantId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!

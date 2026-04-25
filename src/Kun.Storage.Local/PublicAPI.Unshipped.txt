@@ -1,0 +1,21 @@
+#nullable enable
+Kun.Storage.Local.DependencyInjection.StorageServiceCollectionExtensions
+static Kun.Storage.Local.DependencyInjection.StorageServiceCollectionExtensions.AddKunLocalFileStorage(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.Storage.Local.LocalFileStorageOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Kun.Storage.Local.LocalFileStorageOptions
+Kun.Storage.Local.LocalFileStorageOptions.DefaultPresignedUrlLifetime.get -> System.TimeSpan
+Kun.Storage.Local.LocalFileStorageOptions.DefaultPresignedUrlLifetime.set -> void
+Kun.Storage.Local.LocalFileStorageOptions.LocalFileStorageOptions() -> void
+Kun.Storage.Local.LocalFileStorageOptions.PublicBaseUrl.get -> System.Uri!
+Kun.Storage.Local.LocalFileStorageOptions.PublicBaseUrl.set -> void
+Kun.Storage.Local.LocalFileStorageOptions.RootPath.get -> string!
+Kun.Storage.Local.LocalFileStorageOptions.RootPath.set -> void
+Kun.Storage.Local.LocalFileSystemStorage
+Kun.Storage.Local.LocalFileSystemStorage.DeleteAsync(string! objectKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
+Kun.Storage.Local.LocalFileSystemStorage.ExistsAsync(string! objectKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
+Kun.Storage.Local.LocalFileSystemStorage.GetMetadataAsync(string! objectKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Storage.ObjectMetadata?>!
+Kun.Storage.Local.LocalFileSystemStorage.GetPresignedDownloadAsync(string! objectKey, Kun.Storage.DownloadOptions? options = null, System.TimeSpan? expiresIn = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Storage.PresignedDownloadUrl!>!
+Kun.Storage.Local.LocalFileSystemStorage.GetPresignedPostUploadAsync(string! objectKey, Kun.Storage.UploadConstraints? constraints = null, System.TimeSpan? expiresIn = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Storage.PresignedPostUpload!>!
+Kun.Storage.Local.LocalFileSystemStorage.GetPresignedUploadAsync(string! objectKey, string! contentType, Kun.Storage.UploadConstraints? constraints = null, System.TimeSpan? expiresIn = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Storage.PresignedUploadUrl!>!
+Kun.Storage.Local.LocalFileSystemStorage.ListAsync(string? prefix = null, int maxKeys = 1000, string? continuationToken = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Storage.ListObjectsResult!>!
+Kun.Storage.Local.LocalFileSystemStorage.LocalFileSystemStorage(Microsoft.Extensions.Options.IOptions<Kun.Storage.Local.LocalFileStorageOptions!>! options, Microsoft.Extensions.Logging.ILogger<Kun.Storage.Local.LocalFileSystemStorage!>! logger, System.TimeProvider? timeProvider = null) -> void
+Kun.Storage.Local.LocalFileSystemStorage.UploadAsync(string! objectKey, System.IO.Stream! content, string! contentType, Kun.Storage.UploadConstraints? constraints = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Storage.ObjectMetadata!>!

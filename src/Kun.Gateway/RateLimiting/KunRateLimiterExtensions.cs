@@ -38,6 +38,115 @@ public static class KunRateLimiterExtensions
 
         return services;
     }
+
+    /// <summary>Name of the named policy registered by <c>AddKunSlidingWindowRateLimiter</c>.</summary>
+    public const string SlidingWindowPolicyName = "kun-sliding-window";
+
+    /// <summary>Name of the named policy registered by <c>AddKunTokenBucketRateLimiter</c>.</summary>
+    public const string TokenBucketPolicyName = "kun-token-bucket";
+
+    /// <summary>
+    /// Registers a sliding-window rate limiter policy partitioned by the resolved
+    /// <see cref="IRateLimitPartitionResolver"/> key. Call
+    /// <c>app.MapXxx().RequireRateLimiting(KunRateLimiterExtensions.SlidingWindowPolicyName)</c>
+    /// on endpoints that should enforce it. Defaults: 100 permits per 1-minute window with
+    /// 6 segments. Defence-in-depth sibling to the fixed-window path; both may coexist.
+    /// </summary>
+    public static IServiceCollection AddKunSlidingWindowRateLimiter(
+        this IServiceCollection services,
+        Action<KunSlidingWindowOptions>? configureKun = null,
+        Action<RateLimiterOptions>? configureHost = null)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+
+        services.TryAddSingleton<IRateLimitPartitionResolver, TenantRateLimitPartitionResolver>();
+
+        if (configureKun is not null)
+        {
+            services.Configure(configureKun);
+        }
+        else
+        {
+            services.AddOptions<KunSlidingWindowOptions>();
+        }
+
+        services.AddRateLimiter(options =>
+        {
+            options.AddPolicy<string, KunSlidingWindowRateLimiterPolicy>(SlidingWindowPolicyName);
+            configureHost?.Invoke(options);
+        });
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers a token-bucket rate limiter policy partitioned by the resolved
+    /// <see cref="IRateLimitPartitionResolver"/> key. Defaults: 100-token burst budget,
+    /// refilled at 20 tokens / 10 seconds (≈120 tokens/minute steady state).
+    /// Absorbs bursty traffic better than fixed-window; use for APIs where clients
+    /// naturally come in bursts (webhook fanout, batch imports).
+    /// </summary>
+    /// <summary>
+    /// Registers <see cref="RedisFixedWindowRateLimitStore"/> as the default
+    /// <see cref="IRedisRateLimitStore"/> and binds <see cref="RedisRateLimitStoreOptions"/>.
+    /// Consumers are responsible for registering their own <c>IConnectionMultiplexer</c>
+    /// (e.g. via <c>AddStackExchangeRedisCache</c> or a direct Singleton registration).
+    /// This primitive provides the distributed counter surface; full
+    /// <c>PartitionedRateLimiter&lt;HttpContext&gt;</c> integration with ASP.NET's
+    /// rate-limit middleware is tracked as future work.
+    /// </summary>
+    public static IServiceCollection AddKunRedisRateLimitStore(
+        this IServiceCollection services,
+        Action<RedisRateLimitStoreOptions>? configure = null)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+
+        if (configure is not null)
+        {
+            services.Configure(configure);
+        }
+        else
+        {
+            services.AddOptions<RedisRateLimitStoreOptions>();
+        }
+
+        services.TryAddSingleton<IRedisRateLimitStore, RedisFixedWindowRateLimitStore>();
+        return services;
+    }
+
+    /// <summary>
+    /// Registers a token-bucket rate limiter policy partitioned by the resolved
+    /// <see cref="IRateLimitPartitionResolver"/> key. Defaults: 100-token burst budget,
+    /// refilled at 20 tokens / 10 seconds (≈120 tokens/minute steady state).
+    /// Absorbs bursty traffic better than fixed-window; use for APIs where clients
+    /// naturally come in bursts (webhook fanout, batch imports).
+    /// </summary>
+    public static IServiceCollection AddKunTokenBucketRateLimiter(
+        this IServiceCollection services,
+        Action<KunTokenBucketOptions>? configureKun = null,
+        Action<RateLimiterOptions>? configureHost = null)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+
+        services.TryAddSingleton<IRateLimitPartitionResolver, TenantRateLimitPartitionResolver>();
+
+        if (configureKun is not null)
+        {
+            services.Configure(configureKun);
+        }
+        else
+        {
+            services.AddOptions<KunTokenBucketOptions>();
+        }
+
+        services.AddRateLimiter(options =>
+        {
+            options.AddPolicy<string, KunTokenBucketRateLimiterPolicy>(TokenBucketPolicyName);
+            configureHost?.Invoke(options);
+        });
+
+        return services;
+    }
 }
 
 /// <summary>

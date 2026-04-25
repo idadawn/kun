@@ -82,7 +82,7 @@ public static class KunStorageServiceCollectionExtensions
         return services;
     }
 
-    private static IAmazonS3 BuildS3Client(StorageOptions options)
+    private static AmazonS3Client BuildS3Client(StorageOptions options)
     {
         var config = new AmazonS3Config();
 

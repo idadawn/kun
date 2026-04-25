@@ -1,50 +1,49 @@
-using System.Security.Cryptography;
 using System.Text.Json.Serialization;
 using Kun.Gateway.Configuration;
+using Kun.Gateway.Jwks;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Kun.Gateway.Endpoints;
 
 /// <summary>
-/// Extension methods for mapping the internal JWKS endpoint.
+/// Extension methods for mapping the public JWKS endpoint.
 /// </summary>
 public static class JwksEndpoint
 {
     /// <summary>
     /// Maps <c>/.well-known/jwks.json</c> — returns the gateway's RSA public key as a JSON Web Key Set.
     /// The <c>kid</c> is derived from the SHA-256 hash of the RSA modulus for stable key identification.
+    /// Response is cached by <see cref="JwksResponseBuilder"/> and only rebuilt when the
+    /// underlying public-key file is modified.
     /// </summary>
     /// <param name="endpoints">The endpoint route builder.</param>
+    /// <param name="additionalGate">
+    /// Optional predicate evaluated on each request. Return <see langword="false"/> to respond 404.
+    /// Typical use is a production-only allow-list (e.g. loopback only when this route is
+    /// supposed to be reachable only via mesh-internal hops). When <see langword="null"/>,
+    /// no additional gating is applied.
+    /// </param>
     /// <returns>The <see cref="IEndpointConventionBuilder"/> for the mapped route.</returns>
-    public static IEndpointConventionBuilder MapKunJwks(this IEndpointRouteBuilder endpoints)
+    public static IEndpointConventionBuilder MapKunJwks(
+        this IEndpointRouteBuilder endpoints,
+        Func<HttpContext, bool>? additionalGate = null)
     {
         ArgumentNullException.ThrowIfNull(endpoints);
 
-        return endpoints.MapGet("/.well-known/jwks.json", (IOptions<KunGatewayOptions> options) =>
-        {
-            var opts = options.Value;
-            var pem = File.ReadAllText(opts.PublicKeyPath);
-            var rsa = RSA.Create();
-            rsa.ImportFromPem(pem);
-
-            var rsaKey = new RsaSecurityKey(rsa);
-            var jwk = JsonWebKeyConverter.ConvertFromRSASecurityKey(rsaKey);
-
-            // Derive a stable kid from SHA-256 of the modulus bytes
-            var modulusBytes = rsa.ExportParameters(false).Modulus ?? [];
-            var hash = System.Security.Cryptography.SHA256.HashData(modulusBytes);
-            jwk.KeyId = Convert.ToBase64String(hash)[..16]; // truncate to 16 chars
-            jwk.Use = "sig";
-            jwk.Alg = "RS256";
-
-            var keySet = new JwksResponse
+        return endpoints.MapGet("/.well-known/jwks.json",
+            (HttpContext httpContext,
+             IOptions<KunGatewayOptions> options,
+             JwksResponseBuilder builder) =>
             {
-                Keys = [new JwkDto(jwk)],
-            };
+                if (additionalGate is not null && !additionalGate(httpContext))
+                {
+                    return Results.NotFound();
+                }
 
-            return Results.Ok(keySet);
-        });
+                var keySet = builder.Build(options.Value.PublicKeyPath);
+                return Results.Ok(keySet);
+            });
     }
 }
 

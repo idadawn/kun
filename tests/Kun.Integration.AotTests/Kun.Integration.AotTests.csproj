@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsAotCandidate>false</IsAotCandidate>
+    <Description>
+      AOT publish integration tests — shells out to `dotnet publish
+      -p:PublishAot=true` on Kun.Sample.Minimal and asserts the
+      output is free of trim / AOT warnings. When the platform
+      linker (clang / gcc) is available, additionally executes the
+      produced native binary and asserts known sample output.
+    </Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      No ProjectReference to Kun.Sample.Minimal: we deliberately
+      shell out to `dotnet publish` against its csproj so the
+      publish step is exercised as a downstream consumer would
+      see it. Resolving the sample via filesystem also keeps this
+      test project free of AOT analyzer pressure on its own.
+    -->
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="coverlet.collector" />
+  </ItemGroup>
+
+</Project>

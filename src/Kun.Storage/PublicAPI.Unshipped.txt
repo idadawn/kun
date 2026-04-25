@@ -1,0 +1,128 @@
+#nullable enable
+Kun.Storage.Abstractions.ContentDispositionPolicy
+Kun.Storage.Abstractions.IFileStorage
+Kun.Storage.Abstractions.IFileStorage.CreatePresignedDownloadUrlAsync(string! path, Kun.Storage.Abstractions.PresignedDownloadRequest! request, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Storage.Abstractions.PresignedDownloadUrl!>!
+Kun.Storage.Abstractions.IFileStorage.CreatePresignedUploadUrlAsync(string! path, Kun.Storage.Abstractions.PresignedUploadRequest! request, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Storage.Abstractions.PresignedUploadUrl!>!
+Kun.Storage.Abstractions.IFileStorage.DeleteObjectAsync(string! path, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Storage.Abstractions.IFileStorage.GetObjectAsync(string! path, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Storage.Abstractions.ObjectDownload!>!
+Kun.Storage.Abstractions.IFileStorage.HeadObjectAsync(string! path, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Storage.Abstractions.ObjectMetadata?>!
+Kun.Storage.Abstractions.IFileStorage.ListObjectsAsync(string! prefix, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<Kun.Storage.Abstractions.ObjectSummary!>!
+Kun.Storage.Abstractions.IFileStorage.PutObjectAsync(string! path, System.IO.Stream! content, Kun.Storage.Abstractions.PutObjectOptions! options, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Storage.Abstractions.ObjectDownload
+Kun.Storage.Abstractions.ObjectDownload.Content.get -> System.IO.Stream!
+Kun.Storage.Abstractions.ObjectDownload.Dispose() -> void
+Kun.Storage.Abstractions.ObjectDownload.DisposeAsync() -> System.Threading.Tasks.ValueTask
+Kun.Storage.Abstractions.ObjectDownload.Metadata.get -> Kun.Storage.Abstractions.ObjectMetadata!
+Kun.Storage.Abstractions.ObjectDownload.ObjectDownload(System.IO.Stream! content, Kun.Storage.Abstractions.ObjectMetadata! metadata) -> void
+Kun.Storage.Abstractions.ObjectMetadata
+Kun.Storage.Abstractions.ObjectMetadata.ContentDisposition.get -> string?
+Kun.Storage.Abstractions.ObjectMetadata.ContentDisposition.init -> void
+Kun.Storage.Abstractions.ObjectMetadata.ContentLength.get -> long
+Kun.Storage.Abstractions.ObjectMetadata.ContentLength.init -> void
+Kun.Storage.Abstractions.ObjectMetadata.ContentType.get -> string!
+Kun.Storage.Abstractions.ObjectMetadata.ContentType.init -> void
+Kun.Storage.Abstractions.ObjectMetadata.ETag.get -> string?
+Kun.Storage.Abstractions.ObjectMetadata.ETag.init -> void
+Kun.Storage.Abstractions.ObjectMetadata.LastModified.get -> System.DateTimeOffset
+Kun.Storage.Abstractions.ObjectMetadata.LastModified.init -> void
+Kun.Storage.Abstractions.ObjectMetadata.ObjectMetadata(string! ContentType, long ContentLength, string? ETag, System.DateTimeOffset LastModified, string? ContentDisposition = null, System.Collections.Generic.IReadOnlyDictionary<string!, string!>? UserMetadata = null) -> void
+Kun.Storage.Abstractions.ObjectMetadata.UserMetadata.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>?
+Kun.Storage.Abstractions.ObjectMetadata.UserMetadata.init -> void
+Kun.Storage.Abstractions.ObjectSummary
+Kun.Storage.Abstractions.ObjectSummary.ETag.get -> string?
+Kun.Storage.Abstractions.ObjectSummary.ETag.init -> void
+Kun.Storage.Abstractions.ObjectSummary.LastModified.get -> System.DateTimeOffset
+Kun.Storage.Abstractions.ObjectSummary.LastModified.init -> void
+Kun.Storage.Abstractions.ObjectSummary.ObjectSummary(string! Path, long Size, System.DateTimeOffset LastModified, string? ETag = null) -> void
+Kun.Storage.Abstractions.ObjectSummary.Path.get -> string!
+Kun.Storage.Abstractions.ObjectSummary.Path.init -> void
+Kun.Storage.Abstractions.ObjectSummary.Size.get -> long
+Kun.Storage.Abstractions.ObjectSummary.Size.init -> void
+Kun.Storage.Abstractions.PresignedDownloadRequest
+Kun.Storage.Abstractions.PresignedDownloadRequest.ExpiresIn.get -> System.TimeSpan
+Kun.Storage.Abstractions.PresignedDownloadRequest.ExpiresIn.init -> void
+Kun.Storage.Abstractions.PresignedDownloadRequest.PresignedDownloadRequest(System.TimeSpan ExpiresIn, string? ResponseContentDisposition = null) -> void
+Kun.Storage.Abstractions.PresignedDownloadRequest.ResponseContentDisposition.get -> string?
+Kun.Storage.Abstractions.PresignedDownloadRequest.ResponseContentDisposition.init -> void
+Kun.Storage.Abstractions.PresignedDownloadUrl
+Kun.Storage.Abstractions.PresignedDownloadUrl.ExpiresAt.get -> System.DateTimeOffset
+Kun.Storage.Abstractions.PresignedDownloadUrl.ExpiresAt.init -> void
+Kun.Storage.Abstractions.PresignedDownloadUrl.PresignedDownloadUrl(System.Uri! Url, System.DateTimeOffset ExpiresAt) -> void
+Kun.Storage.Abstractions.PresignedDownloadUrl.Url.get -> System.Uri!
+Kun.Storage.Abstractions.PresignedDownloadUrl.Url.init -> void
+Kun.Storage.Abstractions.PresignedUploadRequest
+Kun.Storage.Abstractions.PresignedUploadRequest.ContentLengthMax.get -> long?
+Kun.Storage.Abstractions.PresignedUploadRequest.ContentLengthMax.init -> void
+Kun.Storage.Abstractions.PresignedUploadRequest.ContentLengthMin.get -> long?
+Kun.Storage.Abstractions.PresignedUploadRequest.ContentLengthMin.init -> void
+Kun.Storage.Abstractions.PresignedUploadRequest.ContentType.get -> string?
+Kun.Storage.Abstractions.PresignedUploadRequest.ContentType.init -> void
+Kun.Storage.Abstractions.PresignedUploadRequest.ExpiresIn.get -> System.TimeSpan
+Kun.Storage.Abstractions.PresignedUploadRequest.ExpiresIn.init -> void
+Kun.Storage.Abstractions.PresignedUploadRequest.PresignedUploadRequest(System.TimeSpan ExpiresIn, string? ContentType = null, long? ContentLengthMin = null, long? ContentLengthMax = null) -> void
+Kun.Storage.Abstractions.PresignedUploadUrl
+Kun.Storage.Abstractions.PresignedUploadUrl.ExpiresAt.get -> System.DateTimeOffset
+Kun.Storage.Abstractions.PresignedUploadUrl.ExpiresAt.init -> void
+Kun.Storage.Abstractions.PresignedUploadUrl.HttpMethod.get -> string!
+Kun.Storage.Abstractions.PresignedUploadUrl.HttpMethod.init -> void
+Kun.Storage.Abstractions.PresignedUploadUrl.PresignedUploadUrl(System.Uri! Url, string! HttpMethod, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! RequiredHeaders, System.DateTimeOffset ExpiresAt) -> void
+Kun.Storage.Abstractions.PresignedUploadUrl.RequiredHeaders.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Kun.Storage.Abstractions.PresignedUploadUrl.RequiredHeaders.init -> void
+Kun.Storage.Abstractions.PresignedUploadUrl.Url.get -> System.Uri!
+Kun.Storage.Abstractions.PresignedUploadUrl.Url.init -> void
+Kun.Storage.Abstractions.PutObjectOptions
+Kun.Storage.Abstractions.PutObjectOptions.CacheControl.get -> string?
+Kun.Storage.Abstractions.PutObjectOptions.CacheControl.init -> void
+Kun.Storage.Abstractions.PutObjectOptions.ContentDisposition.get -> string?
+Kun.Storage.Abstractions.PutObjectOptions.ContentDisposition.init -> void
+Kun.Storage.Abstractions.PutObjectOptions.ContentType.get -> string!
+Kun.Storage.Abstractions.PutObjectOptions.ContentType.init -> void
+Kun.Storage.Abstractions.PutObjectOptions.FileName.get -> string?
+Kun.Storage.Abstractions.PutObjectOptions.FileName.init -> void
+Kun.Storage.Abstractions.PutObjectOptions.PutObjectOptions(string! ContentType, string? ContentDisposition = null, string? CacheControl = null, string? FileName = null, System.Collections.Generic.IReadOnlyDictionary<string!, string!>? UserMetadata = null) -> void
+Kun.Storage.Abstractions.PutObjectOptions.UserMetadata.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>?
+Kun.Storage.Abstractions.PutObjectOptions.UserMetadata.init -> void
+Kun.Storage.Abstractions.StorageOptions
+Kun.Storage.Abstractions.StorageOptions.AccessKey.get -> string!
+Kun.Storage.Abstractions.StorageOptions.AccessKey.set -> void
+Kun.Storage.Abstractions.StorageOptions.BucketName.get -> string!
+Kun.Storage.Abstractions.StorageOptions.BucketName.set -> void
+Kun.Storage.Abstractions.StorageOptions.Endpoint.get -> string!
+Kun.Storage.Abstractions.StorageOptions.Endpoint.set -> void
+Kun.Storage.Abstractions.StorageOptions.Provider.get -> Kun.Storage.Abstractions.StorageProvider
+Kun.Storage.Abstractions.StorageOptions.Provider.set -> void
+Kun.Storage.Abstractions.StorageOptions.Region.get -> string!
+Kun.Storage.Abstractions.StorageOptions.Region.set -> void
+Kun.Storage.Abstractions.StorageOptions.RootPath.get -> string!
+Kun.Storage.Abstractions.StorageOptions.RootPath.set -> void
+Kun.Storage.Abstractions.StorageOptions.SecretKey.get -> string!
+Kun.Storage.Abstractions.StorageOptions.SecretKey.set -> void
+Kun.Storage.Abstractions.StorageOptions.StorageOptions() -> void
+Kun.Storage.Abstractions.StorageProvider
+Kun.Storage.Abstractions.StorageProvider.Local = 0 -> Kun.Storage.Abstractions.StorageProvider
+Kun.Storage.Abstractions.StorageProvider.S3 = 1 -> Kun.Storage.Abstractions.StorageProvider
+Kun.Storage.DependencyInjection.KunStorageServiceCollectionExtensions
+Kun.Storage.Implementations.LocalFileStorage
+Kun.Storage.Implementations.LocalFileStorage.CreatePresignedDownloadUrlAsync(string! path, Kun.Storage.Abstractions.PresignedDownloadRequest! request, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Storage.Abstractions.PresignedDownloadUrl!>!
+Kun.Storage.Implementations.LocalFileStorage.CreatePresignedUploadUrlAsync(string! path, Kun.Storage.Abstractions.PresignedUploadRequest! request, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Storage.Abstractions.PresignedUploadUrl!>!
+Kun.Storage.Implementations.LocalFileStorage.DeleteObjectAsync(string! path, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Storage.Implementations.LocalFileStorage.GetObjectAsync(string! path, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Storage.Abstractions.ObjectDownload!>!
+Kun.Storage.Implementations.LocalFileStorage.HeadObjectAsync(string! path, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Storage.Abstractions.ObjectMetadata?>!
+Kun.Storage.Implementations.LocalFileStorage.ListObjectsAsync(string! prefix, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<Kun.Storage.Abstractions.ObjectSummary!>!
+Kun.Storage.Implementations.LocalFileStorage.LocalFileStorage(Microsoft.Extensions.Options.IOptions<Kun.Storage.Abstractions.StorageOptions!>! options, Microsoft.Extensions.Logging.ILogger<Kun.Storage.Implementations.LocalFileStorage!>! logger) -> void
+Kun.Storage.Implementations.LocalFileStorage.PutObjectAsync(string! path, System.IO.Stream! content, Kun.Storage.Abstractions.PutObjectOptions! options, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Storage.Implementations.S3FileStorage
+Kun.Storage.Implementations.S3FileStorage.CreatePresignedDownloadUrlAsync(string! path, Kun.Storage.Abstractions.PresignedDownloadRequest! request, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Storage.Abstractions.PresignedDownloadUrl!>!
+Kun.Storage.Implementations.S3FileStorage.CreatePresignedUploadUrlAsync(string! path, Kun.Storage.Abstractions.PresignedUploadRequest! request, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Storage.Abstractions.PresignedUploadUrl!>!
+Kun.Storage.Implementations.S3FileStorage.DeleteObjectAsync(string! path, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Storage.Implementations.S3FileStorage.GetObjectAsync(string! path, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Storage.Abstractions.ObjectDownload!>!
+Kun.Storage.Implementations.S3FileStorage.HeadObjectAsync(string! path, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Storage.Abstractions.ObjectMetadata?>!
+Kun.Storage.Implementations.S3FileStorage.ListObjectsAsync(string! prefix, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<Kun.Storage.Abstractions.ObjectSummary!>!
+Kun.Storage.Implementations.S3FileStorage.PutObjectAsync(string! path, System.IO.Stream! content, Kun.Storage.Abstractions.PutObjectOptions! options, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Storage.Implementations.S3FileStorage.S3FileStorage(Amazon.S3.IAmazonS3! s3, Microsoft.Extensions.Options.IOptions<Kun.Storage.Abstractions.StorageOptions!>! options, Microsoft.Extensions.Logging.ILogger<Kun.Storage.Implementations.S3FileStorage!>! logger) -> void
+static Kun.Storage.Abstractions.ContentDispositionPolicy.BuildAttachmentDisposition(string? fileName) -> string!
+static Kun.Storage.Abstractions.ContentDispositionPolicy.EnforceAttachment(string? contentType, string? currentDisposition, string? fileName = null) -> string?
+static Kun.Storage.Abstractions.ContentDispositionPolicy.IsUnsafeForInlineDisplay(string? contentType) -> bool
+static Kun.Storage.DependencyInjection.KunStorageServiceCollectionExtensions.AddKunStorage(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.Storage.Abstractions.StorageOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Kun.Storage.DependencyInjection.KunStorageServiceCollectionExtensions.AddLocalStorage(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.Storage.Abstractions.StorageOptions!>? configure = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Kun.Storage.DependencyInjection.KunStorageServiceCollectionExtensions.AddS3Storage(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.Storage.Abstractions.StorageOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!

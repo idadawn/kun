@@ -1,0 +1,71 @@
+#nullable enable
+Kun.Storage.ActiveWebContentTypes
+static Kun.Storage.ActiveWebContentTypes.Contains(string? contentType) -> bool
+static readonly Kun.Storage.ActiveWebContentTypes.Value -> System.Collections.Frozen.FrozenSet<string!>!
+Kun.Storage.DownloadOptions
+Kun.Storage.DownloadOptions.DownloadOptions(bool ForceDownload = false, string? DownloadFileName = null, System.Collections.Generic.IReadOnlyDictionary<string!, string!>? ResponseHeaders = null) -> void
+Kun.Storage.DownloadOptions.DownloadFileName.get -> string?
+Kun.Storage.DownloadOptions.DownloadFileName.init -> void
+Kun.Storage.DownloadOptions.ForceDownload.get -> bool
+Kun.Storage.DownloadOptions.ForceDownload.init -> void
+Kun.Storage.DownloadOptions.ResponseHeaders.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>?
+Kun.Storage.DownloadOptions.ResponseHeaders.init -> void
+Kun.Storage.IFileStorage
+Kun.Storage.IFileStorage.DeleteAsync(string! objectKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
+Kun.Storage.IFileStorage.ExistsAsync(string! objectKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
+Kun.Storage.IFileStorage.GetMetadataAsync(string! objectKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Storage.ObjectMetadata?>!
+Kun.Storage.IFileStorage.GetPresignedDownloadAsync(string! objectKey, Kun.Storage.DownloadOptions? options = null, System.TimeSpan? expiresIn = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Storage.PresignedDownloadUrl!>!
+Kun.Storage.IFileStorage.GetPresignedPostUploadAsync(string! objectKey, Kun.Storage.UploadConstraints? constraints = null, System.TimeSpan? expiresIn = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Storage.PresignedPostUpload!>!
+Kun.Storage.IFileStorage.GetPresignedUploadAsync(string! objectKey, string! contentType, Kun.Storage.UploadConstraints? constraints = null, System.TimeSpan? expiresIn = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Storage.PresignedUploadUrl!>!
+Kun.Storage.IFileStorage.ListAsync(string? prefix = null, int maxKeys = 1000, string? continuationToken = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Storage.ListObjectsResult!>!
+Kun.Storage.IFileStorage.UploadAsync(string! objectKey, System.IO.Stream! content, string! contentType, Kun.Storage.UploadConstraints? constraints = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Storage.ObjectMetadata!>!
+Kun.Storage.ListObjectsResult
+Kun.Storage.ListObjectsResult.ContinuationToken.get -> string?
+Kun.Storage.ListObjectsResult.ContinuationToken.init -> void
+Kun.Storage.ListObjectsResult.ListObjectsResult(System.Collections.Generic.IReadOnlyList<Kun.Storage.ObjectMetadata!>! Objects, string? ContinuationToken) -> void
+Kun.Storage.ListObjectsResult.Objects.get -> System.Collections.Generic.IReadOnlyList<Kun.Storage.ObjectMetadata!>!
+Kun.Storage.ListObjectsResult.Objects.init -> void
+Kun.Storage.ObjectMetadata
+Kun.Storage.ObjectMetadata.ContentType.get -> string?
+Kun.Storage.ObjectMetadata.ContentType.init -> void
+Kun.Storage.ObjectMetadata.ETag.get -> string?
+Kun.Storage.ObjectMetadata.ETag.init -> void
+Kun.Storage.ObjectMetadata.Key.get -> string!
+Kun.Storage.ObjectMetadata.Key.init -> void
+Kun.Storage.ObjectMetadata.LastModified.get -> System.DateTimeOffset
+Kun.Storage.ObjectMetadata.LastModified.init -> void
+Kun.Storage.ObjectMetadata.ObjectMetadata(string! Key, long Size, string? ContentType, string? ETag, System.DateTimeOffset LastModified) -> void
+Kun.Storage.ObjectMetadata.Size.get -> long
+Kun.Storage.ObjectMetadata.Size.init -> void
+Kun.Storage.PresignedDownloadUrl
+Kun.Storage.PresignedDownloadUrl.ContentDispositionForced.get -> bool
+Kun.Storage.PresignedDownloadUrl.ContentDispositionForced.init -> void
+Kun.Storage.PresignedDownloadUrl.ExpiresAt.get -> System.DateTimeOffset
+Kun.Storage.PresignedDownloadUrl.ExpiresAt.init -> void
+Kun.Storage.PresignedDownloadUrl.PresignedDownloadUrl(System.Uri! Url, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! ResponseHeaders, System.DateTimeOffset ExpiresAt, bool ContentDispositionForced) -> void
+Kun.Storage.PresignedDownloadUrl.ResponseHeaders.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Kun.Storage.PresignedDownloadUrl.ResponseHeaders.init -> void
+Kun.Storage.PresignedDownloadUrl.Url.get -> System.Uri!
+Kun.Storage.PresignedDownloadUrl.Url.init -> void
+Kun.Storage.PresignedPostUpload
+Kun.Storage.PresignedPostUpload.ExpiresAt.get -> System.DateTimeOffset
+Kun.Storage.PresignedPostUpload.ExpiresAt.init -> void
+Kun.Storage.PresignedPostUpload.FormFields.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Kun.Storage.PresignedPostUpload.FormFields.init -> void
+Kun.Storage.PresignedPostUpload.PresignedPostUpload(System.Uri! Url, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! FormFields, System.DateTimeOffset ExpiresAt) -> void
+Kun.Storage.PresignedPostUpload.Url.get -> System.Uri!
+Kun.Storage.PresignedPostUpload.Url.init -> void
+Kun.Storage.PresignedUploadUrl
+Kun.Storage.PresignedUploadUrl.ExpiresAt.get -> System.DateTimeOffset
+Kun.Storage.PresignedUploadUrl.ExpiresAt.init -> void
+Kun.Storage.PresignedUploadUrl.PresignedUploadUrl(System.Uri! Url, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! RequiredHeaders, System.DateTimeOffset ExpiresAt) -> void
+Kun.Storage.PresignedUploadUrl.RequiredHeaders.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Kun.Storage.PresignedUploadUrl.RequiredHeaders.init -> void
+Kun.Storage.PresignedUploadUrl.Url.get -> System.Uri!
+Kun.Storage.PresignedUploadUrl.Url.init -> void
+Kun.Storage.UploadConstraints
+Kun.Storage.UploadConstraints.AllowedContentTypes.get -> System.Collections.Generic.IReadOnlyCollection<string!>?
+Kun.Storage.UploadConstraints.AllowedContentTypes.init -> void
+Kun.Storage.UploadConstraints.MaxBytes.get -> long?
+Kun.Storage.UploadConstraints.MaxBytes.init -> void
+Kun.Storage.UploadConstraints.UploadConstraints(long? MaxBytes = null, System.Collections.Generic.IReadOnlyCollection<string!>? AllowedContentTypes = null) -> void

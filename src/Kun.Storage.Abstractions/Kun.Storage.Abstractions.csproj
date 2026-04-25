@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsAotCandidate>true</IsAotCandidate>
+    <IsPackable>true</IsPackable>
+    <HasPublicApi>true</HasPublicApi>
+    <Description>Kun Framework — object-storage abstractions: IFileStorage contract, presigned URL records, upload constraints, and the ActiveWebContentTypes set used to force-download rendered web payloads.</Description>
+  </PropertyGroup>
+
+</Project>

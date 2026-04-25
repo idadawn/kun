@@ -25,6 +25,57 @@ Kun.Security.MultiTenancy.JwtTenantContext
 Kun.Security.MultiTenancy.JwtTenantContext.IsMultiTenant.get -> bool
 Kun.Security.MultiTenancy.JwtTenantContext.JwtTenantContext(Microsoft.AspNetCore.Http.IHttpContextAccessor! httpContextAccessor) -> void
 Kun.Security.MultiTenancy.JwtTenantContext.TenantId.get -> string?
+Kun.Security.S2SJwt.IS2SJwtIssuer
+Kun.Security.S2SJwt.IS2SJwtIssuer.IssueAsync(Kun.Security.S2SJwt.S2SJwtIssueRequest! request, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<string!>!
+Kun.Security.S2SJwt.IS2SJwtIssuer.IssueAsync(string! userId, string! tenantId, string![]! scopes, string![]! audience, string! sessionId, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<string!>!
+Kun.Security.S2SJwt.S2SJwtIssueRequest
+Kun.Security.S2SJwt.S2SJwtIssueRequest.S2SJwtIssueRequest(string! UserId, string! TenantId, System.Collections.Generic.IReadOnlyList<string!>! Audience, System.Collections.Generic.IReadOnlyList<string!>? Roles = null, System.Collections.Generic.IReadOnlyList<string!>? Scopes = null, string? SessionId = null, string? MembershipId = null, string? TraceId = null, System.TimeSpan? Lifetime = null) -> void
+Kun.Security.S2SJwt.S2SJwtIssueRequest.UserId.get -> string!
+Kun.Security.S2SJwt.S2SJwtIssueRequest.UserId.init -> void
+Kun.Security.S2SJwt.S2SJwtIssueRequest.TenantId.get -> string!
+Kun.Security.S2SJwt.S2SJwtIssueRequest.TenantId.init -> void
+Kun.Security.S2SJwt.S2SJwtIssueRequest.Audience.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Kun.Security.S2SJwt.S2SJwtIssueRequest.Audience.init -> void
+Kun.Security.S2SJwt.S2SJwtIssueRequest.Roles.get -> System.Collections.Generic.IReadOnlyList<string!>?
+Kun.Security.S2SJwt.S2SJwtIssueRequest.Roles.init -> void
+Kun.Security.S2SJwt.S2SJwtIssueRequest.Scopes.get -> System.Collections.Generic.IReadOnlyList<string!>?
+Kun.Security.S2SJwt.S2SJwtIssueRequest.Scopes.init -> void
+Kun.Security.S2SJwt.S2SJwtIssueRequest.SessionId.get -> string?
+Kun.Security.S2SJwt.S2SJwtIssueRequest.SessionId.init -> void
+Kun.Security.S2SJwt.S2SJwtIssueRequest.MembershipId.get -> string?
+Kun.Security.S2SJwt.S2SJwtIssueRequest.MembershipId.init -> void
+Kun.Security.S2SJwt.S2SJwtIssueRequest.TraceId.get -> string?
+Kun.Security.S2SJwt.S2SJwtIssueRequest.TraceId.init -> void
+Kun.Security.S2SJwt.S2SJwtIssueRequest.Lifetime.get -> System.TimeSpan?
+Kun.Security.S2SJwt.S2SJwtIssueRequest.Lifetime.init -> void
+Kun.Security.S2SJwt.IS2SJwtVerifier
+Kun.Security.S2SJwt.IS2SJwtVerifier.VerifyAsync(string! token, string! expectedAudience, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Security.Claims.ClaimsPrincipal?>!
+Kun.Security.S2SJwt.JwksEndpointExtensions
+Kun.Security.S2SJwt.JwksEndpointMiddleware
+Kun.Security.S2SJwt.JwksEndpointMiddleware.InvokeAsync(Microsoft.AspNetCore.Http.HttpContext! context) -> System.Threading.Tasks.Task!
+Kun.Security.S2SJwt.JwksEndpointMiddleware.JwksEndpointMiddleware(Microsoft.AspNetCore.Http.RequestDelegate! next, Microsoft.Extensions.Options.IOptions<Kun.Security.S2SJwt.S2SJwtOptions!>! options, Microsoft.Extensions.Logging.ILogger<Kun.Security.S2SJwt.JwksEndpointMiddleware!>! logger) -> void
+Kun.Security.S2SJwt.KunSecurityS2SJwtServiceCollectionExtensions
+Kun.Security.S2SJwt.S2SJwtIssuer
+Kun.Security.S2SJwt.S2SJwtIssuer.IssueAsync(Kun.Security.S2SJwt.S2SJwtIssueRequest! request, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<string!>!
+Kun.Security.S2SJwt.S2SJwtIssuer.IssueAsync(string! userId, string! tenantId, string![]! scopes, string![]! audience, string! sessionId, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<string!>!
+Kun.Security.S2SJwt.S2SJwtIssuer.S2SJwtIssuer(Microsoft.Extensions.Options.IOptions<Kun.Security.S2SJwt.S2SJwtOptions!>! options, Microsoft.Extensions.Logging.ILogger<Kun.Security.S2SJwt.S2SJwtIssuer!>! logger) -> void
+Kun.Security.S2SJwt.S2SJwtOptions
+Kun.Security.S2SJwt.S2SJwtOptions.DefaultLifetimeSeconds.get -> int
+Kun.Security.S2SJwt.S2SJwtOptions.DefaultLifetimeSeconds.init -> void
+Kun.Security.S2SJwt.S2SJwtOptions.Issuer.get -> string!
+Kun.Security.S2SJwt.S2SJwtOptions.Issuer.init -> void
+Kun.Security.S2SJwt.S2SJwtOptions.KeyId.get -> string!
+Kun.Security.S2SJwt.S2SJwtOptions.KeyId.init -> void
+Kun.Security.S2SJwt.S2SJwtOptions.PreviousKeyId.get -> string?
+Kun.Security.S2SJwt.S2SJwtOptions.PreviousKeyId.init -> void
+Kun.Security.S2SJwt.S2SJwtOptions.PreviousSigningKeyPem.get -> string?
+Kun.Security.S2SJwt.S2SJwtOptions.PreviousSigningKeyPem.init -> void
+Kun.Security.S2SJwt.S2SJwtOptions.S2SJwtOptions() -> void
+Kun.Security.S2SJwt.S2SJwtOptions.SigningKeyPem.get -> string!
+Kun.Security.S2SJwt.S2SJwtOptions.SigningKeyPem.init -> void
+Kun.Security.S2SJwt.S2SJwtVerifier
+Kun.Security.S2SJwt.S2SJwtVerifier.S2SJwtVerifier(Microsoft.Extensions.Options.IOptions<Kun.Security.S2SJwt.S2SJwtOptions!>! options, Microsoft.Extensions.Logging.ILogger<Kun.Security.S2SJwt.S2SJwtVerifier!>! logger) -> void
+Kun.Security.S2SJwt.S2SJwtVerifier.VerifyAsync(string! token, string! expectedAudience, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Security.Claims.ClaimsPrincipal?>!
 Kun.Security.S2sTokenOptions
 Kun.Security.S2sTokenOptions.Audience.get -> string!
 Kun.Security.S2sTokenOptions.Audience.init -> void
@@ -47,51 +98,5 @@ Kun.Security.Security.JwtCurrentUser.UserId.get -> string?
 static Kun.Security.Authentication.KunServiceAuthenticationExtensions.AddKunServiceAuthentication(this Microsoft.AspNetCore.Authentication.AuthenticationBuilder! builder, System.Action<Kun.Security.Authentication.KunServiceAuthenticationOptions!>! configure) -> Microsoft.AspNetCore.Authentication.AuthenticationBuilder!
 static Kun.Security.DependencyInjection.KunSecurityServiceCollectionExtensions.AddKunSecurity(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Kun.Security.Extensions.HttpClientBuilderExtensions.AddKunServiceAuth(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
-Kun.Security.S2SJwt.IS2SJwtIssuer
-Kun.Security.S2SJwt.IS2SJwtIssuer.IssueAsync(Kun.Security.S2SJwt.S2SJwtIssueRequest! request, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<string!>
-Kun.Security.S2SJwt.S2SJwtIssueRequest
-Kun.Security.S2SJwt.S2SJwtIssueRequest.S2SJwtIssueRequest(string! UserId, string! TenantId, System.Collections.Generic.IReadOnlyList<string!>! Audience, System.Collections.Generic.IReadOnlyList<string!>? Roles = null, System.Collections.Generic.IReadOnlyList<string!>? Scopes = null, string? SessionId = null, string? MembershipId = null, string? TraceId = null, System.TimeSpan? Lifetime = null) -> void
-Kun.Security.S2SJwt.S2SJwtIssueRequest.UserId.get -> string!
-Kun.Security.S2SJwt.S2SJwtIssueRequest.UserId.init -> void
-Kun.Security.S2SJwt.S2SJwtIssueRequest.TenantId.get -> string!
-Kun.Security.S2SJwt.S2SJwtIssueRequest.TenantId.init -> void
-Kun.Security.S2SJwt.S2SJwtIssueRequest.Audience.get -> System.Collections.Generic.IReadOnlyList<string!>!
-Kun.Security.S2SJwt.S2SJwtIssueRequest.Audience.init -> void
-Kun.Security.S2SJwt.S2SJwtIssueRequest.Roles.get -> System.Collections.Generic.IReadOnlyList<string!>?
-Kun.Security.S2SJwt.S2SJwtIssueRequest.Roles.init -> void
-Kun.Security.S2SJwt.S2SJwtIssueRequest.Scopes.get -> System.Collections.Generic.IReadOnlyList<string!>?
-Kun.Security.S2SJwt.S2SJwtIssueRequest.Scopes.init -> void
-Kun.Security.S2SJwt.S2SJwtIssueRequest.SessionId.get -> string?
-Kun.Security.S2SJwt.S2SJwtIssueRequest.SessionId.init -> void
-Kun.Security.S2SJwt.S2SJwtIssueRequest.MembershipId.get -> string?
-Kun.Security.S2SJwt.S2SJwtIssueRequest.MembershipId.init -> void
-Kun.Security.S2SJwt.S2SJwtIssueRequest.TraceId.get -> string?
-Kun.Security.S2SJwt.S2SJwtIssueRequest.TraceId.init -> void
-Kun.Security.S2SJwt.S2SJwtIssueRequest.Lifetime.get -> System.TimeSpan?
-Kun.Security.S2SJwt.S2SJwtIssueRequest.Lifetime.init -> void
-Kun.Security.S2SJwt.IS2SJwtVerifier
-Kun.Security.S2SJwt.IS2SJwtVerifier.VerifyAsync(string! token, string! expectedAudience, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Security.Claims.ClaimsPrincipal?>
-Kun.Security.S2SJwt.JwksEndpointMiddleware
-Kun.Security.S2SJwt.JwksEndpointMiddleware.InvokeAsync(Microsoft.AspNetCore.Http.HttpContext! context) -> System.Threading.Tasks.Task
-Kun.Security.S2SJwt.JwksEndpointMiddleware.JwksEndpointMiddleware(Microsoft.AspNetCore.Http.RequestDelegate! next, Microsoft.Extensions.Options.IOptions<Kun.Security.S2SJwt.S2SJwtOptions!>! options, Microsoft.Extensions.Logging.ILogger<Kun.Security.S2SJwt.JwksEndpointMiddleware!>! logger) -> void
-Kun.Security.S2SJwt.S2SJwtIssuer
-Kun.Security.S2SJwt.S2SJwtIssuer.IssueAsync(Kun.Security.S2SJwt.S2SJwtIssueRequest! request, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<string!>
-Kun.Security.S2SJwt.S2SJwtIssuer.S2SJwtIssuer(Microsoft.Extensions.Options.IOptions<Kun.Security.S2SJwt.S2SJwtOptions!>! options, Microsoft.Extensions.Logging.ILogger<Kun.Security.S2SJwt.S2SJwtIssuer!>! logger) -> void
-Kun.Security.S2SJwt.S2SJwtOptions
-Kun.Security.S2SJwt.S2SJwtOptions.DefaultLifetimeSeconds.get -> int
-Kun.Security.S2SJwt.S2SJwtOptions.DefaultLifetimeSeconds.init -> void
-Kun.Security.S2SJwt.S2SJwtOptions.Issuer.get -> string!
-Kun.Security.S2SJwt.S2SJwtOptions.Issuer.init -> void
-Kun.Security.S2SJwt.S2SJwtOptions.KeyId.get -> string!
-Kun.Security.S2SJwt.S2SJwtOptions.KeyId.init -> void
-Kun.Security.S2SJwt.S2SJwtOptions.PreviousKeyId.get -> string?
-Kun.Security.S2SJwt.S2SJwtOptions.PreviousKeyId.init -> void
-Kun.Security.S2SJwt.S2SJwtOptions.PreviousSigningKeyPem.get -> string?
-Kun.Security.S2SJwt.S2SJwtOptions.PreviousSigningKeyPem.init -> void
-Kun.Security.S2SJwt.S2SJwtOptions.SigningKeyPem.get -> string!
-Kun.Security.S2SJwt.S2SJwtOptions.SigningKeyPem.init -> void
-Kun.Security.S2SJwt.S2SJwtVerifier
-Kun.Security.S2SJwt.S2SJwtVerifier.S2SJwtVerifier(Microsoft.Extensions.Options.IOptions<Kun.Security.S2SJwt.S2SJwtOptions!>! options, Microsoft.Extensions.Logging.ILogger<Kun.Security.S2SJwt.S2SJwtVerifier!>! logger) -> void
-Kun.Security.S2SJwt.S2SJwtVerifier.VerifyAsync(string! token, string! expectedAudience, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Security.Claims.ClaimsPrincipal?>
 static Kun.Security.S2SJwt.JwksEndpointExtensions.UseS2SJwksEndpoint(this Microsoft.AspNetCore.Builder.IApplicationBuilder! app) -> Microsoft.AspNetCore.Builder.IApplicationBuilder!
 static Kun.Security.S2SJwt.KunSecurityS2SJwtServiceCollectionExtensions.AddS2SJwt(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.Security.S2SJwt.S2SJwtOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
