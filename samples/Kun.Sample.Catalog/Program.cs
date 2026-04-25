@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Kun.AspNetCore.DependencyInjection;
 using Kun.AspNetCore.Endpoints;
 using Kun.Audit.DependencyInjection;
@@ -7,10 +8,10 @@ using Kun.Dapper;
 using Kun.EntityFrameworkCore;
 using Kun.EntityFrameworkCore.Behaviors;
 using Kun.EntityFrameworkCore.DependencyInjection;
+using Kun.EntityFrameworkCore.Extensions;
 using Kun.EventBus.DependencyInjection;
 using Kun.Grpc.DependencyInjection;
 using Kun.Mediator.DependencyInjection;
-using System.Diagnostics;
 using Kun.Observability.Enrichment;
 using Kun.Observability.Extensions;
 using Kun.Sample.Catalog;
@@ -53,7 +54,8 @@ builder.Services.AddSingleton<IDomainEventDispatcher, MediatorDomainEventDispatc
 // ── EF Core (write side) ─────────────────────────────────────────────────────
 // Register CatalogDbContext so it can be injected directly by command handlers.
 builder.Services.AddDbContext<CatalogDbContext>(opt =>
-    opt.UseNpgsql(writeCs));
+    opt.UseNpgsql(writeCs)
+       .UseKunSchema("catalog"));
 
 // EfUnitOfWork resolves KunDbContext, so forward the scoped registration.
 builder.Services.AddScoped<KunDbContext>(sp => sp.GetRequiredService<CatalogDbContext>());
@@ -69,8 +71,8 @@ builder.Services.AddSingleton<IReadDbConnectionFactory, NpgsqlReadDbConnectionFa
 // ── Event bus + Outbox ────────────────────────────────────────────────────────
 builder.Services.AddKunEventBus(eb =>
 {
-    eb.Register<ProductPublishedIntegrationEvent>("product.published.v1");
-    eb.Register<InventoryChangedIntegrationEvent>("inventory.changed.v1");
+    eb.Register<ProductPublishedIntegrationEvent>();
+    eb.Register<InventoryChangedIntegrationEvent>();
     eb.UseInMemoryIdempotency();
 });
 

@@ -26,6 +26,9 @@ public sealed class RlsEnforcementTests(PostgresFixture fx) : IAsyncLifetime
         DROP POLICY IF EXISTS rls_tenant_iso ON rls_orders;
         CREATE POLICY rls_tenant_iso ON rls_orders
             USING (tenant_id = current_setting('app.current_tenant_id', true));
+        -- kun_app is the non-superuser role used by the tests; without the grant,
+        -- its INSERTs/SELECTs would fail with "permission denied".
+        GRANT SELECT, INSERT, UPDATE, DELETE ON rls_orders TO kun_app;
         """;
 
     public async ValueTask InitializeAsync()
@@ -33,6 +36,7 @@ public sealed class RlsEnforcementTests(PostgresFixture fx) : IAsyncLifetime
         if (string.IsNullOrEmpty(fx.ConnectionString)) return;
 
         var ct = TestContext.Current.CancellationToken;
+        // DDL (CREATE POLICY / ALTER TABLE / GRANT) requires superuser.
         await using var conn = new NpgsqlConnection(fx.ConnectionString);
         await conn.OpenAsync(ct);
         await using var cmd = new NpgsqlCommand(TableDdl, conn);
@@ -71,7 +75,7 @@ public sealed class RlsEnforcementTests(PostgresFixture fx) : IAsyncLifetime
 
     private async Task SeedAsync(string tenantId, string note, CancellationToken ct)
     {
-        await using var conn = new NpgsqlConnection(fx.ConnectionString);
+        await using var conn = new NpgsqlConnection(fx.AppConnectionString);
         await conn.OpenAsync(ct);
         await using var tx = await conn.BeginTransactionAsync(ct);
         await SetTenantGucAsync(conn, tx, tenantId, ct);
@@ -87,17 +91,23 @@ public sealed class RlsEnforcementTests(PostgresFixture fx) : IAsyncLifetime
 
     private async Task<List<string>> ReadScopedToTenantAsync(string tenantId, CancellationToken ct)
     {
-        await using var conn = new NpgsqlConnection(fx.ConnectionString);
+        await using var conn = new NpgsqlConnection(fx.AppConnectionString);
         await conn.OpenAsync(ct);
         await using var tx = await conn.BeginTransactionAsync(ct);
         await SetTenantGucAsync(conn, tx, tenantId, ct);
 
         var results = new List<string>();
-        await using var sel = new NpgsqlCommand("SELECT note FROM rls_orders ORDER BY note", conn, tx);
-        await using var reader = await sel.ExecuteReaderAsync(ct);
-        while (await reader.ReadAsync(ct))
+        // Reader must be fully disposed before tx.CommitAsync — Npgsql rejects
+        // a commit while a reader still holds the connector. `await using var`
+        // at method scope would dispose after CommitAsync, so a nested scope
+        // is required.
+        await using (var sel = new NpgsqlCommand("SELECT note FROM rls_orders ORDER BY note", conn, tx))
+        await using (var reader = await sel.ExecuteReaderAsync(ct))
         {
-            results.Add(reader.GetString(0));
+            while (await reader.ReadAsync(ct))
+            {
+                results.Add(reader.GetString(0));
+            }
         }
         await tx.CommitAsync(ct);
         return results;
@@ -105,7 +115,7 @@ public sealed class RlsEnforcementTests(PostgresFixture fx) : IAsyncLifetime
 
     private async Task<List<string>> ReadUnscopedAsync(CancellationToken ct)
     {
-        await using var conn = new NpgsqlConnection(fx.ConnectionString);
+        await using var conn = new NpgsqlConnection(fx.AppConnectionString);
         await conn.OpenAsync(ct);
         await using var sel = new NpgsqlCommand("SELECT note FROM rls_orders", conn);
         await using var reader = await sel.ExecuteReaderAsync(ct);

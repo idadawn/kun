@@ -4,11 +4,12 @@
     <IsAotCandidate>true</IsAotCandidate>
     <IsPackable>true</IsPackable>
     <HasPublicApi>true</HasPublicApi>
-    <Description>Kun Framework audit-log abstractions: IAuditWriter / IAuditReader / AuditableAttribute, plus a no-op default writer and an optional integration-event fan-out writer. EF Core adapter lives in Kun.Audit.EntityFrameworkCore.</Description>
+    <Description>Kun Framework audit module. Provides both (a) an audit-log writer/reader abstraction (IAuditWriter / IAuditReader / AuditableAttribute) with NullAuditWriter + EventBusAuditWriter (EF Core adapter lives in Kun.Audit.EntityFrameworkCore), and (b) a tamper-evident hash-chained operation audit behaviour (IAuditSink + IAuditChainState + AuditLogPipelineBehavior) implementing the SAD v3.0 §15.5 audit.operations contract.</Description>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Kun.Core\Kun.Core.csproj" />
+    <ProjectReference Include="..\Kun.Mediator\Kun.Mediator.csproj" />
     <ProjectReference Include="..\Kun.EventBus\Kun.EventBus.csproj" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />

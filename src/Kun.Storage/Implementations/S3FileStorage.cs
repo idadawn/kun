@@ -1,10 +1,8 @@
 using System.Net;
 using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Kun.Storage.Abstractions;
-using Kun.Storage.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -12,119 +10,106 @@ namespace Kun.Storage.Implementations;
 
 /// <summary>
 /// Amazon S3 / MinIO-compatible implementation of <see cref="IFileStorage"/>.
-/// Uses the low-level <see cref="IAmazonS3"/> client directly — the
-/// AWS-SDK <c>TransferUtility</c> is intentionally avoided because it
-/// adds reflection-heavy code paths that block the AOT analyzer.
 /// </summary>
-/// <remarks>
-/// Active-web content types are persisted with
-/// <c>Content-Disposition: attachment</c>; the same header is re-applied
-/// to presigned download URLs as a defence-in-depth override so clients
-/// cannot inline-render a stored HTML page via a public URL.
-/// </remarks>
 public sealed partial class S3FileStorage : IFileStorage
 {
     private readonly IAmazonS3 _s3;
-    private readonly string _bucket;
+    private readonly StorageOptions _options;
     private readonly ILogger<S3FileStorage> _logger;
 
-    /// <summary>Creates a new <see cref="S3FileStorage"/>.</summary>
-    public S3FileStorage(IAmazonS3 s3, IOptions<S3StorageOptions> options, ILogger<S3FileStorage> logger)
+    /// <summary>Initializes a new instance.</summary>
+    public S3FileStorage(IAmazonS3 s3, IOptions<StorageOptions> options, ILogger<S3FileStorage> logger)
     {
         ArgumentNullException.ThrowIfNull(s3);
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(logger);
-        var value = options.Value;
-        ArgumentException.ThrowIfNullOrWhiteSpace(value.BucketName);
         _s3 = s3;
-        _bucket = value.BucketName;
+        _options = options.Value;
         _logger = logger;
     }
 
     /// <inheritdoc />
-    public async Task<ObjectMetadata> PutObjectAsync(
-        string objectKey,
+    public async Task PutObjectAsync(
+        string path,
         Stream content,
-        string contentType,
+        PutObjectOptions options,
         CancellationToken ct = default)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(objectKey);
         ArgumentNullException.ThrowIfNull(content);
-        ArgumentException.ThrowIfNullOrWhiteSpace(contentType);
-
-        // Hash the body before upload when the stream is seekable so callers
-        // get a Sha256 back. Non-seekable streams skip the hash to avoid
-        // buffering huge uploads in memory.
-        string? sha256 = null;
-        long size = content.CanSeek ? content.Length : -1;
-        if (content.CanSeek)
-        {
-            var position = content.Position;
-            using var hash = SHA256.Create();
-            var digest = await hash.ComputeHashAsync(content, ct).ConfigureAwait(false);
-            sha256 = Convert.ToHexStringLower(digest);
-            content.Position = position;
-        }
+        ArgumentNullException.ThrowIfNull(options);
 
         var request = new PutObjectRequest
         {
-            BucketName = _bucket,
-            Key = objectKey,
+            BucketName = _options.BucketName,
+            Key = path,
             InputStream = content,
-            ContentType = contentType,
+            ContentType = options.ContentType,
             AutoCloseStream = false,
         };
 
-        var disposition = ContentDispositionPolicy.BuildHeaderValue(objectKey, contentType);
-        if (disposition is not null)
+        var enforcedDisposition = ContentDispositionPolicy.EnforceAttachment(
+            options.ContentType, options.ContentDisposition, options.FileName);
+        if (!string.IsNullOrEmpty(enforcedDisposition))
         {
-            request.Headers.ContentDisposition = disposition;
+            request.Headers.ContentDisposition = enforcedDisposition;
         }
 
-        _ = await _s3.PutObjectAsync(request, ct).ConfigureAwait(false);
-        Log.ObjectPut(_logger, _bucket, objectKey);
+        if (!string.IsNullOrEmpty(options.CacheControl))
+        {
+            request.Headers.CacheControl = options.CacheControl;
+        }
 
-        return new ObjectMetadata(
-            ObjectKey: objectKey,
-            Size: size < 0 ? 0 : size,
-            ContentType: contentType,
-            Sha256: sha256,
-            LastModified: DateTimeOffset.UtcNow);
+        if (options.UserMetadata is { Count: > 0 })
+        {
+            foreach (var kv in options.UserMetadata)
+            {
+                request.Metadata[kv.Key] = kv.Value;
+            }
+        }
+
+        await _s3.PutObjectAsync(request, ct).ConfigureAwait(false);
+        Log.ObjectPut(_logger, _options.BucketName, path);
     }
 
     /// <inheritdoc />
-    public async Task<Stream> GetObjectAsync(string objectKey, CancellationToken ct = default)
+    public async Task<ObjectDownload> GetObjectAsync(string path, CancellationToken ct = default)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(objectKey);
-        try
+        var response = await _s3.GetObjectAsync(new GetObjectRequest
         {
-            var response = await _s3.GetObjectAsync(
-                new GetObjectRequest { BucketName = _bucket, Key = objectKey },
-                ct).ConfigureAwait(false);
-            Log.ObjectGet(_logger, _bucket, objectKey);
-            return response.ResponseStream;
-        }
-        catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-        {
-            throw new FileNotFoundException($"Object '{objectKey}' not found in bucket '{_bucket}'.", objectKey, ex);
-        }
+            BucketName = _options.BucketName,
+            Key = path,
+        }, ct).ConfigureAwait(false);
+
+        var metadata = BuildMetadata(
+            response.Headers.ContentType,
+            response.Headers.ContentLength,
+            response.ETag,
+            response.LastModified,
+            response.Headers.ContentDisposition,
+            response.Metadata);
+
+        Log.ObjectGet(_logger, _options.BucketName, path);
+        return new ObjectDownload(response.ResponseStream, metadata);
     }
 
     /// <inheritdoc />
-    public async Task<ObjectMetadata?> HeadObjectAsync(string objectKey, CancellationToken ct = default)
+    public async Task<ObjectMetadata?> HeadObjectAsync(string path, CancellationToken ct = default)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(objectKey);
         try
         {
-            var response = await _s3.GetObjectMetadataAsync(
-                new GetObjectMetadataRequest { BucketName = _bucket, Key = objectKey },
-                ct).ConfigureAwait(false);
-            return new ObjectMetadata(
-                ObjectKey: objectKey,
-                Size: response.ContentLength,
-                ContentType: response.Headers.ContentType,
-                Sha256: null,
-                LastModified: response.LastModified is { Ticks: > 0 } lm ? lm : DateTimeOffset.UtcNow);
+            var response = await _s3.GetObjectMetadataAsync(new GetObjectMetadataRequest
+            {
+                BucketName = _options.BucketName,
+                Key = path,
+            }, ct).ConfigureAwait(false);
+
+            return BuildMetadata(
+                response.Headers.ContentType,
+                response.Headers.ContentLength,
+                response.ETag,
+                response.LastModified,
+                response.Headers.ContentDisposition,
+                response.Metadata);
         }
         catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
@@ -133,40 +118,44 @@ public sealed partial class S3FileStorage : IFileStorage
     }
 
     /// <inheritdoc />
-    public async Task DeleteObjectAsync(string objectKey, CancellationToken ct = default)
+    public async Task DeleteObjectAsync(string path, CancellationToken ct = default)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(objectKey);
-        await _s3.DeleteObjectAsync(
-            new DeleteObjectRequest { BucketName = _bucket, Key = objectKey },
-            ct).ConfigureAwait(false);
-        Log.ObjectDeleted(_logger, _bucket, objectKey);
+        await _s3.DeleteObjectAsync(new DeleteObjectRequest
+        {
+            BucketName = _options.BucketName,
+            Key = path,
+        }, ct).ConfigureAwait(false);
+        Log.ObjectDeleted(_logger, _options.BucketName, path);
     }
 
     /// <inheritdoc />
-    public async IAsyncEnumerable<ObjectMetadata> ListObjectsAsync(
-        string? prefix = null,
+    public async IAsyncEnumerable<ObjectSummary> ListObjectsAsync(
+        string prefix,
         [EnumeratorCancellation] CancellationToken ct = default)
     {
+        ArgumentNullException.ThrowIfNull(prefix);
         string? continuationToken = null;
+
         do
         {
-            var response = await _s3.ListObjectsV2Async(
-                new ListObjectsV2Request
-                {
-                    BucketName = _bucket,
-                    Prefix = prefix,
-                    ContinuationToken = continuationToken,
-                },
-                ct).ConfigureAwait(false);
-
-            foreach (var item in response.S3Objects ?? [])
+            var response = await _s3.ListObjectsV2Async(new ListObjectsV2Request
             {
-                yield return new ObjectMetadata(
-                    ObjectKey: item.Key,
-                    Size: item.Size,
-                    ContentType: null,
-                    Sha256: null,
-                    LastModified: item.LastModified is { Ticks: > 0 } lm ? lm : DateTimeOffset.UtcNow);
+                BucketName = _options.BucketName,
+                Prefix = prefix,
+                ContinuationToken = continuationToken,
+            }, ct).ConfigureAwait(false);
+
+            if (response.S3Objects is { Count: > 0 })
+            {
+                foreach (var item in response.S3Objects)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    yield return new ObjectSummary(
+                        item.Key,
+                        item.Size,
+                        ToUtc(item.LastModified),
+                        item.ETag);
+                }
             }
 
             continuationToken = response.IsTruncated == true ? response.NextContinuationToken : null;
@@ -176,63 +165,126 @@ public sealed partial class S3FileStorage : IFileStorage
 
     /// <inheritdoc />
     public Task<PresignedUploadUrl> CreatePresignedUploadUrlAsync(
-        string objectKey,
-        TimeSpan expiresIn,
-        string? contentType = null,
+        string path,
+        PresignedUploadRequest request,
         CancellationToken ct = default)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(objectKey);
-        if (expiresIn <= TimeSpan.Zero)
+        ArgumentNullException.ThrowIfNull(request);
+        var expiresAt = DateTimeOffset.UtcNow.Add(request.ExpiresIn);
+
+        var req = new GetPreSignedUrlRequest
         {
-            throw new ArgumentOutOfRangeException(nameof(expiresIn), "Expiry must be positive.");
+            BucketName = _options.BucketName,
+            Key = path,
+            Verb = HttpVerb.PUT,
+            Expires = expiresAt.UtcDateTime,
+            Protocol = ResolveProtocol(),
+        };
+        if (!string.IsNullOrEmpty(request.ContentType))
+        {
+            req.ContentType = request.ContentType;
         }
 
-        var expiry = DateTime.UtcNow.Add(expiresIn);
-        var request = new GetPreSignedUrlRequest
+        var url = _s3.GetPreSignedURL(req);
+        var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (!string.IsNullOrEmpty(request.ContentType))
         {
-            BucketName = _bucket,
-            Key = objectKey,
-            Verb = HttpVerb.PUT,
-            Expires = expiry,
-            ContentType = contentType,
-        };
+            headers["Content-Type"] = request.ContentType;
+        }
 
-        var url = _s3.GetPreSignedURL(request);
-        Log.PresignedUrlGenerated(_logger, _bucket, objectKey, "PUT");
-        return Task.FromResult(new PresignedUploadUrl(
-            Url: new Uri(url),
-            Expiry: expiry,
-            ObjectKey: objectKey,
-            RequiredContentType: contentType));
+        Log.PresignedUploadUrlGenerated(_logger, _options.BucketName, path);
+        return Task.FromResult(new PresignedUploadUrl(new Uri(url), "PUT", headers, expiresAt));
     }
 
     /// <inheritdoc />
-    public Task<PresignedDownloadUrl> CreatePresignedDownloadUrlAsync(
-        string objectKey,
-        TimeSpan expiresIn,
+    public async Task<PresignedDownloadUrl> CreatePresignedDownloadUrlAsync(
+        string path,
+        PresignedDownloadRequest request,
         CancellationToken ct = default)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(objectKey);
-        if (expiresIn <= TimeSpan.Zero)
+        ArgumentNullException.ThrowIfNull(request);
+        var expiresAt = DateTimeOffset.UtcNow.Add(request.ExpiresIn);
+
+        var dispositionOverride = request.ResponseContentDisposition;
+        if (dispositionOverride is null)
         {
-            throw new ArgumentOutOfRangeException(nameof(expiresIn), "Expiry must be positive.");
+            // Probe the object's stored content-type so we can enforce attachment
+            // disposition on active-web MIME types (HTML/SVG/XML/JS/WASM).
+            var metadata = await HeadObjectAsync(path, ct).ConfigureAwait(false);
+            if (metadata is not null
+                && ContentDispositionPolicy.IsUnsafeForInlineDisplay(metadata.ContentType))
+            {
+                dispositionOverride = ContentDispositionPolicy.EnforceAttachment(
+                    metadata.ContentType, currentDisposition: null, fileName: Path.GetFileName(path));
+            }
         }
 
-        var expiry = DateTime.UtcNow.Add(expiresIn);
-        var url = _s3.GetPreSignedURL(new GetPreSignedUrlRequest
+        var req = new GetPreSignedUrlRequest
         {
-            BucketName = _bucket,
-            Key = objectKey,
+            BucketName = _options.BucketName,
+            Key = path,
             Verb = HttpVerb.GET,
-            Expires = expiry,
-        });
+            Expires = expiresAt.UtcDateTime,
+            Protocol = ResolveProtocol(),
+        };
+        if (!string.IsNullOrEmpty(dispositionOverride))
+        {
+            req.ResponseHeaderOverrides.ContentDisposition = dispositionOverride;
+        }
 
-        Log.PresignedUrlGenerated(_logger, _bucket, objectKey, "GET");
-        return Task.FromResult(new PresignedDownloadUrl(
-            Url: new Uri(url),
-            Expiry: expiry,
-            ObjectKey: objectKey));
+        var url = _s3.GetPreSignedURL(req);
+        Log.PresignedDownloadUrlGenerated(_logger, _options.BucketName, path);
+        return new PresignedDownloadUrl(new Uri(url), expiresAt);
     }
+
+    private static ObjectMetadata BuildMetadata(
+        string? contentType,
+        long contentLength,
+        string? eTag,
+        DateTime? lastModified,
+        string? contentDisposition,
+        MetadataCollection metadata)
+    {
+        Dictionary<string, string>? userMeta = null;
+        if (metadata.Count > 0)
+        {
+            userMeta = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var key in metadata.Keys)
+            {
+                // AWS SDK returns keys with the "x-amz-meta-" prefix — strip it.
+                var normalizedKey = key.StartsWith("x-amz-meta-", StringComparison.OrdinalIgnoreCase)
+                    ? key["x-amz-meta-".Length..]
+                    : key;
+                userMeta[normalizedKey] = metadata[key];
+            }
+        }
+
+        return new ObjectMetadata(
+            contentType ?? "application/octet-stream",
+            contentLength,
+            eTag,
+            ToUtc(lastModified),
+            contentDisposition,
+            userMeta);
+    }
+
+    private static DateTimeOffset ToUtc(DateTime? value) =>
+        value.HasValue
+            ? new DateTimeOffset(DateTime.SpecifyKind(value.Value, DateTimeKind.Utc))
+            : DateTimeOffset.UtcNow;
+
+    /// <summary>
+    /// Resolves the presigned URL scheme from the underlying S3 client's ServiceURL.
+    /// AWS SDK defaults <see cref="GetPreSignedUrlRequest.Protocol"/> to HTTPS regardless of
+    /// <c>AmazonS3Config.UseHttp</c>, so MinIO / LocalStack setups with an <c>http://</c>
+    /// ServiceURL would otherwise emit <c>https://</c> URLs that fail a real HttpClient
+    /// request with "Cannot determine the frame size".
+    /// </summary>
+    private Protocol ResolveProtocol() =>
+        _s3.Config.ServiceURL is { } su
+        && su.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+            ? Protocol.HTTP
+            : Protocol.HTTPS;
 
     private static partial class Log
     {
@@ -245,7 +297,10 @@ public sealed partial class S3FileStorage : IFileStorage
         [LoggerMessage(LogLevel.Debug, "Deleted object s3://{Bucket}/{Key}")]
         public static partial void ObjectDeleted(ILogger logger, string bucket, string key);
 
-        [LoggerMessage(LogLevel.Debug, "Generated {Verb} presigned URL for s3://{Bucket}/{Key}")]
-        public static partial void PresignedUrlGenerated(ILogger logger, string bucket, string key, string verb);
+        [LoggerMessage(LogLevel.Debug, "Generated presigned PUT URL for s3://{Bucket}/{Key}")]
+        public static partial void PresignedUploadUrlGenerated(ILogger logger, string bucket, string key);
+
+        [LoggerMessage(LogLevel.Debug, "Generated presigned GET URL for s3://{Bucket}/{Key}")]
+        public static partial void PresignedDownloadUrlGenerated(ILogger logger, string bucket, string key);
     }
 }

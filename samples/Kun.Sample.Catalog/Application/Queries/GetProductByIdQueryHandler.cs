@@ -18,6 +18,10 @@ public sealed class GetProductByIdQueryHandler(IReadDbConnectionFactory connecti
     {
         using var connection = await connectionFactory.OpenAsync(cancellationToken);
 
+        // Schema-qualify — CatalogDbContext.DefaultSchema = "catalog", so the table
+        // lives at "catalog"."catalog_products", and unqualified lookups depend on
+        // search_path being set to include the schema (the read connection doesn't
+        // get that).
         const string sql = """
             SELECT "Id",
                    "Name",
@@ -25,7 +29,7 @@ public sealed class GetProductByIdQueryHandler(IReadDbConnectionFactory connecti
                    "Price",
                    "CategoryId",
                    "Stock"
-            FROM   catalog_products
+            FROM   "catalog"."catalog_products"
             WHERE  "Id" = @Id
               AND  "IsDeleted" = false
             """;

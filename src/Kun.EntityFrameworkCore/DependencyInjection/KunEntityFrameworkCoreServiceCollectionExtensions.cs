@@ -15,6 +15,11 @@ public static class KunEntityFrameworkCoreServiceCollectionExtensions
     /// dispatcher. Callers must separately register their <see cref="KunDbContext"/> subclass
     /// via <c>AddDbContext</c>.
     /// </summary>
+    /// <remarks>
+    /// Also registers <see cref="TenantRlsConnectionInterceptor"/> as Scoped; it does not
+    /// activate unless the caller adds it to their <c>DbContextOptionsBuilder</c> via
+    /// <c>opts.AddInterceptors(sp.GetRequiredService&lt;TenantRlsConnectionInterceptor&gt;())</c>.
+    /// </remarks>
     /// <param name="services">The service collection to configure.</param>
     /// <returns>The same <paramref name="services"/> for chaining.</returns>
     public static IServiceCollection AddKunEntityFrameworkCore(this IServiceCollection services)
@@ -32,6 +37,10 @@ public static class KunEntityFrameworkCoreServiceCollectionExtensions
         services.TryAddScoped<IOutboxWriter>(sp => sp.GetRequiredService<IntegrationEventOutboxAccumulator>());
 
         services.TryAddScoped<IDomainEventDispatcher, InProcessDomainEventDispatcher>();
+
+        // Opt-in defence-in-depth: resolves to a no-op unless the caller wires it into
+        // their DbContextOptionsBuilder. See TenantRlsConnectionInterceptor docs.
+        services.TryAddScoped<TenantRlsConnectionInterceptor>();
 
         return services;
     }

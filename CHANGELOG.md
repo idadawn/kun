@@ -706,6 +706,79 @@ but the new capabilities below require explicit opt-in:
     it via `.GetAwaiter().GetResult()` and stays available for existing
     synchronous call sites.
 
+### Highlights (2026-04-24 / 04-25)
+
+**Phase 1 neuroagent-consumer gap fully closed.** Five tickets landed in one burst (23 commits on `main`, all pushed to `origin`):
+
+- **P1-KN-001** `Kun.Storage` — new 15th module (`IFileStorage` 7-method contract + `ContentDispositionPolicy` + S3/MinIO/Local backends).
+- **P1-KN-002** S2S JWT claims alignment (`Kun.Security.S2SJwt` rewritten around `S2SJwtIssueRequest`, emits `roles`/`membership_id`/`trace_id`, default TTL 15 min, multi-aud header bug fixed).
+- **P1-KN-003** Attribute-driven integration-event registration (`[IntegrationEventId("event.v1")]` + `Register<TEvent>()` overload).
+- **P1-CS-011** `TenantRlsConnectionInterceptor` — opt-in defence-in-depth behind the EF global filter; PG-only, whitelist-guarded.
+- **P1-CS-019** `Kun.Audit` — new 16th-slot abstraction module (tamper-evident hash-chained operation audit + Mediator pipeline behaviour + 21 xunit cases).
+
+Framework module count: 13 → 15. Test projects: 11 → 13. Validation / AOT publish matrix / NuGet release / Aspire runtime drill / SG regression remain open — see `TODO-remaining.md` for the P1/P2/P3 roadmap.
+
+### Added — Kun.Audit module (Phase 1 P1-CS-019)
+
+- New `Kun.Audit` abstraction module (IsAotCandidate=true, HasPublicApi=true): tamper-evident operation audit for CQRS commands via a Mediator pipeline behaviour + pluggable `IAuditSink`. Matches SAD v3.0 §15.5 `audit.operations` contract (prev_hash + content_hash).
+- `AuditContentHasher.Compute`: canonical `id|tenant|actor|command|ISO-timestamp|latency|outcome|errorCode` + SHA-256 over `prev || canonical`, lower-case hex. Timestamp pinned to round-trip `O` format with `InvariantCulture` so hashes are stable across culture / timezone.
+- `IAuditChainState.AppendAsync`: atomic read-previous / compute-new / commit-new, serialised per tenant key so concurrent commands on the same tenant cannot fork the chain. `InMemoryAuditChainState` uses per-tenant `SemaphoreSlim`; production deployments are expected to back this with a durable DB-level coordinator (documented in `docs/security/audit-log.md`).
+- `AuditLogPipelineBehavior<TRequest, TResponse>`: captures actor/tenant/timing/outcome per handler invocation. Original handler exception is preserved via `ExceptionDispatchInfo`. Audit-write failures are logged at Warning and swallowed — audit MUST NOT convert a successful handler into a failure nor mask a business exception.
+- DI: `AddKunAudit()` wires `InMemoryAuditChainState` + `InMemoryAuditSink` + `TimeProvider.System` as `TryAdd` defaults; `AddAuditBehavior<TCommand, TResponse>()` on `KunMediatorBuilder` opts one command in at a time so queries stay unaudited.
+- New doc `docs/security/audit-log.md` covers record shape, chain semantics, serialisation contract, in-memory limitations, production shape, wiring, failure semantics, and chain-verification procedure.
+- 21 xunit cases in `tests/Kun.Audit.Tests` cover the hash matrix, concurrent chain serialisation (100-task storm), sink ordering/null-guards, behaviour success/exception paths, sink-failure non-propagation, consecutive-entry linking, and per-tenant chain isolation.
+- Registered in `Kun.sln` under GUID `{A100000E-...}`; `src/AGENTS.md` / `README.md` module matrix / `docs/architecture/module-map.md` updated.
+
+### Added — Kun.EntityFrameworkCore tenant-RLS interceptor (Phase 1 P1-CS-011)
+
+- New `Kun.EntityFrameworkCore.Interceptors.TenantRlsConnectionInterceptor`: opt-in EF `DbConnectionInterceptor` that pushes `ITenantContext.TenantId` into the PostgreSQL session variable `app.current_tenant_id` on connection open and RESETs it on close. Gives NeuroAgent a second isolation layer behind the existing EF global query filter when paired with RLS policies on the database schema.
+- Activates only on Npgsql connections (nominal FQN check) so `Kun.EntityFrameworkCore` does not need a direct Npgsql package dependency; MySQL / SQL Server / other providers silently no-op.
+- Tenant id is whitelisted against `^[A-Za-z0-9._-]{1,128}$` before inlining into the `SET` command (PostgreSQL `SET` cannot be parameterised); unsafe values throw `InvalidOperationException` rather than being coerced.
+- Registered as Scoped by `AddKunEntityFrameworkCore`; callers opt in per `DbContextOptionsBuilder` via `opts.AddInterceptors(sp.GetRequiredService<TenantRlsConnectionInterceptor>())`.
+- New doc `docs/security/multi-tenancy-rls.md` covers defence-in-depth rationale, policy template (ENABLE + FORCE ROW LEVEL SECURITY + USING + WITH CHECK), wiring, and ops notes.
+- Three xunit integration cases in `tests/Kun.IntegrationTests/MultiTenancy/TenantRlsTests.cs` run against a live Postgres 16 container: RLS isolation proven *without* the EF filter (test entity deliberately omits `IMultiTenant`), cross-tenant write rejection via WITH CHECK, and whitelist rejection of unsafe tenant ids.
+
+### Added — Kun.EventBus attribute-driven registration (Phase 1 P1-KN-003)
+
+- New `[IntegrationEventId("bounded-context.event.v1")]` attribute so the stable token lives next to the event record instead of being repeated in DI wiring.
+- `IEventTypeRegistrar.Register<TEvent>()` no-arg overload reads the attribute at DI-registration time. Marked `[RequiresUnreferencedCode]`; AOT-strict consumers can keep calling `Register<TEvent>(string)` to stay reflection-free. The resulting runtime registry is still the zero-reflection `FrozenDictionary`-backed `EventTypeRegistry`.
+- Missing attribute yields an actionable `InvalidOperationException` pointing the caller at either decorating the type or using the explicit string overload.
+- Samples (`Kun.Sample.Catalog.Contracts`, `Kun.Sample.Order.Contracts`) migrated to the attribute so the pattern is visible to framework users.
+- 7 new xunit cases in `Kun.EventBus.Tests/IntegrationEventIdAttributeTests.cs` cover attribute validation, presence/absence, attribute-vs-string equivalence, and fluent chaining.
+
+### Changed — Kun.Security.S2SJwt (Phase 1 P1-KN-002)
+
+- `IS2SJwtIssuer.IssueAsync` now takes a single `S2SJwtIssueRequest` record. The prior 5-positional-parameter signature is removed (API was in `PublicAPI.Unshipped.txt` with no in-repo consumers besides tests).
+- New claim emission, aligned with SAD v3.0 §12: `roles` (multi-valued), `membership_id`, `trace_id` — all optional via the request record. Pre-existing `sub`, `jti`, `tenant_id`, `scope`, `session_id` remain.
+- Multi-audience tokens now fold `aud` into the payload as a JSON array (previously, multi-audience tokens leaked `aud` into the JWT *header* — correctness bug, now fixed).
+- `S2SJwtOptions.DefaultLifetimeSeconds` default bumped from 300 → **900** (15 minutes) per SAD §12; individual calls can still override via `S2SJwtIssueRequest.Lifetime`.
+- `docs/security/s2s-jwt.md` extended with a NeuroAgent Set B section explaining why both `Kun.Gateway.S2sTokenIssuer` (RS256, 60s) and `Kun.Security.S2SJwt.S2SJwtIssuer` (ES256, 15min) coexist and when to use each.
+
+### Added — Kun.Storage (Phase 1 P1-KN-001)
+
+- **Kun.Storage** module (trim-safe, `IsAotCandidate=false` due to AWSSDK.S3 reflection):
+  - `IFileStorage` seven-method contract: `PutObject` / `GetObject` / `HeadObject` / `DeleteObject` / `ListObjects` / `CreatePresignedUploadUrl` / `CreatePresignedDownloadUrl`.
+  - Supporting types: `ObjectMetadata` / `ObjectSummary` / `ObjectDownload` (IAsyncDisposable) / `PutObjectOptions` / `PresignedUploadRequest+Url` / `PresignedDownloadRequest+Url`.
+  - `ContentDispositionPolicy`: active-web MIME whitelist (HTML/SVG/XML/JS/WASM/XHTML/ECMAScript) + RFC 5987 attachment builder. Enforced at every write path and every presigned-download URL so user-uploaded content cannot render inline.
+  - `S3FileStorage` (AWSSDK.S3, compatible with MinIO via path-style + custom endpoint). Auto-probes stored MIME on presigned GET to inject `ResponseContentDisposition` attachment override.
+  - `LocalFileStorage`: 2-layer path-traversal defense (syntactic + semantic), `.kunmeta` JSON sidecar for metadata, HMAC-SHA256-signed `kun-local://` stub URLs for presigned ops (dev-only).
+  - DI: `AddKunStorage` / `AddLocalStorage` / `AddS3Storage` with central `StorageOptions`.
+- **Tests**:
+  - `tests/Kun.Storage.Tests`: ContentDispositionPolicy matrix, LocalFileStorage round-trips + traversal + attachment enforcement, mocked-S3 unit tests, DI resolution tests.
+  - `tests/Kun.IntegrationTests/Storage/S3FileStorageIntegrationTests.cs` + `Fixtures/MinioFixture.cs`: MinIO Testcontainer with real `HttpClient` round-trips against presigned URLs.
+- **Docs**: new `src/Kun.Storage/AGENTS.md`, module added to `src/AGENTS.md`, README, `docs/architecture/module-map.md`; `docs/neuroagent-phase1-gap.md` updated to mark P1-KN-001 complete.
+
+### Merge — main → develop reconciliation (2026-04-25, `sync-main-into-develop`)
+
+- Union merge across five design-divergent groups, arbitrated against `docs/whitepaper.md`:
+  - **Kun.Audit** — writer/reader abstraction (develop) + hash-chain pipeline behaviour (main) coexist in one module. `AddKunAudit().UseEventBus()` and `AddAuditBehavior<TReq,TResp>()` both available.
+  - **Kun.EventBus** — three `Register<TEvent>` overloads (string / string+JsonTypeInfo / [IntegrationEventId] attribute) all retained.
+  - **Kun.EntityFrameworkCore** — `TenantRlsConnectionInterceptor` (connection-scoped) + `TenantRlsTransactionInterceptor` + `SchemaConsistencyInterceptor` all retained; consumers pick per-deployment.
+  - **Kun.Security.S2SJwt** — dual `IssueAsync` overloads (record `S2SJwtIssueRequest` + legacy 5-param). `DefaultLifetimeSeconds` set to **300** per whitepaper §9.6 zero-trust TTL upper bound (60–300s).
+  - **Kun.Storage** — main's 7-method `IFileStorage` contract wins (whitepaper §13.1; develop's variant lacked `RequiredHeaders` on presigned upload, making SigV4 S3 uploads unreliable, and had no response-Content-Disposition override for active-MIME attachment enforcement). develop's split-module skeleton `Kun.Storage.Abstractions` / `.Local` / `.S3` preserved for Phase 2 implementation; `src/Kun.Storage/` old legacy files removed.
+- **P1-KN-002 TTL correction** — the main-side note about `DefaultLifetimeSeconds` bumping to 900 is superseded: per whitepaper §9.6 ("TTL 控制在 60 秒到 5 分钟"), default is 300 seconds. Explicit callers may still override via `S2SJwtIssueRequest.Lifetime`.
+- Pre-push hook installed at `.git/hooks/pre-push` to refuse direct pushes to `main`.
+
 ### Fixed
 
 - **Kun.Gateway**: `S2sTokenIssuer` now injects `IHostEnvironment` and throws `InvalidOperationException` when the signing key file is missing in non-Development environments, preventing silent ephemeral-key self-signing in production.

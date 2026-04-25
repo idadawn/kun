@@ -1,9 +1,11 @@
+using Kun.EventBus;
+
 namespace Kun.Sample.Catalog.Contracts;
 
 /// <summary>
 /// Integration event published when a new product is made available in the catalog.
-/// Stable event ID: <c>product.published.v1</c>
 /// </summary>
+[IntegrationEventId("product.published.v1")]
 public sealed record ProductPublishedIntegrationEvent(
     Guid ProductId,
     string Name,

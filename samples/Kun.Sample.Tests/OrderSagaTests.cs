@@ -5,10 +5,13 @@ using System.Text.Json;
 using FluentAssertions;
 using Grpc.Core;
 using Kun.Sample.Tests.Fixtures;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 // The gRPC client code (CatalogService.CatalogServiceClient) is generated into the Order
 // assembly (GrpcServices="Client"), not the Catalog assembly (GrpcServices="Server").
 using OrderApp::Kun.Sample.Catalog.Grpc;
@@ -126,6 +129,11 @@ public sealed class OrderWebFactory : IAsyncLifetime
         _factory = new WebApplicationFactory<OrderApp::Program>()
             .WithWebHostBuilder(builder =>
             {
+                // Development env switches on DeveloperExceptionPage so the test
+                // sees the real exception body when the handler throws (previously
+                // ProblemDetails swallowed it to a generic 500).
+                builder.UseEnvironment("Development");
+
                 builder.ConfigureAppConfiguration((_, cfg) =>
                 {
                     cfg.AddInMemoryCollection(new Dictionary<string, string?>
@@ -165,6 +173,13 @@ public sealed class OrderWebFactory : IAsyncLifetime
                         foreach (var d in existing) svc.Remove(d);
                         svc.AddTransient<T>();
                     }
+                });
+
+                builder.ConfigureLogging(lb =>
+                {
+                    lb.ClearProviders();
+                    lb.AddProvider(CapturingLoggerProvider.Instance);
+                    lb.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Warning);
                 });
             });
 
@@ -280,7 +295,9 @@ public sealed class OrderSagaTests : IClassFixture<OrderWebFactory>
         var ct = TestContext.Current.CancellationToken;
 
         var postResponse = await _client.PostAsJsonAsync("/demo/happy-path", new { }, ct);
-        postResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        postResponse.StatusCode.Should().Be(HttpStatusCode.OK,
+            because: $"server response: {await postResponse.Content.ReadAsStringAsync(ct)} | " +
+                     $"captured error: {CapturingLoggerProvider.Instance.LastError}");
 
         var body = await postResponse.Content.ReadAsStringAsync(ct);
         var doc = JsonDocument.Parse(body);
@@ -428,5 +445,44 @@ public sealed class ReserveInventoryStepFailureTests : IClassFixture<OrderWebFac
         lastState.Should().Be("Compensated",
             because: "ReserveInventoryStep throws SagaStepFailedException when Catalog returns Success=false, " +
                      "triggering immediate saga compensation");
+    }
+}
+
+/// <summary>
+/// Diagnostic logger provider — keeps the most recent error-level entry so the test
+/// assertion can show the server-side exception that caused a 500, rather than just
+/// the ProblemDetails envelope.
+/// </summary>
+internal sealed class CapturingLoggerProvider : ILoggerProvider
+{
+    internal static readonly CapturingLoggerProvider Instance = new();
+
+    internal string? LastError { get; private set; }
+
+    public ILogger CreateLogger(string categoryName) => new Capturing(this, categoryName);
+
+    public void Dispose() { }
+
+    private sealed class Capturing : ILogger
+    {
+        private readonly CapturingLoggerProvider _owner;
+        private readonly string _category;
+
+        public Capturing(CapturingLoggerProvider owner, string category)
+        {
+            _owner = owner;
+            _category = category;
+        }
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+        public bool IsEnabled(LogLevel logLevel) => logLevel >= LogLevel.Warning;
+
+        public void Log<TState>(
+            LogLevel logLevel, EventId eventId, TState state,
+            Exception? exception, Func<TState, Exception?, string> formatter)
+        {
+            if (logLevel < LogLevel.Error) return;
+            _owner.LastError = $"[{_category}] {formatter(state, exception)}\n{exception}";
+        }
     }
 }

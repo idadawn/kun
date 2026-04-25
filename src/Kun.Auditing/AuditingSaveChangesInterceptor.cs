@@ -66,13 +66,16 @@ public sealed partial class AuditingSaveChangesInterceptor : ISaveChangesInterce
             return result;
         }
 
-        foreach (var entry in context.ChangeTracker.Entries())
-        {
-            if (!ShouldAudit(entry))
-            {
-                continue;
-            }
+        // Snapshot before WriteAsync — the default OutboxAuditSink writes a new
+        // OutboxMessage entry to the same DbContext, which mutates ChangeTracker.Entries()
+        // and trips InvalidOperationException on the live enumerator.
+        var auditable = context.ChangeTracker
+            .Entries()
+            .Where(ShouldAudit)
+            .ToList();
 
+        foreach (var entry in auditable)
+        {
             var auditEvent = BuildEvent(entry);
             await _sink.WriteAsync(auditEvent, cancellationToken).ConfigureAwait(false);
             LogEmitted(_logger, auditEvent.ResourceType, auditEvent.Action);
@@ -94,13 +97,13 @@ public sealed partial class AuditingSaveChangesInterceptor : ISaveChangesInterce
             return result;
         }
 
-        foreach (var entry in context.ChangeTracker.Entries())
-        {
-            if (!ShouldAudit(entry))
-            {
-                continue;
-            }
+        var auditable = context.ChangeTracker
+            .Entries()
+            .Where(ShouldAudit)
+            .ToList();
 
+        foreach (var entry in auditable)
+        {
             var auditEvent = BuildEvent(entry);
             // IAuditSink is async-first; block briefly on the sync path. The default
             // outbox sink is non-blocking (in-memory enqueue) so this is effectively

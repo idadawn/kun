@@ -1,9 +1,11 @@
+using Kun.EventBus;
+
 namespace Kun.Sample.Catalog.Contracts;
 
 /// <summary>
 /// Integration event published when a product's stock changes.
-/// Stable event ID: <c>inventory.changed.v1</c>
 /// </summary>
+[IntegrationEventId("inventory.changed.v1")]
 public sealed record InventoryChangedIntegrationEvent(
     Guid ProductId,
     int StockDelta,

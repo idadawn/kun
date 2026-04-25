@@ -1,140 +1,119 @@
-using System.Text;
-using DotNet.Testcontainers.Builders;
+using System.Net;
+using Amazon.S3;
+using Amazon.S3.Model;
 using FluentAssertions;
-using Kun.Storage.Configuration;
+using Kun.Storage.Abstractions;
 using Kun.Storage.Implementations;
-using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Testcontainers.Minio;
+using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using Xunit;
 
 namespace Kun.Storage.Tests;
 
-/// <summary>
-/// Integration tests against a live MinIO container. Skipped locally
-/// without Docker; the CI ubuntu-latest runner has Docker available so
-/// Testcontainers will spin MinIO on demand.
-/// </summary>
-public sealed class S3FileStorageTests : IAsyncLifetime
+public sealed class S3FileStorageTests
 {
-    private const string Bucket = "kun-storage-test";
-    private readonly MinioContainer _minio = new MinioBuilder()
-        .WithImage("minio/minio:RELEASE.2024-10-13T13-34-11Z")
-        .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("API:"))
-        .Build();
+    private readonly IAmazonS3 _s3;
+    private readonly S3FileStorage _storage;
+    private readonly CancellationToken _ct;
 
-    private S3FileStorage? _storage;
-    private Amazon.S3.AmazonS3Client? _s3;
-
-    public async ValueTask InitializeAsync()
+    public S3FileStorageTests()
     {
-        await _minio.StartAsync();
-
-        _s3 = new Amazon.S3.AmazonS3Client(
-            new Amazon.Runtime.BasicAWSCredentials(_minio.GetAccessKey(), _minio.GetSecretKey()),
-            new Amazon.S3.AmazonS3Config
-            {
-                ServiceURL = _minio.GetConnectionString(),
-                ForcePathStyle = true,
-                UseHttp = true,
-            });
-
-        await _s3.PutBucketAsync(new Amazon.S3.Model.PutBucketRequest { BucketName = Bucket });
-
-        var options = Options.Create(new S3StorageOptions
-        {
-            BucketName = Bucket,
-            Endpoint = _minio.GetConnectionString(),
-            AccessKey = _minio.GetAccessKey(),
-            SecretKey = _minio.GetSecretKey(),
-            ForcePathStyle = true,
-        });
-        _storage = new S3FileStorage(_s3, options, NullLogger<S3FileStorage>.Instance);
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        _s3?.Dispose();
-        await _minio.DisposeAsync();
+        _s3 = Substitute.For<IAmazonS3>();
+        var options = Options.Create(new StorageOptions { BucketName = "test-bucket" });
+        _storage = new S3FileStorage(_s3, options, Substitute.For<ILogger<S3FileStorage>>());
+        _ct = TestContext.Current.CancellationToken;
     }
 
     [Fact]
-    public async Task PutAndHead_RoundTrip()
+    public async Task PutObject_Forces_Attachment_Disposition_For_Html()
     {
-        var ct = TestContext.Current.CancellationToken;
-        using var body = new MemoryStream(Encoding.UTF8.GetBytes("hello minio"));
+        PutObjectRequest? captured = null;
+        _s3.PutObjectAsync(Arg.Do<PutObjectRequest>(r => captured = r), Arg.Any<CancellationToken>())
+           .Returns(new PutObjectResponse());
 
-        var put = await _storage!.PutObjectAsync("folder/obj.txt", body, "text/plain", ct);
-        var head = await _storage.HeadObjectAsync("folder/obj.txt", ct);
+        using var content = new MemoryStream(new byte[] { 1 });
+        await _storage.PutObjectAsync(
+            "evil.html",
+            content,
+            new PutObjectOptions(ContentType: "text/html", FileName: "evil.html"),
+            _ct);
 
-        put.ObjectKey.Should().Be("folder/obj.txt");
-        head.Should().NotBeNull();
-        head!.Size.Should().Be("hello minio".Length);
-        head.ContentType.Should().Be("text/plain");
+        captured.Should().NotBeNull();
+        captured!.Headers.ContentDisposition.Should().NotBeNull();
+        captured.Headers.ContentDisposition.Should().StartWith("attachment");
     }
 
     [Fact]
-    public async Task ActiveWebType_ForcesContentDispositionAttachment()
+    public async Task PutObject_Does_Not_Set_Disposition_For_Safe_Mime()
     {
-        var ct = TestContext.Current.CancellationToken;
-        using var body = new MemoryStream(Encoding.UTF8.GetBytes("<html><script>alert(1)</script></html>"));
+        PutObjectRequest? captured = null;
+        _s3.PutObjectAsync(Arg.Do<PutObjectRequest>(r => captured = r), Arg.Any<CancellationToken>())
+           .Returns(new PutObjectResponse());
 
-        await _storage!.PutObjectAsync("evil.html", body, "text/html", ct);
+        using var content = new MemoryStream(new byte[] { 1 });
+        await _storage.PutObjectAsync(
+            "pic.png",
+            content,
+            new PutObjectOptions(ContentType: "image/png"),
+            _ct);
 
-        var response = await _s3!.GetObjectAsync(new Amazon.S3.Model.GetObjectRequest
-        {
-            BucketName = Bucket,
-            Key = "evil.html",
-        }, ct);
-
-        response.Headers.ContentDisposition.Should().StartWith("attachment;");
-        response.Headers.ContentDisposition.Should().Contain("evil.html");
+        captured.Should().NotBeNull();
+        captured!.Headers.ContentDisposition.Should().BeNullOrEmpty();
     }
 
     [Fact]
-    public async Task ListObjects_Paginates()
+    public async Task HeadObject_Returns_Null_On_NotFound()
     {
-        var ct = TestContext.Current.CancellationToken;
-        for (var i = 0; i < 5; i++)
-        {
-            using var body = new MemoryStream(Encoding.UTF8.GetBytes($"item-{i}"));
-            await _storage!.PutObjectAsync($"list/{i}.txt", body, "text/plain", ct);
-        }
+        _s3.GetObjectMetadataAsync(Arg.Any<GetObjectMetadataRequest>(), Arg.Any<CancellationToken>())
+           .ThrowsAsync(new AmazonS3Exception("not found") { StatusCode = HttpStatusCode.NotFound });
 
-        var keys = new List<string>();
-        await foreach (var entry in _storage!.ListObjectsAsync("list/", ct))
-        {
-            keys.Add(entry.ObjectKey);
-        }
+        var result = await _storage.HeadObjectAsync("missing.txt", _ct);
 
-        keys.Should().HaveCount(5).And.OnlyHaveUniqueItems();
+        result.Should().BeNull();
     }
 
     [Fact]
-    public async Task HeadObject_ReturnsNull_ForMissingKey()
+    public async Task CreatePresignedDownloadUrl_Signs_Attachment_Override_For_Unsafe_Mime()
     {
-        var ct = TestContext.Current.CancellationToken;
-        var head = await _storage!.HeadObjectAsync("does/not/exist.bin", ct);
-        head.Should().BeNull();
+        var metadataResp = new GetObjectMetadataResponse();
+        metadataResp.Headers.ContentType = "text/html";
+        _s3.GetObjectMetadataAsync(Arg.Any<GetObjectMetadataRequest>(), Arg.Any<CancellationToken>())
+           .Returns(metadataResp);
+
+        GetPreSignedUrlRequest? captured = null;
+        _s3.GetPreSignedURL(Arg.Do<GetPreSignedUrlRequest>(r => captured = r))
+           .Returns("https://s3.example.com/signed");
+
+        var result = await _storage.CreatePresignedDownloadUrlAsync(
+            "user/evil.html",
+            new PresignedDownloadRequest(TimeSpan.FromMinutes(5)),
+            _ct);
+
+        captured.Should().NotBeNull();
+        captured!.ResponseHeaderOverrides.ContentDisposition.Should().NotBeNull();
+        captured.ResponseHeaderOverrides.ContentDisposition.Should().StartWith("attachment");
+        result.Url.ToString().Should().Be("https://s3.example.com/signed");
     }
 
     [Fact]
-    public async Task PresignedDownloadUrl_IsUsableByAnonymousClient()
+    public async Task CreatePresignedDownloadUrl_Respects_Caller_Supplied_Disposition()
     {
-        var ct = TestContext.Current.CancellationToken;
-        var payload = "presigned-download"u8.ToArray();
-        using (var body = new MemoryStream(payload))
-        {
-            await _storage!.PutObjectAsync("pre/download.bin", body, "application/octet-stream", ct);
-        }
+        GetPreSignedUrlRequest? captured = null;
+        _s3.GetPreSignedURL(Arg.Do<GetPreSignedUrlRequest>(r => captured = r))
+           .Returns("https://s3.example.com/signed");
 
-        var presigned = await _storage!.CreatePresignedDownloadUrlAsync(
-            "pre/download.bin",
-            TimeSpan.FromMinutes(2),
-            ct);
+        await _storage.CreatePresignedDownloadUrlAsync(
+            "report.pdf",
+            new PresignedDownloadRequest(
+                TimeSpan.FromMinutes(5),
+                ResponseContentDisposition: "inline"),
+            _ct);
 
-        using var http = new HttpClient();
-        var fetched = await http.GetByteArrayAsync(presigned.Url, ct);
-        fetched.Should().Equal(payload);
+        captured!.ResponseHeaderOverrides.ContentDisposition.Should().Be("inline");
+        // And must not waste a HEAD round-trip when disposition is explicit.
+        await _s3.DidNotReceive().GetObjectMetadataAsync(
+            Arg.Any<GetObjectMetadataRequest>(), Arg.Any<CancellationToken>());
     }
 }

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization.Metadata;
 
 namespace Kun.EventBus;
@@ -25,4 +26,21 @@ public interface IEventTypeRegistrar
     /// <c>[JsonSerializable(typeof(TEvent))]</c>-decorated <see cref="System.Text.Json.Serialization.JsonSerializerContext"/>.
     /// </param>
     IEventTypeRegistrar Register<TEvent>(string eventType, JsonTypeInfo<TEvent> typeInfo) where TEvent : class;
+
+    /// <summary>
+    /// Registers <typeparamref name="TEvent"/> using the token declared on its
+    /// <see cref="IntegrationEventIdAttribute"/>. Throws
+    /// <see cref="InvalidOperationException"/> when the attribute is absent.
+    /// </summary>
+    /// <remarks>
+    /// Reads the attribute reflectively once at DI-registration time; the resulting
+    /// registry is the same O(1) <see cref="EventTypeRegistry"/> used at steady state.
+    /// AOT-strict callers can stick with <see cref="Register{TEvent}(string)"/> or
+    /// <see cref="Register{TEvent}(string, JsonTypeInfo{TEvent})"/> to avoid the reflection entirely.
+    /// </remarks>
+    [RequiresUnreferencedCode(
+        "Reads [IntegrationEventId] via reflection on typeof(TEvent). " +
+        "Under trimming, IntegrationEventIdAttribute instances must be preserved. " +
+        "Use Register<TEvent>(string) to avoid reflection entirely.")]
+    IEventTypeRegistrar Register<TEvent>() where TEvent : class;
 }
