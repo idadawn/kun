@@ -64,8 +64,16 @@ public sealed class PgBouncerPostgresFixture : IAsyncLifetime
                 .WithEnvironment("DB_NAME", "kun")
                 .WithEnvironment("POOL_MODE", "transaction")
                 .WithEnvironment("AUTH_TYPE", "plain")
-                .WithEnvironment("MAX_CLIENT_CONN", "100")
-                .WithEnvironment("DEFAULT_POOL_SIZE", "5")
+                // The 100-parallel stress test (PgBouncerCompatTests) drives 100
+                // concurrent client conns. With NOSUPERUSER kun_app and a tiny pool of
+                // 5 backend slots, queue pressure surfaces "Exception while reading from
+                // stream" — pool exhaustion masquerading as a connection failure. 25
+                // backend slots keeps the prepared-statement compatibility assertion
+                // meaningful while staying well under postgres' default max_connections.
+                .WithEnvironment("MAX_CLIENT_CONN", "200")
+                .WithEnvironment("DEFAULT_POOL_SIZE", "25")
+                .WithEnvironment("RESERVE_POOL_SIZE", "10")
+                .WithEnvironment("RESERVE_POOL_TIMEOUT", "1")
                 .WithEnvironment("LISTEN_PORT", "6432")
                 .WithPortBinding(6432, assignRandomHostPort: true)
                 .Build();
