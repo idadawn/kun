@@ -92,11 +92,11 @@ Kun.Identity.Configuration.KunIdentityBuilder.AddS2SIssuer(System.Action<Kun.Ide
 Kun.Identity.Configuration.KunIdentityBuilder.KunIdentityBuilder(Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> void
 Kun.Identity.Configuration.KunIdentityBuilder.Services.get -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 Kun.Identity.Configuration.KunJwtBearerOptions
-Kun.Identity.Configuration.KunJwtBearerOptions.Audience.get -> string!
+Kun.Identity.Configuration.KunJwtBearerOptions.Audience.get -> string?
 Kun.Identity.Configuration.KunJwtBearerOptions.Audience.set -> void
 Kun.Identity.Configuration.KunJwtBearerOptions.ClockSkew.get -> System.TimeSpan
 Kun.Identity.Configuration.KunJwtBearerOptions.ClockSkew.set -> void
-Kun.Identity.Configuration.KunJwtBearerOptions.Issuer.get -> string!
+Kun.Identity.Configuration.KunJwtBearerOptions.Issuer.get -> string?
 Kun.Identity.Configuration.KunJwtBearerOptions.Issuer.set -> void
 Kun.Identity.Configuration.KunJwtBearerOptions.IssuerSigningKeys.get -> System.Collections.Generic.IList<Microsoft.IdentityModel.Tokens.SecurityKey!>!
 Kun.Identity.Configuration.KunJwtBearerOptions.JwksUri.get -> string?
