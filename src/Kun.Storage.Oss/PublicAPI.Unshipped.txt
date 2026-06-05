@@ -1,0 +1,25 @@
+#nullable enable
+Kun.Storage.Oss.DependencyInjection.StorageServiceCollectionExtensions
+static Kun.Storage.Oss.DependencyInjection.StorageServiceCollectionExtensions.AddKunOssFileStorage(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.Storage.Oss.OssStorageOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Kun.Storage.Oss.OssFileStorage
+Kun.Storage.Oss.OssFileStorage.DeleteAsync(string! objectKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
+Kun.Storage.Oss.OssFileStorage.ExistsAsync(string! objectKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
+Kun.Storage.Oss.OssFileStorage.GetMetadataAsync(string! objectKey, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Storage.ObjectMetadata?>!
+Kun.Storage.Oss.OssFileStorage.GetPresignedDownloadAsync(string! objectKey, Kun.Storage.DownloadOptions? options = null, System.TimeSpan? expiresIn = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Storage.PresignedDownloadUrl!>!
+Kun.Storage.Oss.OssFileStorage.GetPresignedPostUploadAsync(string! objectKey, Kun.Storage.UploadConstraints? constraints = null, System.TimeSpan? expiresIn = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Storage.PresignedPostUpload!>!
+Kun.Storage.Oss.OssFileStorage.GetPresignedUploadAsync(string! objectKey, string! contentType, Kun.Storage.UploadConstraints? constraints = null, System.TimeSpan? expiresIn = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Storage.PresignedUploadUrl!>!
+Kun.Storage.Oss.OssFileStorage.ListAsync(string? prefix = null, int maxKeys = 1000, string? continuationToken = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Storage.ListObjectsResult!>!
+Kun.Storage.Oss.OssFileStorage.OssFileStorage(Aliyun.OSS.IOss! oss, Microsoft.Extensions.Options.IOptions<Kun.Storage.Oss.OssStorageOptions!>! options, Microsoft.Extensions.Logging.ILogger<Kun.Storage.Oss.OssFileStorage!>! logger, System.TimeProvider? timeProvider = null) -> void
+Kun.Storage.Oss.OssFileStorage.UploadAsync(string! objectKey, System.IO.Stream! content, string! contentType, Kun.Storage.UploadConstraints? constraints = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Storage.ObjectMetadata!>!
+Kun.Storage.Oss.OssStorageOptions
+Kun.Storage.Oss.OssStorageOptions.AccessKeyId.get -> string!
+Kun.Storage.Oss.OssStorageOptions.AccessKeyId.set -> void
+Kun.Storage.Oss.OssStorageOptions.AccessKeySecret.get -> string!
+Kun.Storage.Oss.OssStorageOptions.AccessKeySecret.set -> void
+Kun.Storage.Oss.OssStorageOptions.BucketName.get -> string!
+Kun.Storage.Oss.OssStorageOptions.BucketName.set -> void
+Kun.Storage.Oss.OssStorageOptions.DefaultPresignedUrlLifetime.get -> System.TimeSpan
+Kun.Storage.Oss.OssStorageOptions.DefaultPresignedUrlLifetime.set -> void
+Kun.Storage.Oss.OssStorageOptions.Endpoint.get -> string!
+Kun.Storage.Oss.OssStorageOptions.Endpoint.set -> void
+Kun.Storage.Oss.OssStorageOptions.OssStorageOptions() -> void

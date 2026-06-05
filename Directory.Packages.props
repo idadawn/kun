@@ -61,9 +61,10 @@
     <PackageVersion Include="RabbitMQ.Client" Version="7.0.0" />
   </ItemGroup>
 
-  <ItemGroup Label="Object Storage (Kun.Storage.S3)">
+  <ItemGroup Label="Object Storage (Kun.Storage.S3 / Kun.Storage.Oss)">
     <PackageVersion Include="AWSSDK.S3" Version="3.7.420" />
     <PackageVersion Include="AWSSDK.Extensions.NETCore.Setup" Version="3.7.300" />
+    <PackageVersion Include="Aliyun.OSS.SDK.NetCore" Version="2.14.1" />
   </ItemGroup>
 
   <ItemGroup Label="Integration Event Schema Generation (P1-1 SchemaGen)">
