@@ -130,7 +130,12 @@ public sealed partial class OssFileStorage : IFileStorage
         if (forceAttachment)
         {
             var fileName = SanitizeFileName(options?.DownloadFileName ?? GetLeafName(objectKey));
-            var disposition = $"attachment; filename=\"{fileName}\"";
+            // No space after ';' (and SanitizeFileName strips spaces from fileName): this value
+            // is emitted into the presigned URL's response-content-disposition query param, and
+            // the Aliyun OSS SDK does NOT URL-encode spaces there — a raw space produces a
+            // malformed download URL that clients reject ("URL rejected: malformed input").
+            // RFC 6266 permits omitting the optional whitespace around ';'.
+            var disposition = $"attachment;filename=\"{fileName}\"";
             request.ResponseHeaders.ContentDisposition = disposition;
             responseHeaders["Content-Disposition"] = disposition;
         }
@@ -300,7 +305,10 @@ public sealed partial class OssFileStorage : IFileStorage
         var len = 0;
         foreach (var ch in name)
         {
-            if (ch == '"' || ch == '\\' || ch == '\r' || ch == '\n' || ch < 0x20)
+            // Strip spaces too: a space would land unencoded in the presigned URL's
+            // response-content-disposition param (the Aliyun OSS SDK does not encode it),
+            // yielding a malformed download URL.
+            if (ch == '"' || ch == '\\' || ch == ' ' || ch == '\r' || ch == '\n' || ch < 0x20)
             {
                 continue;
             }

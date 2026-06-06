@@ -114,6 +114,34 @@ public sealed class OssFileStorageTests
     }
 
     [Fact]
+    public async Task GetPresignedDownloadAsync_DispositionHasNoUnencodedSpace()
+    {
+        // Regression: the forced-attachment value is emitted verbatim into the presigned URL's
+        // response-content-disposition query param, and the Aliyun OSS SDK does NOT URL-encode
+        // spaces there — any raw space yields a malformed, client-rejected download URL. Guard
+        // that neither the "attachment;" separator nor a spacey filename introduces a space.
+        var oss = Substitute.For<IOss>();
+        oss.GetObjectMetadata(Arg.Any<string>(), Arg.Any<string>())
+           .Returns(new OssObjectMetadata { ContentType = "text/html" });
+
+        GeneratePresignedUriRequest? captured = null;
+        oss.GeneratePresignedUri(Arg.Do<GeneratePresignedUriRequest>(r => captured = r))
+           .Returns(new Uri("https://example.com/signed"));
+
+        var storage = CreateStorage(oss);
+
+        var presigned = await storage.GetPresignedDownloadAsync(
+            "uploads/evil page.html",
+            new DownloadOptions(DownloadFileName: "my report.html"),
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        captured.Should().NotBeNull();
+        captured!.ResponseHeaders.ContentDisposition.Should().NotContain(" ");
+        captured.ResponseHeaders.ContentDisposition.Should().Be("attachment;filename=\"myreport.html\"");
+        presigned.ResponseHeaders["Content-Disposition"].Should().NotContain(" ");
+    }
+
+    [Fact]
     public async Task GetPresignedUploadAsync_UsesPutMethodAndSetsContentType()
     {
         var oss = Substitute.For<IOss>();
