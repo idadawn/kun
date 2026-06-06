@@ -27,12 +27,6 @@ public sealed partial class LocalFileStorage : IFileStorage
 {
     private const string SidecarSuffix = ".kunmeta";
 
-    private static readonly JsonSerializerOptions SidecarJson = new()
-    {
-        WriteIndented = false,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-    };
-
     private readonly string _rootPath;
     private readonly string _rootPrefix;
     private readonly byte[] _signingKey;
@@ -318,7 +312,7 @@ public sealed partial class LocalFileStorage : IFileStorage
 
         await using var fs = new FileStream(sidecar, FileMode.Open, FileAccess.Read, FileShare.Read,
             bufferSize: 4096, useAsync: true);
-        var data = await JsonSerializer.DeserializeAsync<SidecarData>(fs, SidecarJson, ct).ConfigureAwait(false)
+        var data = await JsonSerializer.DeserializeAsync(fs, SidecarJsonContext.Default.SidecarData, ct).ConfigureAwait(false)
             ?? new SidecarData("application/octet-stream", null, null, null);
 
         IReadOnlyDictionary<string, string>? userMeta = data.UserMetadata is { Count: > 0 } ? data.UserMetadata : null;
@@ -336,7 +330,7 @@ public sealed partial class LocalFileStorage : IFileStorage
         var sidecar = fullPath + SidecarSuffix;
         await using var fs = new FileStream(sidecar, FileMode.Create, FileAccess.Write, FileShare.None,
             bufferSize: 4096, useAsync: true);
-        await JsonSerializer.SerializeAsync(fs, data, SidecarJson, ct).ConfigureAwait(false);
+        await JsonSerializer.SerializeAsync(fs, data, SidecarJsonContext.Default.SidecarData, ct).ConfigureAwait(false);
     }
 
     private sealed record SidecarData(
@@ -344,6 +338,14 @@ public sealed partial class LocalFileStorage : IFileStorage
         string? ContentDisposition,
         string? CacheControl,
         Dictionary<string, string>? UserMetadata);
+
+    // Source-generated JSON (AOT/trim-safe — avoids IL2026/IL3050 from reflection-based
+    // (de)serialization). Options that were on the old SidecarJson live here verbatim.
+    [JsonSourceGenerationOptions(
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        WriteIndented = false)]
+    [JsonSerializable(typeof(SidecarData))]
+    private sealed partial class SidecarJsonContext : JsonSerializerContext;
 
     private static partial class Log
     {
