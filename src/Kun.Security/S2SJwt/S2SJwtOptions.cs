@@ -7,19 +7,19 @@ namespace Kun.Security.S2SJwt;
 public sealed class S2SJwtOptions
 {
     /// <summary>ECDSA P-256 private key in PEM format for signing tokens.</summary>
-    public required string SigningKeyPem { get; init; }
+    public required string SigningKeyPem { get; set; }
 
     /// <summary>Key identifier for the current signing key.</summary>
-    public required string KeyId { get; init; }
+    public required string KeyId { get; set; }
 
     /// <summary>Previous ECDSA P-256 private key PEM for graceful key rotation. Optional.</summary>
-    public string? PreviousSigningKeyPem { get; init; }
+    public string? PreviousSigningKeyPem { get; set; }
 
     /// <summary>Key identifier for the previous signing key. Required when <see cref="PreviousSigningKeyPem"/> is set.</summary>
-    public string? PreviousKeyId { get; init; }
+    public string? PreviousKeyId { get; set; }
 
     /// <summary>Token issuer. Must be <c>neuroagent-edge</c> per contract.</summary>
-    public string Issuer { get; init; } = "neuroagent-edge";
+    public string Issuer { get; set; } = "neuroagent-edge";
 
     /// <summary>
     /// Default token lifetime. Defaults to 300 seconds (5 minutes), the upper bound of the
@@ -27,5 +27,5 @@ public sealed class S2SJwtOptions
     /// <see cref="IS2SJwtIssuer.IssueAsync(S2SJwtIssueRequest, System.Threading.CancellationToken)"/>
     /// may tighten this via <see cref="S2SJwtIssueRequest.Lifetime"/>.
     /// </summary>
-    public int DefaultLifetimeSeconds { get; init; } = 300;
+    public int DefaultLifetimeSeconds { get; set; } = 300;
 }

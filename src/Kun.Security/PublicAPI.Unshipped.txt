@@ -61,18 +61,18 @@ Kun.Security.S2SJwt.S2SJwtIssuer.IssueAsync(string! userId, string! tenantId, st
 Kun.Security.S2SJwt.S2SJwtIssuer.S2SJwtIssuer(Microsoft.Extensions.Options.IOptions<Kun.Security.S2SJwt.S2SJwtOptions!>! options, Microsoft.Extensions.Logging.ILogger<Kun.Security.S2SJwt.S2SJwtIssuer!>! logger) -> void
 Kun.Security.S2SJwt.S2SJwtOptions
 Kun.Security.S2SJwt.S2SJwtOptions.DefaultLifetimeSeconds.get -> int
-Kun.Security.S2SJwt.S2SJwtOptions.DefaultLifetimeSeconds.init -> void
+Kun.Security.S2SJwt.S2SJwtOptions.DefaultLifetimeSeconds.set -> void
 Kun.Security.S2SJwt.S2SJwtOptions.Issuer.get -> string!
-Kun.Security.S2SJwt.S2SJwtOptions.Issuer.init -> void
+Kun.Security.S2SJwt.S2SJwtOptions.Issuer.set -> void
 Kun.Security.S2SJwt.S2SJwtOptions.KeyId.get -> string!
-Kun.Security.S2SJwt.S2SJwtOptions.KeyId.init -> void
+Kun.Security.S2SJwt.S2SJwtOptions.KeyId.set -> void
 Kun.Security.S2SJwt.S2SJwtOptions.PreviousKeyId.get -> string?
-Kun.Security.S2SJwt.S2SJwtOptions.PreviousKeyId.init -> void
+Kun.Security.S2SJwt.S2SJwtOptions.PreviousKeyId.set -> void
 Kun.Security.S2SJwt.S2SJwtOptions.PreviousSigningKeyPem.get -> string?
-Kun.Security.S2SJwt.S2SJwtOptions.PreviousSigningKeyPem.init -> void
+Kun.Security.S2SJwt.S2SJwtOptions.PreviousSigningKeyPem.set -> void
 Kun.Security.S2SJwt.S2SJwtOptions.S2SJwtOptions() -> void
 Kun.Security.S2SJwt.S2SJwtOptions.SigningKeyPem.get -> string!
-Kun.Security.S2SJwt.S2SJwtOptions.SigningKeyPem.init -> void
+Kun.Security.S2SJwt.S2SJwtOptions.SigningKeyPem.set -> void
 Kun.Security.S2SJwt.S2SJwtVerifier
 Kun.Security.S2SJwt.S2SJwtVerifier.S2SJwtVerifier(Microsoft.Extensions.Options.IOptions<Kun.Security.S2SJwt.S2SJwtOptions!>! options, Microsoft.Extensions.Logging.ILogger<Kun.Security.S2SJwt.S2SJwtVerifier!>! logger) -> void
 Kun.Security.S2SJwt.S2SJwtVerifier.VerifyAsync(string! token, string! expectedAudience, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Security.Claims.ClaimsPrincipal?>!
