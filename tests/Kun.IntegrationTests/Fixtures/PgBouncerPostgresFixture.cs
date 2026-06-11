@@ -76,6 +76,12 @@ public sealed class PgBouncerPostgresFixture : IAsyncLifetime
                 .WithEnvironment("RESERVE_POOL_TIMEOUT", "1")
                 .WithEnvironment("LISTEN_PORT", "6432")
                 .WithPortBinding(6432, assignRandomHostPort: true)
+                // StartAsync alone returns when the container process launches, not
+                // when pgbouncer has bound its listen socket. On loaded CI runners
+                // that gap reaches whole seconds, and the first test connections hit
+                // a half-started listener and die with kernel resets ("Exception
+                // while reading from stream") faster than any in-test retry budget.
+                .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(6432))
                 .Build();
             await _pgBouncer.StartAsync(ct);
 
