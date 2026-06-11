@@ -17,6 +17,7 @@ against `docs/benchmarks/baseline-*.md`.
 | Directory | Purpose |
 |-----------|---------|
 | `Kun.Benchmarks/` | Single benchmark assembly. `Program.cs` is the BenchmarkDotNet entry point; benchmarks live in `*Benchmarks.cs` files. |
+| `Kun.Benchmarks.Grpc/` | Microbenchmarks for `Kun.Grpc` interceptor hot paths. Run weekly (plus on `benchmarks`-labeled PRs) by `.github/workflows/benchmarks.yml`. |
 
 ## For AI Agents
 
