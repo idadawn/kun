@@ -34,6 +34,26 @@ public sealed partial class KunJwtValidator : IJwtValidator
         _options = options.Value;
         _logger = logger;
 
+        if (string.IsNullOrWhiteSpace(_options.Issuer))
+            throw new InvalidOperationException("KunJwtBearerOptions.Issuer must be configured.");
+        if (string.IsNullOrWhiteSpace(_options.Audience))
+            throw new InvalidOperationException("KunJwtBearerOptions.Audience must be configured.");
+
+#pragma warning disable CS0618 // ValidateSignature is obsolete for callers, not for internal checks
+        if (_options.ValidateSignature
+            && (_options.IssuerSigningKeys?.Count ?? 0) == 0
+            && string.IsNullOrWhiteSpace(_options.JwksUri))
+        {
+            throw new InvalidOperationException(
+                "KunJwt: ValidateSignature is true but no IssuerSigningKeys and no JwksUri configured.");
+        }
+
+        if (!_options.ValidateSignature)
+        {
+            Log.SignatureValidationDisabled(_logger);
+        }
+#pragma warning restore CS0618
+
         if (!string.IsNullOrWhiteSpace(_options.JwksUri))
         {
             _configManager = new ConfigurationManager<OpenIdConnectConfiguration>(
@@ -51,13 +71,15 @@ public sealed partial class KunJwtValidator : IJwtValidator
         var parameters = new TokenValidationParameters
         {
             ValidIssuer = _options.Issuer,
-            ValidateIssuer = !string.IsNullOrWhiteSpace(_options.Issuer),
+            ValidateIssuer = true,
             ValidAudience = _options.Audience,
-            ValidateAudience = !string.IsNullOrWhiteSpace(_options.Audience),
+            ValidateAudience = true,
             RequireExpirationTime = _options.RequireExpirationTime,
             ValidateLifetime = true,
+#pragma warning disable CS0618 // ValidateSignature is obsolete for callers, not for internal checks
             ValidateIssuerSigningKey = _options.ValidateSignature,
             RequireSignedTokens = _options.ValidateSignature,
+#pragma warning restore CS0618
             ClockSkew = _options.ClockSkew,
         };
 
@@ -96,5 +118,8 @@ public sealed partial class KunJwtValidator : IJwtValidator
 
         [LoggerMessage(EventId = 2, Level = LogLevel.Debug, Message = "Kun.Identity token rejected: {Reason}")]
         public static partial void TokenInvalid(ILogger logger, string reason);
+
+        [LoggerMessage(EventId = 3, Level = LogLevel.Critical, Message = "Kun.Identity: JWT signature validation is DISABLED. This must only be used in tests.")]
+        public static partial void SignatureValidationDisabled(ILogger logger);
     }
 }

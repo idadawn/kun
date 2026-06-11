@@ -2,6 +2,7 @@ using System.Security.Claims;
 using FluentAssertions;
 using Kun.Identity.Configuration;
 using Kun.Identity.Implementations;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -66,6 +67,87 @@ public sealed class KunJwtValidatorTests
         principal.Should().BeNull();
     }
 
+    [Fact]
+    public void Ctor_ThrowsWhenIssuerIsNull()
+    {
+        var options = new KunJwtBearerOptions
+        {
+            Issuer = null,
+            Audience = Audience,
+        };
+        options.IssuerSigningKeys.Add(TestKeys.CreateRsaKey());
+
+        var act = () => new KunJwtValidator(Options.Create(options), NullLogger<KunJwtValidator>.Instance);
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*Issuer*");
+    }
+
+    [Fact]
+    public void Ctor_ThrowsWhenAudienceIsNull()
+    {
+        var options = new KunJwtBearerOptions
+        {
+            Issuer = Issuer,
+            Audience = null,
+        };
+        options.IssuerSigningKeys.Add(TestKeys.CreateRsaKey());
+
+        var act = () => new KunJwtValidator(Options.Create(options), NullLogger<KunJwtValidator>.Instance);
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*Audience*");
+    }
+
+    [Fact]
+    public void Ctor_ThrowsWhenIssuerIsWhitespace()
+    {
+        var options = new KunJwtBearerOptions
+        {
+            Issuer = "   ",
+            Audience = Audience,
+        };
+        options.IssuerSigningKeys.Add(TestKeys.CreateRsaKey());
+
+        var act = () => new KunJwtValidator(Options.Create(options), NullLogger<KunJwtValidator>.Instance);
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*Issuer*");
+    }
+
+    [Fact]
+    public void Ctor_ThrowsWhenValidateSignatureTrueButNoKeysAndNoJwksUri()
+    {
+#pragma warning disable CS0618
+        var options = new KunJwtBearerOptions
+        {
+            Issuer = Issuer,
+            Audience = Audience,
+            ValidateSignature = true,
+        };
+#pragma warning restore CS0618
+
+        var act = () => new KunJwtValidator(Options.Create(options), NullLogger<KunJwtValidator>.Instance);
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*ValidateSignature*");
+    }
+
+    [Fact]
+    public void Ctor_LogsCriticalWhenSignatureValidationDisabled()
+    {
+        var logger = new TestLogger<KunJwtValidator>();
+        var options = new KunJwtBearerOptions
+        {
+            Issuer = Issuer,
+            Audience = Audience,
+        };
+#pragma warning disable CS0618
+        options.ValidateSignature = false;
+#pragma warning restore CS0618
+
+        var validator = new KunJwtValidator(Options.Create(options), logger);
+
+        logger.LatestLevel.Should().Be(LogLevel.Critical);
+        logger.LatestMessage.Should().Contain("signature validation is DISABLED");
+    }
+
     private static string IssueToken(RsaSecurityKey signingKey, TimeSpan lifetime, string audience)
     {
         var handler = new JsonWebTokenHandler();
@@ -98,5 +180,20 @@ public sealed class KunJwtValidatorTests
         return new KunJwtValidator(
             Options.Create(options),
             NullLogger<KunJwtValidator>.Instance);
+    }
+
+    private sealed class TestLogger<T> : ILogger<T>
+    {
+        public LogLevel LatestLevel { get; private set; }
+        public string? LatestMessage { get; private set; }
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+        {
+            LatestLevel = logLevel;
+            LatestMessage = formatter(state, exception);
+        }
     }
 }

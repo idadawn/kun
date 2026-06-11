@@ -9,11 +9,11 @@ namespace Kun.Identity.Configuration;
 /// </summary>
 public sealed class KunJwtBearerOptions
 {
-    /// <summary>Expected <c>iss</c> claim. Required.</summary>
-    public string Issuer { get; set; } = string.Empty;
+    /// <summary>Expected <c>iss</c> claim. Required — must be set explicitly.</summary>
+    public string? Issuer { get; set; }
 
-    /// <summary>Expected <c>aud</c> claim. Required.</summary>
-    public string Audience { get; set; } = string.Empty;
+    /// <summary>Expected <c>aud</c> claim. Required — must be set explicitly.</summary>
+    public string? Audience { get; set; }
 
     /// <summary>
     /// OIDC JWKS URL. When set, signing keys are fetched and rotated
@@ -31,6 +31,10 @@ public sealed class KunJwtBearerOptions
     /// <summary>Allowed wall-clock skew between issuer and verifier (default 60 seconds).</summary>
     public TimeSpan ClockSkew { get; set; } = TimeSpan.FromSeconds(60);
 
-    /// <summary>Validate the token's signature (default <see langword="true"/> — only disable for tests).</summary>
+    /// <summary>
+    /// Validate the token's signature (default <see langword="true"/>).
+    /// Only disable for tests — accepting unsigned tokens in production is a critical security risk.
+    /// </summary>
+    [Obsolete("Only disable for tests; will be removed in a future version.")]
     public bool ValidateSignature { get; set; } = true;
 }
