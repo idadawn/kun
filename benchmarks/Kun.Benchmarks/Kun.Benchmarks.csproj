@@ -13,6 +13,10 @@
     <IsPackable>false</IsPackable>
     <IsPublishable>false</IsPublishable>
     <IsAotCandidate>false</IsAotCandidate>
+    <!-- BenchmarkDotNet conventions: benchmarks are instance methods even when they
+         don't touch instance state (runner uses a single instance per benchmark),
+         and benchmark classes don't need XML docs on every method. -->
+    <NoWarn>$(NoWarn);CA1822;CS1591</NoWarn>
     <Description>BenchmarkDotNet performance baselines for Kun Framework critical paths.</Description>
   </PropertyGroup>
 

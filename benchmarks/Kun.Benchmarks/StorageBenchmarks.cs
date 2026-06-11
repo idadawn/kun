@@ -4,7 +4,6 @@ using Amazon.S3;
 using Amazon.S3.Model;
 using BenchmarkDotNet.Attributes;
 using Kun.Storage.Abstractions;
-using Kun.Storage.Configuration;
 using Kun.Storage.Implementations;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -12,30 +11,30 @@ using Microsoft.Extensions.Options;
 namespace Kun.Benchmarks;
 
 /// <summary>
-/// Storage-path baselines for <see cref="LocalFileSystemStorage"/> and
+/// Storage-path baselines for <see cref="LocalFileStorage"/> and
 /// <see cref="S3FileStorage"/>.
 ///
 /// <para>
-/// <b>Presigned-URL comparison scope.</b>  <see cref="LocalFileSystemStorage"/>
-/// intentionally throws <see cref="NotSupportedException"/> for presigned
-/// URLs (it is a dev-only backend), so the "Local vs S3" comparison
-/// targets only the cost S3 actually spends — HMAC-SHA256 canonical-request
-/// signing. The AWS SDK performs that locally, with no network, so the
-/// benchmark runs offline against an <see cref="AmazonS3Client"/>
-/// instantiated with dummy credentials.
+/// <b>Presigned-URL comparison scope.</b>  <see cref="LocalFileStorage"/> issues
+/// HMAC-signed <c>kun-local://</c> stub URLs whose wire format is not comparable
+/// to S3's, so the "Local vs S3" comparison targets only the cost S3 actually
+/// spends — SigV4 HMAC-SHA256 canonical-request signing. The AWS SDK performs
+/// that locally, with no network, so the benchmark runs offline against an
+/// <see cref="AmazonS3Client"/> instantiated with dummy credentials.
 /// </para>
 ///
 /// <para>
 /// <b>PutObject / GetObject / HeadObject baselines</b> are measured on
-/// <see cref="LocalFileSystemStorage"/> only — a fair S3 comparison here
-/// requires a live endpoint, which is out of scope for a CPU-bound
-/// benchmark.
+/// <see cref="LocalFileStorage"/> only — a fair S3 comparison here requires a
+/// live endpoint, which is out of scope for a CPU-bound benchmark.
 /// </para>
 /// </summary>
 [MemoryDiagnoser]
 public class StorageBenchmarks : IDisposable
 {
-    private LocalFileSystemStorage _local = null!;
+    private static readonly PutObjectOptions PutOptions = new("application/octet-stream");
+
+    private LocalFileStorage _local = null!;
     private AmazonS3Client _s3 = null!;
     private string _rootPath = null!;
     private byte[] _payload = null!;
@@ -49,9 +48,11 @@ public class StorageBenchmarks : IDisposable
         _rootPath = Path.Combine(Path.GetTempPath(), $"kun-bench-{Guid.NewGuid():N}");
         Directory.CreateDirectory(_rootPath);
 
-        _local = new LocalFileSystemStorage(
-            Options.Create(new LocalStorageOptions { RootPath = _rootPath }),
-            NullLogger<LocalFileSystemStorage>.Instance);
+        // Empty SecretKey: LocalFileStorage falls back to a per-process random
+        // signing key, which is fine — these benchmarks never validate URLs.
+        _local = new LocalFileStorage(
+            Options.Create(new StorageOptions { RootPath = _rootPath }),
+            NullLogger<LocalFileStorage>.Instance);
 
         // AmazonS3Client with fake credentials: GetPreSignedURL is a pure
         // local HMAC-SHA256 operation — the client never opens a socket.
@@ -71,8 +72,7 @@ public class StorageBenchmarks : IDisposable
         // Seed a single object on disk so Get / Head benchmarks do not
         // measure a cold miss.
         using var seed = new MemoryStream(_payload);
-        _local.PutObjectAsync(ObjectKey, seed, "application/octet-stream")
-            .GetAwaiter().GetResult();
+        _local.PutObjectAsync(ObjectKey, seed, PutOptions).GetAwaiter().GetResult();
     }
 
     [GlobalCleanup]
@@ -93,10 +93,10 @@ public class StorageBenchmarks : IDisposable
     // ─── Local filesystem baselines ─────────────────────────────────────────
 
     [Benchmark(Baseline = true, Description = "Local · PutObject 1 KiB")]
-    public async Task<ObjectMetadata> Local_PutObject_1KiB()
+    public async Task Local_PutObject_1KiB()
     {
         using var ms = new MemoryStream(_payload);
-        return await _local.PutObjectAsync(ObjectKey, ms, "application/octet-stream").ConfigureAwait(false);
+        await _local.PutObjectAsync(ObjectKey, ms, PutOptions).ConfigureAwait(false);
     }
 
     [Benchmark(Description = "Local · HeadObject")]
@@ -106,8 +106,8 @@ public class StorageBenchmarks : IDisposable
     [Benchmark(Description = "Local · GetObject 1 KiB (copy to /dev/null)")]
     public async Task Local_GetObject_1KiB()
     {
-        await using var stream = await _local.GetObjectAsync(ObjectKey).ConfigureAwait(false);
-        await stream.CopyToAsync(Stream.Null).ConfigureAwait(false);
+        await using var download = await _local.GetObjectAsync(ObjectKey).ConfigureAwait(false);
+        await download.Content.CopyToAsync(Stream.Null).ConfigureAwait(false);
     }
 
     // ─── S3 presigned URL signing (pure-HMAC, offline) ──────────────────────

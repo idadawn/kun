@@ -45,8 +45,8 @@ public class MultiTenancyQueryFilterBenchmarks : IDisposable
         {
             _unfiltered.Items.Add(new TenantItem { Id = Guid.NewGuid(), Name = $"u{i}", TenantId = "t-0" });
             _unfiltered.Items.Add(new TenantItem { Id = Guid.NewGuid(), Name = $"u{i}", TenantId = "t-1" });
-            _filtered.Items.Add(new TenantItem   { Id = Guid.NewGuid(), Name = $"f{i}", TenantId = "t-0" });
-            _filtered.Items.Add(new TenantItem   { Id = Guid.NewGuid(), Name = $"f{i}", TenantId = "t-1" });
+            _filtered.Items.Add(new TenantItem { Id = Guid.NewGuid(), Name = $"f{i}", TenantId = "t-0" });
+            _filtered.Items.Add(new TenantItem { Id = Guid.NewGuid(), Name = $"f{i}", TenantId = "t-1" });
         }
 
         _unfiltered.SaveChanges();
