@@ -56,12 +56,17 @@ public static class KunServiceAuthenticationExtensions
             }
             else if (!string.IsNullOrWhiteSpace(opts.JwksUri))
             {
-                // Use built-in JWKS retriever; keys are cached and refreshed on unknown kid
+                // JwksUri points at a raw JWKS endpoint (per the option's contract),
+                // not an OIDC discovery document — so parse it with
+                // JwksConfigurationRetriever. OpenIdConnectConfigurationRetriever would
+                // treat the response as discovery metadata and surface zero signing
+                // keys (IDX10500). ConfigurationManager still caches the keys and
+                // refreshes on an unknown kid.
                 var retriever = new HttpDocumentRetriever { RequireHttps = false };
                 jwtOpts.TokenValidationParameters.ConfigurationManager =
                     new ConfigurationManager<OpenIdConnectConfiguration>(
                         opts.JwksUri,
-                        new OpenIdConnectConfigurationRetriever(),
+                        new JwksConfigurationRetriever(),
                         retriever);
             }
         });
