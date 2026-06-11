@@ -11,6 +11,7 @@ using Kun.Observability.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry.Logs;
+using OpenTelemetry.Trace;
 using Xunit;
 
 namespace Kun.Observability.Tests;
@@ -36,10 +37,8 @@ public sealed class LogBaggageEnrichmentTests
         using var source = new ActivitySource(KunSource);
         using (var activity = source.StartActivity("span"))
         {
-            if (activity is not null)
-            {
-                activity.SetBaggage(KunBaggageKeys.TenantId, "tenant-42");
-            }
+            activity.Should().NotBeNull("BuildLoggerFactory eagerly starts a TracerProvider listening on Kun sources");
+            activity!.SetBaggage(KunBaggageKeys.TenantId, "tenant-42");
             logger.LogInformation("hello");
         }
 
@@ -59,7 +58,8 @@ public sealed class LogBaggageEnrichmentTests
         using var source = new ActivitySource(KunSource);
         using (var activity = source.StartActivity("span"))
         {
-            activity?.SetBaggage(KunBaggageKeys.TenantId, "tenant-42");
+            activity.Should().NotBeNull("BuildLoggerFactory eagerly starts a TracerProvider listening on Kun sources");
+            activity!.SetBaggage(KunBaggageKeys.TenantId, "tenant-42");
             logger.LogInformation("hello");
         }
 
@@ -79,7 +79,8 @@ public sealed class LogBaggageEnrichmentTests
         using var source = new ActivitySource(KunSource);
         using (var activity = source.StartActivity("span"))
         {
-            activity?.SetBaggage(KunBaggageKeys.TenantId, "tenant-from-baggage");
+            activity.Should().NotBeNull("BuildLoggerFactory eagerly starts a TracerProvider listening on Kun sources");
+            activity!.SetBaggage(KunBaggageKeys.TenantId, "tenant-from-baggage");
             // Structured logging: the "{tenant.id}" placeholder lands as a
             // log-record attribute with that key. Processor must preserve
             // the caller's explicit value over the baggage mirror.
@@ -129,7 +130,16 @@ public sealed class LogBaggageEnrichmentTests
         services.Configure<OpenTelemetryLoggerOptions>(
             o => o.AddInMemoryExporter(logRecords));
 
-        return services.BuildServiceProvider();
+        var provider = services.BuildServiceProvider();
+
+        // Start the tracing pipeline eagerly: resolving TracerProvider is what
+        // installs the ActivityListener on the Kun sources. Without this,
+        // StartActivity in the tests returns non-null only when some *other*
+        // test class's provider happens to be listening on Kun.Mediator at
+        // that instant — a parallel-run race that has flaked in CI.
+        _ = provider.GetRequiredService<TracerProvider>();
+
+        return provider;
     }
 
     private static object? GetAttribute(LogRecord record, string key)
