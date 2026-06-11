@@ -4,7 +4,6 @@ using Kun.Identity.AspNetCore;
 using Kun.Identity.Configuration;
 using Kun.Identity.Tests.Infrastructure;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Xunit;
 

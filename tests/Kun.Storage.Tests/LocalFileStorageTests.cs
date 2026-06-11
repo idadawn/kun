@@ -11,6 +11,8 @@ namespace Kun.Storage.Tests;
 
 public sealed class LocalFileStorageTests : IDisposable
 {
+    private static readonly string[] ExpectedUserPaths = ["users/alice/profile.json", "users/bob/profile.json"];
+
     private readonly string _tempDir;
     private readonly LocalFileStorage _storage;
     private readonly CancellationToken _ct;
@@ -112,8 +114,7 @@ public sealed class LocalFileStorageTests : IDisposable
             results.Add(summary);
         }
 
-        results.Select(s => s.Path).Should().BeEquivalentTo(
-            new[] { "users/alice/profile.json", "users/bob/profile.json" });
+        results.Select(s => s.Path).Should().BeEquivalentTo(ExpectedUserPaths);
     }
 
     [Fact]

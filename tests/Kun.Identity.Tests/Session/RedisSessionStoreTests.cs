@@ -9,12 +9,14 @@ namespace Kun.Identity.Tests.Session;
 
 public sealed class RedisSessionStoreTests
 {
+    private static readonly string[] ViewerRoles = ["viewer"];
+
     private static SessionData Sample() => new(
         UserId: "user-2",
         TenantId: "tenant-b",
         Email: null,
         Name: "Bob",
-        Roles: new[] { "viewer" },
+        Roles: ViewerRoles,
         AccessToken: "AT",
         RefreshToken: null,
         ExpiresAt: DateTimeOffset.UtcNow.AddHours(1));

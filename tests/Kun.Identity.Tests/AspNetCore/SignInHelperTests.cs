@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Claims;
 using FluentAssertions;
 using Kun.Identity.Abstractions;
@@ -120,7 +121,7 @@ public sealed class SignInHelperTests
             new Claim(ClaimTypes.Role, "r1"),
         }, authenticationType: "test"));
         var tokens = new OidcTokenResponse("at", "id", "rt", "Bearer", 120);
-        var now = DateTimeOffset.Parse("2026-01-01T00:00:00Z");
+        var now = DateTimeOffset.Parse("2026-01-01T00:00:00Z", CultureInfo.InvariantCulture);
 
         var data = SignInHelper.BuildSessionData(principal, tokens, now);
 

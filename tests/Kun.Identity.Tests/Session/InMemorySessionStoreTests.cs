@@ -1,3 +1,4 @@
+using System.Globalization;
 using FluentAssertions;
 using Kun.Identity.Abstractions.Session;
 using Kun.Identity.Implementations.Session;
@@ -8,12 +9,14 @@ namespace Kun.Identity.Tests.Session;
 
 public sealed class InMemorySessionStoreTests
 {
+    private static readonly string[] AdminEditorRoles = ["admin", "editor"];
+
     private static SessionData Sample(string userId = "user-1") => new(
         UserId: userId,
         TenantId: "tenant-a",
         Email: "alice@example.com",
         Name: "Alice",
-        Roles: new[] { "admin", "editor" },
+        Roles: AdminEditorRoles,
         AccessToken: "access",
         RefreshToken: "refresh",
         ExpiresAt: DateTimeOffset.UtcNow.AddMinutes(30));
@@ -46,7 +49,7 @@ public sealed class InMemorySessionStoreTests
     public async Task Get_PrunesExpiredEntry_AndReturnsNull()
     {
         var clock = new FakeTimeProvider();
-        clock.SetUtcNow(DateTimeOffset.Parse("2026-01-01T00:00:00Z"));
+        clock.SetUtcNow(DateTimeOffset.Parse("2026-01-01T00:00:00Z", CultureInfo.InvariantCulture));
         var store = new InMemorySessionStore(clock);
         var ct = TestContext.Current.CancellationToken;
 

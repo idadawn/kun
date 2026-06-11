@@ -13,6 +13,8 @@ namespace Kun.Identity.Tests.AspNetCore;
 
 public sealed class CookieAuthMiddlewareTests
 {
+    private static readonly string[] ViewerRoles = ["viewer"];
+
     private static IOptions<KunCookieAuthOptions> Opts(Action<KunCookieAuthOptions>? mutate = null)
     {
         var o = new KunCookieAuthOptions { CookieName = "kun.sid", SessionTtl = TimeSpan.FromHours(1) };
@@ -22,7 +24,7 @@ public sealed class CookieAuthMiddlewareTests
 
     private static SessionData Sample() => new(
         UserId: "u-1", TenantId: "t-1", Email: null, Name: null,
-        Roles: new[] { "viewer" },
+        Roles: ViewerRoles,
         AccessToken: "at", RefreshToken: null,
         ExpiresAt: DateTimeOffset.UtcNow.AddHours(1));
 
