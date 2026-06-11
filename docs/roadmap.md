@@ -25,7 +25,9 @@ M1–M6 代码全部完成。Sprint 1 + Sprint 2 gap-closure 亦已全部合入 
 
 ## 里程碑
 
-| 预览版号 | 达成标志 | 状态 |
+> **2026-06-11 起版本号策略切换为 CalVer**（`vYYYY.M.D[-N|-beta.N]`，于 `main` 打 tag，与 idadawn/iclaw 一致，详见 `CONTRIBUTING.md`）。下表的 SemVer 预览版号为历史规划名义，不再对应实际 tag；"达成标志"列仍有效。
+
+| 预览版号（历史名义） | 达成标志 | 状态 |
 |:---|:---|:---:|
 | `0.1.0-alpha.1` | CQRS 调度 + 验证 AOT 跑通 | 代码就绪，待发版仪式 |
 | `0.2.0-alpha.1` | 持久化双引擎 + Outbox 原子性 | 代码就绪，待发版仪式 |
@@ -34,7 +36,7 @@ M1–M6 代码全部完成。Sprint 1 + Sprint 2 gap-closure 亦已全部合入 
 | `1.0.0-rc.1` | API 冻结，进入 RC | 待 Sprint 2 完成 |
 | `1.0.0` | 正式发布 | 待 RC 走完 |
 
-发版仪式（NuGet + Git-tag）由人手触发；CI `.github/workflows/release.yml` 已绑定"`main`→稳定无后缀 / `develop`→`-beta` 后缀"策略。
+发版仪式（NuGet + Git-tag）由人手触发；CI `.github/workflows/release.yml` 校验 CalVer tag 形状且必须从 `main` 可达。
 
 ## 剩余工作
 

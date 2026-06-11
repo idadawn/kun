@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 # Usage: bash scripts/release.sh <version>
-#   e.g. bash scripts/release.sh 0.1.0-phase1
-#        bash scripts/release.sh 1.0.0
-#        bash scripts/release.sh 1.0.0-rc.1
+#   CalVer, aligned with idadawn/iclaw since 2026-06-11 (YYYY.M.D[-N|-beta.N],
+#   month/day not zero-padded, always cut from main):
+#   e.g. bash scripts/release.sh 2026.6.12
+#        bash scripts/release.sh 2026.6.12-2
+#        bash scripts/release.sh 2026.6.12-beta.1
 #
 # Release pre-flight + tag preparation for Kun Framework.
 #
 # Phases:
-#   0. Semver shape / branch / clean-tree / tag-absence gates
+#   0. CalVer shape / branch / clean-tree / tag-absence gates
 #   1. dotnet build -c Release /warnaserror
 #   2. dotnet test (unit tests; IntegrationTests / Sample.Tests /
 #      Integration.AotTests filtered out — the maintainer runs those in
@@ -32,7 +34,7 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 # Args
 # ---------------------------------------------------------------------------
-VERSION="${1:?Usage: bash scripts/release.sh <version>  (e.g. 0.1.0-phase1)}"
+VERSION="${1:?Usage: bash scripts/release.sh <version>  (e.g. 2026.6.12 or 2026.6.12-beta.1)}"
 TAG="v$VERSION"
 
 # AOT-candidate modules — must stay in sync with .github/workflows/ci.yml
@@ -66,17 +68,17 @@ err()  { printf '\033[1;31m✗ %s\033[0m\n' "$*" >&2; }
 # ---------------------------------------------------------------------------
 # Phase 0: gates
 # ---------------------------------------------------------------------------
-log "Phase 0/5 · Gates (semver / branch / clean tree / tag-absence)"
+log "Phase 0/5 · Gates (calver / branch / clean tree / tag-absence)"
 
-# Validate semver shape (loose: major.minor.patch[-prerelease])
-if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$'; then
-  err "'$VERSION' does not look like a SemVer version (e.g. 0.1.0-phase1 or 1.0.0-rc.1)"
+# Validate CalVer shape: YYYY.M.D[-N|-beta.N] (aligned with iclaw, no zero-padding)
+if ! echo "$VERSION" | grep -qE '^[0-9]{4}\.[0-9]{1,2}\.[0-9]{1,2}(-[0-9]+|-beta\.[0-9]+)?$'; then
+  err "'$VERSION' does not look like a CalVer version (e.g. 2026.6.12, 2026.6.12-2 or 2026.6.12-beta.1)"
   exit 1
 fi
 
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
-if [[ "$BRANCH" != "main" && "$BRANCH" != "develop" ]]; then
-  err "releases must be cut from 'main' or 'develop' (current branch: '$BRANCH')"
+if [[ "$BRANCH" != "main" && ! "$BRANCH" =~ ^hotfix/ ]]; then
+  err "releases must be cut from 'main' (or a 'hotfix/*' branch for old-version patches); current branch: '$BRANCH'"
   exit 1
 fi
 
@@ -188,8 +190,8 @@ cat <<EOF
         git push origin $TAG
 
   ℹ   Release workflow: .github/workflows/release.yml
-      Pre-release ('-phase1', '-alpha', '-beta', '-rc') → GitHub Packages
-      Stable ('vX.Y.Z')                                  → nuget.org (needs NUGET_API_KEY)
+      Pre-release ('vYYYY.M.D-beta.N')          → GitHub Packages
+      Stable ('vYYYY.M.D' / patch 'vYYYY.M.D-N') → nuget.org (needs NUGET_API_KEY)
 
   🛑  Never run 'git push --tags' — it would push every local tag,
       including experiments.
