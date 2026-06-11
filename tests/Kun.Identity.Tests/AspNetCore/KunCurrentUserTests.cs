@@ -8,6 +8,8 @@ namespace Kun.Identity.Tests.AspNetCore;
 
 public sealed class KunCurrentUserTests
 {
+    private static readonly string[] AdminEditorRoles = ["admin", "editor"];
+
     [Fact]
     public void Anonymous_WhenNoHttpContext_ReturnsUnauthenticated()
     {
@@ -45,7 +47,7 @@ public sealed class KunCurrentUserTests
         user.TenantId.Should().Be("tenant-z");
         user.Email.Should().Be("carol@example.com");
         user.Name.Should().Be("Carol");
-        user.Roles.Should().BeEquivalentTo(new[] { "admin", "editor" });
+        user.Roles.Should().BeEquivalentTo(AdminEditorRoles);
         user.Principal.Should().NotBeNull();
     }
 

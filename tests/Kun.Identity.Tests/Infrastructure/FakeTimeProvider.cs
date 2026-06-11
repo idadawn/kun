@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Kun.Identity.Tests.Infrastructure;
 
 /// <summary>
@@ -8,7 +10,7 @@ namespace Kun.Identity.Tests.Infrastructure;
 /// </summary>
 internal sealed class FakeTimeProvider : TimeProvider
 {
-    private DateTimeOffset _now = DateTimeOffset.Parse("2026-01-01T00:00:00Z");
+    private DateTimeOffset _now = DateTimeOffset.Parse("2026-01-01T00:00:00Z", CultureInfo.InvariantCulture);
 
     public void SetUtcNow(DateTimeOffset value) => _now = value;
 

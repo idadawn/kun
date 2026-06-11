@@ -14,6 +14,14 @@ public sealed class BaggageEnrichmentTests
     private const string KunSource = "Kun.Mediator";
     private const string NonKunSource = "Test.NonKun";
 
+    // ActivitySource listening is process-global: other test classes in this
+    // assembly run in parallel and also emit on Kun.Mediator, so their spans
+    // can land in this class's in-memory exporter. Assertions must therefore
+    // select by operation name instead of assuming the export list holds
+    // exactly one entry.
+    private static Activity SingleExported(List<Activity> exported, string operationName)
+        => exported.Should().ContainSingle(a => a.OperationName == operationName).Which;
+
     public BaggageEnrichmentTests()
     {
         // Other tests in this assembly may have left an Activity on the
@@ -37,7 +45,7 @@ public sealed class BaggageEnrichmentTests
             activity!.SetBaggage(KunBaggageKeys.TenantId, "tenant-42");
         }
 
-        var activityOut = exported.Should().ContainSingle().Which;
+        var activityOut = SingleExported(exported, "kun.op");
         activityOut.GetTagItem(KunBaggageKeys.TenantId).Should().Be("tenant-42");
     }
 
@@ -54,7 +62,7 @@ public sealed class BaggageEnrichmentTests
             activity!.SetBaggage(KunBaggageKeys.TenantId, "tenant-42");
         }
 
-        var activityOut = exported.Should().ContainSingle().Which;
+        var activityOut = SingleExported(exported, "nonkun.op");
         activityOut.GetTagItem(KunBaggageKeys.TenantId).Should().BeNull();
     }
 
@@ -71,7 +79,7 @@ public sealed class BaggageEnrichmentTests
             activity!.SetBaggage("custom.noise", "secret");
         }
 
-        var activityOut = exported.Should().ContainSingle().Which;
+        var activityOut = SingleExported(exported, "kun.op");
         activityOut.GetTagItem("custom.noise").Should().BeNull();
     }
 
@@ -89,7 +97,7 @@ public sealed class BaggageEnrichmentTests
             activity.SetBaggage(KunBaggageKeys.UserId, "u-9");
         }
 
-        var activityOut = exported.Should().ContainSingle().Which;
+        var activityOut = SingleExported(exported, "kun.op");
         activityOut.GetTagItem(KunBaggageKeys.TenantId).Should().Be("t-1");
         activityOut.GetTagItem(KunBaggageKeys.UserId).Should().Be("u-9");
     }
@@ -112,7 +120,7 @@ public sealed class BaggageEnrichmentTests
 
         provider.GetRequiredService<TracerProvider>().ForceFlush();
 
-        var activityOut = exported.Should().ContainSingle().Which;
+        var activityOut = SingleExported(exported, "kun.op");
         activityOut.GetTagItem(KunBaggageKeys.TenantId).Should().BeNull();
     }
 
@@ -132,7 +140,7 @@ public sealed class BaggageEnrichmentTests
 
         provider.GetRequiredService<TracerProvider>().ForceFlush();
 
-        var activityOut = exported.Should().ContainSingle().Which;
+        var activityOut = SingleExported(exported, "kun.op");
         activityOut.GetTagItem(KunBaggageKeys.TenantId).Should().Be("tenant-42");
     }
 
