@@ -2,9 +2,33 @@
 
 本文档记录 Kun Framework 的所有显著变更。
 
-格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
+格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。版本号自 2026-06-11 起采用 **CalVer**（`vYYYY.M.D[-N|-beta.N]`，从 `main` 打 tag，见 `CONTRIBUTING.md`）；更早的历史条目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
 ## [Unreleased]
+
+_（暂无未发布条目。）_
+
+## [2026.6.12] - 2026-06-12
+
+首个 CalVer 版本，也是全部可打包模块首次推送 NuGet.org 的正式版。除下列当日变更外，本版还包含此前积压在 Unreleased 的全部 2026-04-22 ～ 04-24 交付（见本节后半部分）。
+
+### Fixed — Kun.sln 完整性：20 个 src/tests 项目纳入 CI 构建与测试门禁 (#24)
+
+- `Kun.sln` 此前缺失 11 个 src 项目（Audit.EntityFrameworkCore、Caching、Configuration、Identity、Identity.AspNetCore、MultiTenancy、MultiTenancy.EntityFrameworkCore、Observability、RateLimit、Sandbox、Storage）与 9 个测试项目——CI 按 sln 构建，这些测试（200+ 用例，仅 Kun.Identity.Tests 即 47 个）从未在 CI 运行，src 侧仅靠 AOT audit 矩阵兜底。
+- 同步修复缺失测试项目在 Release + TreatWarningsAsErrors 下积累的分析器违规（CA1305 / CA1861 / IDE0005）。
+
+### Added — benchmarks 项目纳入 CI 编译门禁 (#25)
+
+- `Kun.Benchmarks` 与 `Kun.Benchmarks.Grpc` 加入 `Kun.sln`，并修复其相对 `Kun.Storage` 现行 API 的编译漂移，防止基准代码静默腐烂。
+
+### Fixed — Kun.Observability 稳定版打包被 NU5104 阻断 (#26)
+
+- `OpenTelemetry.Instrumentation.EntityFrameworkCore` 上游从未发布稳定版（beta-only，当前 1.15.1-beta.1）。`Kun.Observability` 入 sln 后首次被 `dotnet pack` 打包，即触发 NU5104（稳定包不得携带预发布依赖）并被 TreatWarningsAsErrors 升级为错误，阻断发版。在该 csproj 定点 `NoWarn` 并以注释记录上游现状（上游转正后应回顾移除）。
+
+### Fixed — 测试稳定性：消除两处高频 CI flaky (#27 / #28 / #29)
+
+- `LogBaggageEnrichmentTests` 从未启动自身 trace 管道，依赖同程序集并行测试的进程级 ActivitySource 监听器“碰巧在场”；无监听器瞬间 `StartActivity` 返回 null，断言失败。现于 `BuildLoggerFactory` 中 eager resolve `TracerProvider` 使测试自给自足，静默 null 守卫改为显式断言 (#27)。
+- PgBouncer 100 并发压测的 TCP+auth 风暴在高负载共享 runner 上压垮单线程 pgbouncer 的 accept 循环，内核重置表现为 `Exception while reading from stream`：并发收敛到 30 限流闸门（仍高于 25 个后端槽，连接换绑的被测语义不变）+ 仅对 transient 异常 ≤3 次退避重试，prepared-statement 错误（PostgresException）永不重试 (#28)；fixture 补 `UntilPortIsAvailable(6432)` 等待策略，关闭“容器进程已起、监听 socket 未绑定”的启动竞态窗口 (#29)。
 
 ### Added — Kun.Testing.EntityFrameworkCore module with OutboxAssertions (2026-04-24)
 
@@ -716,7 +740,7 @@ but the new capabilities below require explicit opt-in:
 - **P1-CS-011** `TenantRlsConnectionInterceptor` — opt-in defence-in-depth behind the EF global filter; PG-only, whitelist-guarded.
 - **P1-CS-019** `Kun.Audit` — new 16th-slot abstraction module (tamper-evident hash-chained operation audit + Mediator pipeline behaviour + 21 xunit cases).
 
-Framework module count: 13 → 15. Test projects: 11 → 13. Validation / AOT publish matrix / NuGet release / Aspire runtime drill / SG regression remain open — see `TODO-remaining.md` for the P1/P2/P3 roadmap.
+Framework module count: 13 → 15. Test projects: 11 → 13. Validation / AOT publish matrix / NuGet release / Aspire runtime drill / SG regression remain open — see `docs/roadmap.md` for the outstanding-work roadmap（原 `TODO-remaining.md` 已于 2026-06-12 并入该文件）.
 
 ### Added — Kun.Audit module (Phase 1 P1-CS-019)
 

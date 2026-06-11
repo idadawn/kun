@@ -19,7 +19,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 9. **`docs/observability/`** — if anything touches metrics / traces / logs.
 10. **`docs/guides/`** — how-to guides; likely relevant to most tasks.
 11. **`docs/neuroagent-phase1-gap.md`** — Phase 1 consumer (neuroagent) gap audit; shows what's urgent vs deferred.
-12. **`TODO.md`** — current roadmap / what's intentionally not done yet.
+12. **`docs/roadmap.md`** — current roadmap / what's intentionally not done yet.
 13. **Module-level `src/Kun.<Module>/AGENTS.md`** — per-module conventions. Always read the AGENTS.md of every module you're about to modify **and** every module you're about to reference (one-hop).
 14. **`Directory.Build.props`** + **`Directory.Packages.props`** + **`global.json`** — build conventions, central package management, SDK pin. Never add a `<PackageReference Version="...">` in a csproj; CPM handles versions.
 15. **`samples/Kun.Sample.*`** — how consumers wire Kun. Use as reference for API ergonomics.
@@ -33,7 +33,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Publishing API with non-AOT-compatible patterns in an `IsAotCandidate=true` module without updating the csproj flag and justifying in the PR.
 - Inventing a new cross-cutting concern (auth / audit / multi-tenancy / eventbus) without an ADR in `docs/architecture/`.
 - Committing without running `dotnet format --verify-no-changes` locally — CI enforces this.
-- **Committing or pushing directly to `main`** — all work flows through `develop` via PR. See §Branch workflow below.
+- **Committing or pushing directly to `main`** — all work flows through short-lived feature branches via PR into `main`. See §Branch workflow below.
 
 **Task-dispatch contract** (for the main coordinator dispatching to `claude-kun`):
 
@@ -41,7 +41,7 @@ Every Kun task brief MUST include a numbered list of the specs to read first (fr
 
 ## Repository status
 
-Kun Framework is at the **project-skeleton stage**: solution, csproj files, `Directory.Build.props`, `Directory.Packages.props`, CI, docs, and `.claude/skills/` are in place. Most `src/Kun.*` projects contain no `.cs` files yet; the sample under `samples/Kun.Sample.Catalog` is a placeholder. When asked to "add X", expect to be creating types from scratch rather than modifying existing code — follow the conventions below strictly.
+Kun Framework is **Phase-1 code complete**: 32 `src/Kun.*` modules and 29 test projects with real implementations, all wired into `Kun.sln` and gated by CI (build + tests + `dotnet format` + AOT audit matrix). The first stable CalVer release (`v2026.6.12`) ships every packable module to NuGet.org. When asked to "add X", read the target module's existing code and `AGENTS.md` first — you are usually extending live code, not scaffolding from scratch. See `docs/roadmap.md` for what remains open.
 
 ## Common commands
 
@@ -184,22 +184,23 @@ Conventional Commits: `<type>(<scope>): <subject>`. Scope is the module name wit
 
 ## Branch workflow (hard rule)
 
-**`main` is never the development branch. Nobody commits or pushes to `main` directly — no exceptions, no "small docs fix", no "just one commit".** All work flows through `develop`:
+**Nobody commits or pushes to `main` directly — no exceptions, no "small docs fix", no "just one commit".** The repository is trunk-based (`develop` was deleted 2026-06-11; `main` is the only long-lived branch):
 
-1. Cut a feature branch **from `develop`** (naming: `feat/xxx` / `fix/xxx` / `docs/xxx` / `chore/xxx`).
+1. Cut a short-lived feature branch **from the latest `main`** (naming: `feat/xxx` / `fix/xxx` / `docs/xxx` / `chore/xxx`).
 2. Develop and commit on the feature branch.
-3. Open a PR **into `develop`**. CI must be green and at least one maintainer must approve before merge.
-4. `develop → main` happens **only at release time**, via a dedicated release PR — not as an ongoing workflow.
+3. Open a PR **into `main`**. Merge only when CI is fully green (known-flaky reruns count once they pass); merge-commit style (`gh pr merge --merge --delete-branch`).
+4. After merge, delete the remote and local branch/worktree, and return the local checkout to `main` + `git pull`.
 
-Rationale: downstream consumers (`neuroagent-csharp` and others) treat `main` as the stable integration anchor. Direct commits to `main` create the divergence class of problems and break downstream rebase/cherry-pick workflows. Enforcement target (P2 task): GitHub branch protection on `main` with PR-required + status-checks-required.
+Rationale: downstream consumers (`neuroagent-csharp` and others) treat `main` as the stable integration anchor. Direct commits to `main` create the divergence class of problems and break downstream rebase/cherry-pick workflows. Enforcement target (open task, see `docs/roadmap.md`): GitHub branch protection on `main` with PR-required + status-checks-required.
 
-Agent-specific: if `git status` at session start shows you on `main`, your first action is `git checkout develop && git pull && git checkout -b feat/<task>`. Never `git commit` while `git branch --show-current` reports `main`.
+Agent-specific: if `git status` at session start shows you on `main` with work to do, your first action is `git pull && git checkout -b <type>/<task>`. Never `git commit` while `git branch --show-current` reports `main`.
 
 ## Release & versioning policy
 
-Tag suffix is bound to the branch — the `Release` workflow (`.github/workflows/release.yml`) rejects mismatches:
+Versioning is **CalVer** since 2026-06-11 (aligned with `idadawn/iclaw`); the `Release` workflow (`.github/workflows/release.yml`) rejects non-conforming tags:
 
-- `main` → stable, **no suffix** (`v0.2.0`)
-- `develop` → prerelease, **`-beta` suffix** (`v0.2.0-beta`)
+- Stable: `vYYYY.M.D` (no leading zeros, e.g. `v2026.6.12`); same-day follow-up: `vYYYY.M.D-N` (still a full release).
+- Prerelease: `vYYYY.M.D-beta.N` (the only suffix treated as prerelease).
+- Every tag must be reachable from `origin/main`. Legacy `vX.Y.Z` SemVer tags predate this policy; new ones are rejected.
 
-Cut stable releases by merging `develop → main` first (release PR), then tagging from `main`. Do not re-tag a `-beta` commit as stable — tag the merge commit on `main`. See `CONTRIBUTING.md` §发布与版本规范 for details.
+Pushing a tag triggers the Release workflow: validate → build/test/AOT verify → `dotnet pack -p:Version=<tag minus v>` → push to NuGet.org + GitHub Packages → create the GitHub Release with generated notes. Update `CHANGELOG.md` (move `[Unreleased]` into the new version section) **before** tagging. See `CONTRIBUTING.md` §发布与版本规范 for details.

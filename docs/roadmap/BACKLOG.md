@@ -81,7 +81,7 @@ worn by kun himself during idle windows picks the next item.
 
 ### P2 — KN-SELF-018: end-to-end `orchestrating-sagas.md` consumer guide
 
-- **Status**: in-flight — see `kun/.autonomy/active-task.md`
+- **Status**: done — `docs/guides/orchestrating-sagas.md` 已落地（2026-06-12 核对）
 - **Size**: S (target 2 commits).
 - **Why**: Validation (KN-SELF-013), Outbox (KN-SELF-017)
   each have a consumer-facing walkthrough under
