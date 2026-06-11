@@ -118,41 +118,45 @@ Closes #42
 
 **`main` 不是开发分支。任何人、任何时候、任何理由都不在 `main` 上直接 `commit` 或 `push`**——包括小范围文档修改、紧急修复、"就一条 commit" 都不行。
 
-所有改动走 `develop`：
+> **2026-06-11 起**：本仓与下游 `idadawn/iclaw` 同步采用 **trunk-based** 模型，原 `develop` 分支已删除，git-flow 作废。`main` 是唯一长期分支。
+
+所有改动走短命分支 + PR：
 
 | 角色 | 动作 |
 |------|------|
-| 开发者 | 从 `develop` 切出 `feat/xxx` / `fix/xxx` / `docs/xxx` / `chore/xxx` 分支 |
+| 开发者 | 从 `main` 切出 `feat/xxx` / `fix/xxx` / `docs/xxx` / `chore/xxx` 短命分支 |
 | 开发者 | 在特性分支上提交、push |
-| 开发者 | 向 **`develop`** 提 PR，链接相关 Issue，填写 PR 模板 |
+| 开发者 | 向 **`main`** 提 PR，链接相关 Issue，填写 PR 模板 |
 | CI | `build` / `test` / `dotnet format` / AOT publish / layering 全部绿 |
 | 维护者 | 至少一位 Approve |
-| 维护者 | Squash / rebase merge 到 `develop` |
-| 维护者（发版时） | 从 `develop` 开一个 **release PR** 合入 `main`，然后从 `main` 打稳定 tag |
+| 维护者 | Squash / rebase merge 到 `main`，随手删除短命分支 |
+| 维护者（发版时） | 在 `main` 上打 CalVer tag（见下节），tag push 触发 Release workflow |
 
-**为什么**：下游消费方（`neuroagent-csharp` 等）把 `main` 当稳定锚点做 rebase / cherry-pick。任何直接 `main` commit 都会立刻触发下游的合并地狱。该策略同时是 P2 阶段要开启的 GitHub 分支保护（PR-required + status-checks-required）的编码契约：**规则先于工具落地**，工具开启前也不得违反。
+**为什么**：下游消费方（`idadawn/iclaw` 的 `services/csharp` 及其 CI）经 `ProjectReference` 直接消费 `main`，`main` 必须始终可构建。该策略同时是将来要开启的 GitHub 分支保护（PR-required + status-checks-required）的编码契约：**规则先于工具落地**，工具开启前也不得违反。
 
-**AI Agent 特别提醒**：会话启动前先跑 `git branch --show-current`；如果是 `main`，第一步必须是 `git checkout develop && git pull && git checkout -b <type>/<task>`；从未 commit 过主分支。
+**AI Agent 特别提醒**：会话启动前先跑 `git branch --show-current`；如果是 `main`，第一步必须是 `git pull && git checkout -b <type>/<task>`；从未 commit 过主分支。
 
 ## 🏷️ 发布与版本规范
 
-Tag 与分支强绑定，**CI 会强制校验**（见 `.github/workflows/release.yml`）：
+**2026-06-11 起与 iclaw 版本号策略保持一致：CalVer，tag 一律在 `main` 上打**，CI 强制校验（见 `.github/workflows/release.yml`）：
 
-| 分支 | Tag 形式 | 语义 | 示例 |
-| :--- | :--- | :--- | :--- |
-| `main` | `vX.Y.Z` | 正式版本 | `v0.2.0` |
-| `develop` | `vX.Y.Z-beta` | 预发布 | `v0.2.0-beta`、`v0.2.1-beta` |
+| Tag 形式 | 语义 | 示例 |
+| :--- | :--- | :--- |
+| `vYYYY.M.D` | 正式版本 | `v2026.6.12` |
+| `vYYYY.M.D-N` | 同日补号 / 旧版本热修补号 | `v2026.6.12-2` |
+| `vYYYY.M.D-beta.N` | 预发布（GitHub Release 标 prerelease） | `v2026.6.12-beta.1` |
 
 规则：
 
-- 从 `main` 打的 tag **一律不带后缀**；从 `develop` 打的 tag **一律加 `-beta`**。
-- 其它后缀（`-alpha`、`-rc`）目前不在策略内，若打了会被 CI 标注为 `notice` 并跳过分支校验（但仍会走 NuGet 发布）。
-- `develop → main` 合并后再从 `main` 打正式 tag；不要直接把 `-beta` 的 commit 重打成正式 tag。
-- 打错分支会被 Release workflow 的 "Validate tag matches branch policy" 步骤拦下。
+- 月、日**不补零**（`v2026.6.2`，不是 `v2026.06.02`），与 iclaw 一致。
+- 所有 tag 必须指向 `main` 上可达的 commit；其它形式（含旧的 `vX.Y.Z`、`-alpha`、`-rc`）一律被 Release workflow 拒绝。
+- 旧版本紧急修复：从旧 tag 拉 `hotfix/*`，修完打补号 tag（如 `v2026.6.12-2`），删分支——与 iclaw hotfix 流程相同。
+- **NuGet 排序注意**：SemVer 语义下 `-N` 与 `-beta.N` 都按 prerelease 排序（低于无后缀版本）。消费端（iclaw）经 `ProjectReference` 消费 `main`，不受影响；若需让 NuGet 用户拿到补号内容，直接打新日期的正式 tag。
+- 历史 SemVer tag（`v0.1.0` 等）保留不动，仅作存档；2026-06-11 前的「`main`→稳定 / `develop`→`-beta`」策略作废。
 
 ## 🔀 Pull Request 流程
 
-1. **Fork 仓库**（或用内部分支），从 `develop` 切出特性分支：`feat/xxx` / `fix/xxx` / `docs/xxx` / `chore/xxx` — **绝不从 `main` 切**
+1. **Fork 仓库**（或用内部分支），从最新 `main` 切出特性分支：`feat/xxx` / `fix/xxx` / `docs/xxx` / `chore/xxx` — **绝不直接在 `main` 上提交**
 2. **编写代码 + 测试**。任何新功能必须附带测试。
 3. **本地验证**：
    ```bash

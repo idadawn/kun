@@ -29,30 +29,23 @@ jobs:
         with:
           global-json-file: global.json
 
-      # Policy (see CONTRIBUTING.md §Release & versioning):
-      #  - vX.Y.Z         → must be cut from main
-      #  - vX.Y.Z-beta    → must be cut from develop
-      # Other suffixes (alpha/rc) are unsupported by policy and skip the check.
+      # Policy (see CONTRIBUTING.md §Release & versioning), CalVer aligned
+      # with idadawn/iclaw since 2026-06-11:
+      #  - vYYYY.M.D / vYYYY.M.D-N / vYYYY.M.D-beta.N → all cut from main
+      # main is the only long-lived branch (develop deleted 2026-06-11);
+      # legacy vX.Y.Z tags predate this policy, new ones are rejected.
       - name: Validate tag matches branch policy
         run: |
           TAG="$GITHUB_REF_NAME"
           SHA="$GITHUB_SHA"
           BRANCHES=$(git branch -r --contains "$SHA" --format='%(refname:short)')
-          on_main=false; on_develop=false
-          echo "$BRANCHES" | grep -qx 'origin/main'    && on_main=true
-          echo "$BRANCHES" | grep -qx 'origin/develop' && on_develop=true
-          if [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-beta$ ]]; then
-            if [ "$on_develop" != true ]; then
-              echo "::error::Tag $TAG has -beta suffix but commit $SHA is not reachable from origin/develop."
-              exit 1
-            fi
-          elif [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            if [ "$on_main" != true ]; then
-              echo "::error::Stable tag $TAG must be cut from origin/main; commit $SHA is not reachable from main."
-              exit 1
-            fi
-          else
-            echo "::notice::Tag $TAG does not match policy (vX.Y.Z or vX.Y.Z-beta). Skipping branch check."
+          if ! [[ "$TAG" =~ ^v[0-9]{4}\.[0-9]{1,2}\.[0-9]{1,2}(-[0-9]+|-beta\.[0-9]+)?$ ]]; then
+            echo "::error::Tag $TAG does not match CalVer policy vYYYY.M.D[-N|-beta.N] (see CONTRIBUTING.md)."
+            exit 1
+          fi
+          if ! echo "$BRANCHES" | grep -qx 'origin/main'; then
+            echo "::error::Tag $TAG must be cut from origin/main; commit $SHA is not reachable from main."
+            exit 1
           fi
 
       - name: Restore
@@ -86,7 +79,9 @@ jobs:
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          if [[ "$GITHUB_REF_NAME" =~ -(alpha|beta|rc) ]]; then
+          # Only -beta.N marks a prerelease; a -N patch tag is a full release
+          # (same semantics as iclaw CalVer).
+          if [[ "$GITHUB_REF_NAME" =~ -beta\. ]]; then
             echo "prerelease=true" >> "$GITHUB_OUTPUT"
           else
             echo "prerelease=false" >> "$GITHUB_OUTPUT"

@@ -15,14 +15,14 @@ Configure these once in **GitHub → Settings → Secrets and variables → Acti
 | `NUGET_API_KEY` | Stable releases pushed to nuget.org | Generate at https://www.nuget.org/account/apikeys with **Push** scope |
 | `GITHUB_TOKEN` | Auto-provided by Actions | Used for pre-release push to GitHub Packages and GitHub Release creation |
 
-Pre-releases (`-alpha`, `-beta`, `-rc`) publish to **GitHub Packages** using the
+Pre-releases (`-beta.N`) publish to **GitHub Packages** using the
 auto-provided `GITHUB_TOKEN` — no extra secret needed.
 
 ---
 
 ## 1 — Pre-release Verification
 
-- [ ] All CI checks green on the target branch (`main` or `develop`)
+- [ ] All CI checks green on `main` (the only long-lived branch; tags are always cut from `main`)
       - CI runs **unit tests + Testcontainers integration tests** (`Kun.IntegrationTests`) automatically
       - **Sample end-to-end tests** (`Kun.Sample.Tests`) require Aspire service-discovery env vars and must be verified locally before release; they do not run in CI
 - [ ] `dotnet build -c Release /warnaserror` passes locally
@@ -46,14 +46,17 @@ auto-provided `GITHUB_TOKEN` — no extra secret needed.
 The release workflow derives the NuGet version directly from the git tag — no manual
 edit of `Directory.Build.props` is required.
 
-Tag naming convention:
+Tag naming convention — **CalVer, aligned with idadawn/iclaw since 2026-06-11**
+(`vYYYY.M.D[-N|-beta.N]`, month/day not zero-padded, always cut from `main`):
 
 | Tag | NuGet version | Destination |
 |---|---|---|
-| `v1.0.0` | `1.0.0` | nuget.org (stable) |
-| `v1.0.0-rc.1` | `1.0.0-rc.1` | GitHub Packages (pre-release) |
-| `v1.0.0-beta.2` | `1.0.0-beta.2` | GitHub Packages (pre-release) |
-| `v1.0.0-alpha.1` | `1.0.0-alpha.1` | GitHub Packages (pre-release) |
+| `v2026.6.12` | `2026.6.12` | nuget.org (stable) |
+| `v2026.6.12-2` | `2026.6.12-2` | same-day / hotfix patch — full release, but NuGet sorts it as prerelease (below `2026.6.12`); iclaw consumes `main` via ProjectReference so this doesn't matter downstream |
+| `v2026.6.12-beta.1` | `2026.6.12-beta.1` | GitHub Packages (pre-release) |
+
+Legacy `vX.Y.Z` tags (e.g. `v0.1.0`) are historical; the release workflow rejects
+new non-CalVer tags.
 
 `Directory.Build.props` retains `<VersionPrefix>` / `<VersionSuffix>` for local and
 regular CI builds; the release workflow overrides with `-p:Version=<tag>`.
@@ -65,22 +68,22 @@ regular CI builds; the release workflow overrides with `-p:Version=<tag>`.
 **Option A — helper script (recommended)**
 
 ```bash
-# Ensure you are on main or develop with a clean working tree
-bash scripts/release.sh 1.0.0-rc.1
+# Ensure you are on main with a clean working tree
+bash scripts/release.sh 2026.6.12
 # Script updates CHANGELOG.md, commits, creates annotated tag, then prints push instructions
-git push origin develop   # or main
-git push origin v1.0.0-rc.1
+git push origin main
+git push origin v2026.6.12
 ```
 
 **Option B — manual**
 
 ```bash
-# 1. Edit CHANGELOG.md: rename [Unreleased] → [1.0.0-rc.1] - YYYY-MM-DD, add fresh [Unreleased]
+# 1. Edit CHANGELOG.md: rename [Unreleased] → [2026.6.12] - YYYY-MM-DD, add fresh [Unreleased]
 git add CHANGELOG.md
-git commit -m "chore(release): 1.0.0-rc.1"
-git tag -a v1.0.0-rc.1 -m "Kun 1.0.0-rc.1"
-git push origin <branch>
-git push origin v1.0.0-rc.1
+git commit -m "chore(release): 2026.6.12"
+git tag -a v2026.6.12 -m "Kun 2026.6.12"
+git push origin main
+git push origin v2026.6.12
 ```
 
 Once the tag is pushed the GitHub Actions workflow starts automatically.
@@ -108,7 +111,7 @@ Once the tag is pushed the GitHub Actions workflow starts automatically.
   ```bash
   dotnet new classlib -n SmokeTest
   cd SmokeTest
-  dotnet add package Kun.Core --version 1.0.0-rc.1 --prerelease \
+  dotnet add package Kun.Core --version 2026.6.12-beta.1 --prerelease \
     --source https://nuget.pkg.github.com/idadawn/index.json
   dotnet build
   ```
@@ -136,9 +139,9 @@ Pre-releases can be fully deleted:
 
 ```bash
 # Remove remote tag (requires repo admin rights)
-git push origin --delete v1.0.0-rc.1
+git push origin --delete v2026.6.12-beta.1
 # Remove local tag
-git tag -d v1.0.0-rc.1
+git tag -d v2026.6.12-beta.1
 ```
 
 Deleting the tag does not undo an already-published NuGet package — unlist first.
@@ -147,6 +150,6 @@ Deleting the tag does not undo an already-published NuGet package — unlist fir
 
 If a critical bug is found post-release:
 
-1. Branch from the release tag: `git checkout -b hotfix/1.0.1 v1.0.0`
-2. Fix, test, then cut `v1.0.1` using the same checklist
-3. Cherry-pick the fix back to `develop` / `main`
+1. Branch from the release tag: `git checkout -b hotfix/2026.6.12-2 v2026.6.12`
+2. Fix, test, then cut the patch tag `v2026.6.12-2` using the same checklist, and delete the hotfix branch
+3. Cherry-pick the fix back to `main`
