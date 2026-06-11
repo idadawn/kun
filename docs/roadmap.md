@@ -1,11 +1,11 @@
 # Kun Framework 路线图
 
 > 精简的公开路线图。只保留**未完成**条目与里程碑，已交付项在 `CHANGELOG.md` 与 git 历史中追踪。
-> 最近更新：2026-04-22
+> 最近更新：2026-06-12
 
 ## 当前状态
 
-M1–M6 代码全部完成。Sprint 1 + Sprint 2 gap-closure 亦已全部合入 `develop`：
+M1–M6 代码全部完成，Sprint 1 + Sprint 2 gap-closure 已全部合入主干（仓库自 2026-06-11 起 trunk-based，`develop` 已删除，`main` 为唯一长期分支）：
 
 | 缺口 | 内容 | 落地 commit |
 |---|---|---|
@@ -23,6 +23,8 @@ M1–M6 代码全部完成。Sprint 1 + Sprint 2 gap-closure 亦已全部合入 
 
 全量 `dotnet build Kun.sln -c Release -p:TreatWarningsAsErrors=true` 零错误（预存在 8 条 Aspire `CS1591` 为已知噪声）；所有相关单元测试绿，Docker 依赖的集成测试在 CI 跑。
 
+**2026-06-12 快照**：`Kun.sln` 补齐全部 32 个 src + 29 个 tests 项目（#24）与 benchmarks（#25），CI 构建/测试门禁首次覆盖全仓；两处高频 CI flaky（LogBaggage 监听器竞态 #27、PgBouncer 启动/风暴竞态 #28/#29）已根治；首个 CalVer 正式版 **`v2026.6.12`** 从 `main` 打 tag，经 Release 工作流将全部可打包模块推送 NuGet.org + GitHub Packages。
+
 ## 里程碑
 
 > **2026-06-11 起版本号策略切换为 CalVer**（`vYYYY.M.D[-N|-beta.N]`，于 `main` 打 tag，与 idadawn/iclaw 一致，详见 `CONTRIBUTING.md`）。下表的 SemVer 预览版号为历史规划名义，不再对应实际 tag；"达成标志"列仍有效。
@@ -36,7 +38,7 @@ M1–M6 代码全部完成。Sprint 1 + Sprint 2 gap-closure 亦已全部合入 
 | `1.0.0-rc.1` | API 冻结，进入 RC | 待 Sprint 2 完成 |
 | `1.0.0` | 正式发布 | 待 RC 走完 |
 
-发版仪式（NuGet + Git-tag）由人手触发；CI `.github/workflows/release.yml` 校验 CalVer tag 形状且必须从 `main` 可达。
+发版仪式已于 **2026-06-12** 以首个 CalVer tag `v2026.6.12` 执行（NuGet.org + GitHub Packages + GitHub Release），上表 SemVer 里程碑的"达成标志"全部满足、随该版一次性交付。后续发版按 `docs/release-checklist.md` 走：更新 `CHANGELOG.md` → main 打 CalVer tag → `release.yml` 自动完成校验/打包/推送。
 
 ## 剩余工作
 
@@ -46,7 +48,7 @@ M1–M6 代码全部完成。Sprint 1 + Sprint 2 gap-closure 亦已全部合入 
 
 ### Sprint 2 候选项（`.omc/plans/kun-gap-closure-v1.md` 内部计划区）
 
-- **P1-9** NuGet 首次发版（`0.1.0-alpha.2` / `0.1.0-alpha.3`）——用户决定触发
+- ~~**P1-9** NuGet 首次发版~~——已由 `v2026.6.12`（CalVer）完成，2026-06-12
 
 ### Code-review MAJOR follow-ups 状态
 
@@ -71,6 +73,10 @@ M1–M6 代码全部完成。Sprint 1 + Sprint 2 gap-closure 亦已全部合入 
 - **链路追踪手工走查**：需启动 Aspire AppHost 并人工触发 Saga Happy / Failure / Timeout 三条路径，观察 Dashboard 中的单一 TraceId 串联；写入 `docs/observability/tracing-tour.md` 时的证据材料。
 - **演示视频**：3 分钟 Aspire 启动 + 补偿演示；可选。
 - **GitHub 分支保护**：`main` 分支要求 PR 审查 + CI 全绿，用户在仓库 Settings 中配置。
+- **AOT 启动基准数据回填**：`docs/benchmarks/aot-startup.md` 骨架已建，待实测 `Kun.Sample.Minimal` AOT 启动时间后回填数字。
+- **getting-started 外部走查**：请一位无 Kun 经验的开发者按 `docs/getting-started.md` 完整走一遍，记录并修复卡点。
+
+> 以上条目并入自原根目录 `TODO-remaining.md`（2026-06-12 删除）；其中 CI 矩阵验证、AOT publish 矩阵、NuGet 发版仪式等已完成项不再保留。
 
 ## Per-PR 检查清单
 

@@ -7,13 +7,13 @@
 
 A .NET 10 cloud-native microservice framework with an AOT-first lean: strict DDD, dual-engine data access (EF Core write side + Dapper AOT read side), reflection-free CQRS dispatcher, Outbox-based event-driven messaging, in-house Saga orchestrator, zero-trust S2S JWT between services, first-class multi-tenancy, object storage abstraction (`IFileStorage`), and tamper-evident operation audit (hash-chained `AuditEntry`).
 
-**Status**: M1–M6 code complete, Phase 1 neuroagent-consumer gap fully closed. 15 `src/Kun.*` modules with real implementations; `Kun.Storage` and `Kun.Audit` are the most recent additions (2026-04-24). See `CHANGELOG.md` §[Unreleased] for the detailed delivery log and `TODO-remaining.md` for the validation / release / deferred work list.
+**Status**: M1–M6 code complete, Phase 1 neuroagent-consumer gap fully closed, first stable CalVer release (`v2026.6.12`) published to NuGet.org. 32 `src/Kun.*` modules with real implementations, all in `Kun.sln` and CI-gated. See `CHANGELOG.md` for the detailed delivery log and `docs/roadmap.md` for outstanding work.
 
 ## Key Files
 
 | File | Description |
 |------|-------------|
-| `Kun.sln` | Solution with 15 src projects + 13 test projects |
+| `Kun.sln` | Solution with 32 src projects + 29 test projects (+ samples & benchmarks) |
 | `Directory.Build.props` | Global MSBuild config: `net10.0`, nullable on, `TreatWarningsAsErrors`, AOT analyzers gated by `<IsAotCandidate>` |
 | `Directory.Packages.props` | Central Package Management — all NuGet versions pinned here; csproj files do not set `Version=` |
 | `global.json` | Pins .NET SDK 10.0.100 |
@@ -21,15 +21,14 @@ A .NET 10 cloud-native microservice framework with an AOT-first lean: strict DDD
 | `CLAUDE.md` | Authoritative instructions for Claude Code working in this repo |
 | `CONTRIBUTING.md` | Human-facing contribution rules — same constraints as CLAUDE.md, less dense |
 | `README.md` | Project overview, quick-start, module matrix |
-| `CHANGELOG.md` | Keep-a-Changelog format, SemVer |
-| `TODO.md` | Canonical M1–M6 task plan and stage acceptance checklists |
-| `TODO-remaining.md` | Consolidated P1/P2/P3 roadmap of outstanding work (Respawn, AOT publish matrix, Aspire runtime drill, NuGet release, SG regression) |
+| `CHANGELOG.md` | Keep-a-Changelog format; CalVer since 2026-06-11 (historical entries SemVer) |
+| `docs/roadmap.md` | Public roadmap: outstanding work, Phase 2 candidates, deferred items |
 
 ## Subdirectories
 
 | Directory | Purpose |
 |-----------|---------|
-| `src/` | 15 framework modules `Kun.*` (see `src/AGENTS.md`) |
+| `src/` | 32 framework modules `Kun.*` (see `src/AGENTS.md`) |
 | `tests/` | Unit, integration, and saga test projects (see `tests/AGENTS.md`) |
 | `samples/` | `Kun.Sample.Catalog` / `.Order` / `.Minimal` / `.AppHost` / `.Shared` / `.Tests` (see `samples/AGENTS.md`) |
 | `docs/` | Whitepaper, module map, architecture ADRs, security (S2S JWT, multi-tenancy RLS, audit log), observability, neuroagent Phase 1 gap audit (see `docs/AGENTS.md`) |
@@ -43,8 +42,8 @@ A .NET 10 cloud-native microservice framework with an AOT-first lean: strict DDD
 - **Read `CLAUDE.md` first** — it captures the non-negotiable architectural constraints. Then the specific `.claude/skills/` for the task.
 - **Status is "M1–M6 code done, validation pending"**: new features land as incremental commits; refactors must preserve the four-layer dependency flow and the `PublicAPI.Shipped.txt` / `PublicAPI.Unshipped.txt` tracked surface.
 - **Do not edit `Directory.Build.props` or `Directory.Packages.props` without reason** — target framework, nullable, analyzer settings, package versions are centralized there. Never duplicate them in individual csproj files.
-- **Every subtask commits independently**. Project convention (see `TODO.md` note and `TODO-remaining.md`): one commit per task, Conventional Commits with `scope` = module name minus `Kun.` prefix (e.g. `feat(audit): ...`, `fix(saga): ...`).
-- **Branch rule (hard)**: never commit or push to `main`. All work flows through `develop` via PR. If a session starts on `main`, run `git checkout develop && git checkout -b <type>/<task>` before any `git commit`. See `CLAUDE.md` §Branch workflow.
+- **Every subtask commits independently**. Project convention: one commit per task, Conventional Commits with `scope` = module name minus `Kun.` prefix (e.g. `feat(audit): ...`, `fix(saga): ...`).
+- **Branch rule (hard)**: never commit or push to `main` directly. Trunk-based: cut `<type>/<task>` from the latest `main`, PR into `main`, merge only on green CI, delete the branch after merge. See `CLAUDE.md` §Branch workflow.
 
 ### Testing Requirements
 
