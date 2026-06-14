@@ -35,13 +35,14 @@ public static class KunServiceAuthenticationExtensions
             jwtOpts.RequireHttpsMetadata = false; // internal network; TLS handled at transport
 
             var validIssuers = BuildValidIssuers(opts);
+            var validAudiences = BuildValidAudiences(opts);
 
             jwtOpts.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuer = true,
                 ValidIssuers = validIssuers,
                 ValidateAudience = true,
-                ValidAudience = opts.Audience,
+                ValidAudiences = validAudiences,
                 ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,
                 // Reject all symmetric (HS*) algorithms — only RS256/ES256 allowed
@@ -79,6 +80,14 @@ public static class KunServiceAuthenticationExtensions
         var list = new List<string> { opts.Issuer };
         if (opts.AdditionalValidIssuers is not null)
             list.AddRange(opts.AdditionalValidIssuers);
+        return list;
+    }
+
+    private static List<string> BuildValidAudiences(KunServiceAuthenticationOptions opts)
+    {
+        var list = new List<string> { opts.Audience };
+        if (opts.AdditionalValidAudiences is not null)
+            list.AddRange(opts.AdditionalValidAudiences);
         return list;
     }
 }

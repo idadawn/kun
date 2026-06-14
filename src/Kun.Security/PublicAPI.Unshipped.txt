@@ -1,6 +1,8 @@
 #nullable enable
 Kun.Security.Authentication.KunServiceAuthenticationExtensions
 Kun.Security.Authentication.KunServiceAuthenticationOptions
+Kun.Security.Authentication.KunServiceAuthenticationOptions.AdditionalValidAudiences.get -> System.Collections.Generic.IReadOnlyList<string!>?
+Kun.Security.Authentication.KunServiceAuthenticationOptions.AdditionalValidAudiences.set -> void
 Kun.Security.Authentication.KunServiceAuthenticationOptions.AdditionalValidIssuers.get -> System.Collections.Generic.IReadOnlyList<string!>?
 Kun.Security.Authentication.KunServiceAuthenticationOptions.AdditionalValidIssuers.set -> void
 Kun.Security.Authentication.KunServiceAuthenticationOptions.Audience.get -> string!

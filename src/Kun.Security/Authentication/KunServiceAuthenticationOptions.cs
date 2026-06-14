@@ -31,4 +31,10 @@ public sealed class KunServiceAuthenticationOptions
     /// <see cref="Issuer"/> is always included.
     /// </summary>
     public IReadOnlyList<string>? AdditionalValidIssuers { get; set; }
+
+    /// <summary>
+    /// Additional valid audiences for audience migrations / dual-accept rollouts.
+    /// <see cref="Audience"/> is always included.
+    /// </summary>
+    public IReadOnlyList<string>? AdditionalValidAudiences { get; set; }
 }
