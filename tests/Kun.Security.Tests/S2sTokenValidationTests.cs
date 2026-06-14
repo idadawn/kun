@@ -48,12 +48,16 @@ public sealed class S2sTokenValidationTests
         if (opts.AdditionalValidIssuers is not null)
             validIssuers.AddRange(opts.AdditionalValidIssuers);
 
+        var validAudiences = new List<string> { opts.Audience };
+        if (opts.AdditionalValidAudiences is not null)
+            validAudiences.AddRange(opts.AdditionalValidAudiences);
+
         var tvp = new TokenValidationParameters
         {
             ValidateIssuer = true,
             ValidIssuers = validIssuers,
             ValidateAudience = true,
-            ValidAudience = opts.Audience,
+            ValidAudiences = validAudiences,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
             ValidAlgorithms = ["RS256", "ES256"],
@@ -219,5 +223,77 @@ public sealed class S2sTokenValidationTests
 
         // Assert
         act.Should().Throw<SecurityTokenSignatureKeyNotFoundException>();
+    }
+
+    [Fact]
+    public void AdditionalValidAudience_PassesValidation()
+    {
+        // Arrange — dual-accept: token carries an additional (migration-target) audience
+        var keySet = new JsonWebKeySet();
+        keySet.Keys.Add(_publicJwk);
+        var opts = new KunServiceAuthenticationOptions
+        {
+            Issuer = Issuer,
+            Audience = Audience,
+            StaticKeySet = keySet,
+            AdditionalValidAudiences = ["neuroagent-storage"],
+        };
+        var tvp = BuildValidationParams(opts);
+        var token = CreateToken(audience: "neuroagent-storage");
+        var handler = new JwtSecurityTokenHandler();
+
+        // Act
+        var principal = handler.ValidateToken(token, tvp, out _);
+
+        // Assert
+        principal.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void BaseAudience_StillPasses_WhenAdditionalAudiencesConfigured()
+    {
+        // Arrange — base Audience must remain valid alongside additional ones
+        var keySet = new JsonWebKeySet();
+        keySet.Keys.Add(_publicJwk);
+        var opts = new KunServiceAuthenticationOptions
+        {
+            Issuer = Issuer,
+            Audience = Audience,
+            StaticKeySet = keySet,
+            AdditionalValidAudiences = ["neuroagent-storage"],
+        };
+        var tvp = BuildValidationParams(opts);
+        var token = CreateToken(audience: Audience);
+        var handler = new JwtSecurityTokenHandler();
+
+        // Act
+        var principal = handler.ValidateToken(token, tvp, out _);
+
+        // Assert
+        principal.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void AudienceNotInList_IsRejected_WhenAdditionalAudiencesConfigured()
+    {
+        // Arrange — an audience outside both base and additional must still fail
+        var keySet = new JsonWebKeySet();
+        keySet.Keys.Add(_publicJwk);
+        var opts = new KunServiceAuthenticationOptions
+        {
+            Issuer = Issuer,
+            Audience = Audience,
+            StaticKeySet = keySet,
+            AdditionalValidAudiences = ["neuroagent-storage"],
+        };
+        var tvp = BuildValidationParams(opts);
+        var token = CreateToken(audience: "neuroagent-notification");
+        var handler = new JwtSecurityTokenHandler();
+
+        // Act
+        var act = () => handler.ValidateToken(token, tvp, out _);
+
+        // Assert
+        act.Should().Throw<SecurityTokenInvalidAudienceException>();
     }
 }
