@@ -6,7 +6,10 @@
 
 ## [Unreleased]
 
-_（暂无未发布条目。）_
+### Added — OSS Live Smoke 按需 CI 工作流
+
+- 新增 `.github/workflows/oss-live-smoke.yml`：把既有的 `OssFileStorageLiveSmokeTests`（实弹 OSS 预签名 PUT/GET 验证）接入 `workflow_dispatch` + 每日定时（03:27 UTC）的可选 job。此前该测试只能在本地或下游消费者手动跑，从不被任何 CI 触发（见 PR #12 遗留的"实弹 OSS e2e"项）。
+- 仅当配置了 `OSS_SMOKE_*` 四个仓库 secrets 时真正验证；缺失时测试自跳过，job 仍绿，并由 "Check credentials" 步骤打印警告，避免把"跳过"误读为"已验证"。定时任务以 `if: github.repository == 'idadawn/kun'` 限定，fork 不触发。
 
 ## [2026.6.12] - 2026-06-12
 
