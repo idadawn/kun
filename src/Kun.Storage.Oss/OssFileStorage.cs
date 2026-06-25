@@ -205,6 +205,22 @@ public sealed partial class OssFileStorage : IFileStorage
     }
 
     /// <inheritdoc/>
+    public async Task<Stream> OpenReadAsync(string objectKey, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(objectKey);
+        try
+        {
+            var obj = await Task.Run(() => _oss.GetObject(_options.BucketName, objectKey), cancellationToken)
+                .ConfigureAwait(false);
+            return obj.Content;
+        }
+        catch (OssException ex) when (ex.ErrorCode == "NoSuchKey")
+        {
+            throw new FileNotFoundException($"Object '{objectKey}' not found.", objectKey);
+        }
+    }
+
+    /// <inheritdoc/>
     public async Task<bool> DeleteAsync(string objectKey, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(objectKey);

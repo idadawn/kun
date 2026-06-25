@@ -327,6 +327,25 @@ public sealed partial class S3FileStorage : IFileStorage
     }
 
     /// <inheritdoc/>
+    public async Task<Stream> OpenReadAsync(string objectKey, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(objectKey);
+        try
+        {
+            var resp = await _s3.GetObjectAsync(new GetObjectRequest
+            {
+                BucketName = _options.BucketName,
+                Key = objectKey,
+            }, cancellationToken).ConfigureAwait(false);
+            return resp.ResponseStream;
+        }
+        catch (AmazonS3Exception ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            throw new FileNotFoundException($"Object '{objectKey}' not found.", objectKey);
+        }
+    }
+
+    /// <inheritdoc/>
     public async Task<bool> DeleteAsync(string objectKey, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(objectKey);
