@@ -233,6 +233,21 @@ public sealed partial class LocalFileSystemStorage : IFileStorage
     }
 
     /// <inheritdoc/>
+    public Task<Stream> OpenReadAsync(string objectKey, CancellationToken cancellationToken = default)
+    {
+        ValidateKey(objectKey);
+        var path = ResolvePath(objectKey);
+        if (!File.Exists(path))
+        {
+            throw new FileNotFoundException($"Object '{objectKey}' not found.", objectKey);
+        }
+
+        Stream stream = new FileStream(
+            path, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, useAsync: true);
+        return Task.FromResult(stream);
+    }
+
+    /// <inheritdoc/>
     public Task<bool> DeleteAsync(string objectKey, CancellationToken cancellationToken = default)
     {
         ValidateKey(objectKey);

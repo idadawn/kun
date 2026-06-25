@@ -56,6 +56,32 @@ public sealed class LocalFileSystemStorageTests : IDisposable
     }
 
     [Fact]
+    public async Task OpenReadAsync_RoundTripsContent()
+    {
+        var payload = Encoding.UTF8.GetBytes("line1\nline2\n");
+        using (var up = new MemoryStream(payload))
+        {
+            await _storage.UploadAsync(
+                "docs/diff.txt", up, "text/plain",
+                cancellationToken: TestContext.Current.CancellationToken);
+        }
+
+        await using var read = await _storage.OpenReadAsync(
+            "docs/diff.txt", TestContext.Current.CancellationToken);
+        using var ms = new MemoryStream();
+        await read.CopyToAsync(ms, TestContext.Current.CancellationToken);
+        ms.ToArray().Should().Equal(payload);
+    }
+
+    [Fact]
+    public async Task OpenReadAsync_ThrowsFileNotFound_WhenMissing()
+    {
+        var act = async () => await _storage.OpenReadAsync(
+            "nope/missing.bin", TestContext.Current.CancellationToken);
+        await act.Should().ThrowAsync<FileNotFoundException>();
+    }
+
+    [Fact]
     public async Task ExistsAsync_ReflectsUpload()
     {
         using var stream = new MemoryStream([1, 2, 3]);

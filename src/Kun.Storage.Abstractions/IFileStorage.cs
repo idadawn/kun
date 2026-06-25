@@ -114,4 +114,20 @@ public interface IFileStorage
         int maxKeys = 1000,
         string? continuationToken = null,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Opens a readable stream over the object's content for server-side reads (e.g.
+    /// computing a content diff). The caller MUST dispose the returned stream.
+    /// </summary>
+    /// <remarks>
+    /// Optional capability. Backends that only expose presigned URLs leave the default,
+    /// which throws <see cref="NotSupportedException"/> — callers should treat that as
+    /// "server-side read unavailable" and degrade (e.g. metadata-only diff). Overriding
+    /// implementations SHOULD throw <see cref="FileNotFoundException"/> when the object is missing.
+    /// </remarks>
+    /// <param name="objectKey">Storage object key.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task<Stream> OpenReadAsync(string objectKey, CancellationToken cancellationToken = default)
+        => throw new NotSupportedException(
+            $"{GetType().Name} does not support server-side reads (presigned URLs only).");
 }
