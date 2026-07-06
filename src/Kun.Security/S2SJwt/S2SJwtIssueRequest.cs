@@ -24,6 +24,10 @@ namespace Kun.Security.S2SJwt;
 /// Current membership id (when a user has multiple memberships within a tenant).
 /// Emitted as <c>membership_id</c> when set.
 /// </param>
+/// <param name="ProjectId">
+/// Project identifier (UUID) — the usage unit under the tenant (payer) in the
+/// two-level tenant/project scope model. Emitted as <c>project_id</c> when set.
+/// </param>
 /// <param name="TraceId">
 /// W3C trace id (hex) for OpenTelemetry trace continuity across the service mesh.
 /// Emitted as <c>trace_id</c> when set.
@@ -40,5 +44,6 @@ public sealed record S2SJwtIssueRequest(
     IReadOnlyList<string>? Scopes = null,
     string? SessionId = null,
     string? MembershipId = null,
+    string? ProjectId = null,
     string? TraceId = null,
     TimeSpan? Lifetime = null);
