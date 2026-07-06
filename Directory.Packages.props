@@ -26,6 +26,10 @@
   <ItemGroup Label="ASP.NET Core">
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
+    <!-- Microsoft.AspNetCore.OpenApi 10.0.0 传递引入 Microsoft.OpenApi 2.0.0，命中
+         GHSA-v5pm-xwqc-g5wc（NU1903，restore 期即失败）。传递钉版到已修复的 2.7.5，
+         与 iclaw services/csharp 同款处理。 -->
+    <PackageVersion Include="Microsoft.OpenApi" Version="2.7.5" />
   </ItemGroup>
 
   <ItemGroup Label="EF Core (Write Side)">
