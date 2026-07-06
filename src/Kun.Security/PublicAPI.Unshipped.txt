@@ -31,7 +31,7 @@ Kun.Security.S2SJwt.IS2SJwtIssuer
 Kun.Security.S2SJwt.IS2SJwtIssuer.IssueAsync(Kun.Security.S2SJwt.S2SJwtIssueRequest! request, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<string!>!
 Kun.Security.S2SJwt.IS2SJwtIssuer.IssueAsync(string! userId, string! tenantId, string![]! scopes, string![]! audience, string! sessionId, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<string!>!
 Kun.Security.S2SJwt.S2SJwtIssueRequest
-Kun.Security.S2SJwt.S2SJwtIssueRequest.S2SJwtIssueRequest(string! UserId, string! TenantId, System.Collections.Generic.IReadOnlyList<string!>! Audience, System.Collections.Generic.IReadOnlyList<string!>? Roles = null, System.Collections.Generic.IReadOnlyList<string!>? Scopes = null, string? SessionId = null, string? MembershipId = null, string? TraceId = null, System.TimeSpan? Lifetime = null) -> void
+Kun.Security.S2SJwt.S2SJwtIssueRequest.S2SJwtIssueRequest(string! UserId, string! TenantId, System.Collections.Generic.IReadOnlyList<string!>! Audience, System.Collections.Generic.IReadOnlyList<string!>? Roles = null, System.Collections.Generic.IReadOnlyList<string!>? Scopes = null, string? SessionId = null, string? MembershipId = null, string? ProjectId = null, string? TraceId = null, System.TimeSpan? Lifetime = null) -> void
 Kun.Security.S2SJwt.S2SJwtIssueRequest.UserId.get -> string!
 Kun.Security.S2SJwt.S2SJwtIssueRequest.UserId.init -> void
 Kun.Security.S2SJwt.S2SJwtIssueRequest.TenantId.get -> string!
@@ -46,6 +46,8 @@ Kun.Security.S2SJwt.S2SJwtIssueRequest.SessionId.get -> string?
 Kun.Security.S2SJwt.S2SJwtIssueRequest.SessionId.init -> void
 Kun.Security.S2SJwt.S2SJwtIssueRequest.MembershipId.get -> string?
 Kun.Security.S2SJwt.S2SJwtIssueRequest.MembershipId.init -> void
+Kun.Security.S2SJwt.S2SJwtIssueRequest.ProjectId.get -> string?
+Kun.Security.S2SJwt.S2SJwtIssueRequest.ProjectId.init -> void
 Kun.Security.S2SJwt.S2SJwtIssueRequest.TraceId.get -> string?
 Kun.Security.S2SJwt.S2SJwtIssueRequest.TraceId.init -> void
 Kun.Security.S2SJwt.S2SJwtIssueRequest.Lifetime.get -> System.TimeSpan?

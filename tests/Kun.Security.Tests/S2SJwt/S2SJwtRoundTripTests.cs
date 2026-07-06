@@ -213,6 +213,42 @@ public sealed class S2SJwtRoundTripTests : IDisposable
     }
 
     [Fact]
+    public async Task ProjectId_IsEmitted_WhenProvided()
+    {
+        var issuer = CreateIssuer();
+        var verifier = CreateVerifier();
+
+        var token = await issuer.IssueAsync(
+            new S2SJwtIssueRequest(
+                UserId: "user-001",
+                TenantId: "tenant-001",
+                Audience: ["neuroagent-platform"],
+                ProjectId: "22222222-2222-2222-2222-222222222222"),
+            _ct);
+
+        var principal = await verifier.VerifyAsync(token, "neuroagent-platform", _ct);
+        principal!.FindFirst("project_id")!.Value
+            .Should().Be("22222222-2222-2222-2222-222222222222");
+    }
+
+    [Fact]
+    public async Task ProjectId_IsAbsent_When_NotProvided()
+    {
+        var issuer = CreateIssuer();
+        var verifier = CreateVerifier();
+
+        var token = await issuer.IssueAsync(
+            new S2SJwtIssueRequest(
+                UserId: "user-001",
+                TenantId: "tenant-001",
+                Audience: ["neuroagent-platform"]),
+            _ct);
+
+        var principal = await verifier.VerifyAsync(token, "neuroagent-platform", _ct);
+        principal!.FindFirst("project_id").Should().BeNull();
+    }
+
+    [Fact]
     public async Task TraceId_IsEmitted_WhenProvided()
     {
         var issuer = CreateIssuer();

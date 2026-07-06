@@ -14,8 +14,8 @@ namespace Kun.Security.S2SJwt;
 /// <summary>
 /// ES256 implementation of <see cref="IS2SJwtIssuer"/>. Emits the SAD v3.0 §12 claim
 /// set (<c>sub</c>, <c>tenant_id</c>, <c>roles</c>, optional <c>membership_id</c>,
-/// optional <c>trace_id</c>) and retains the pre-existing <c>scope</c> / <c>session_id</c>
-/// claims for OAuth2-style callers.
+/// optional <c>project_id</c>, optional <c>trace_id</c>) and retains the pre-existing
+/// <c>scope</c> / <c>session_id</c> claims for OAuth2-style callers.
 /// </summary>
 public sealed partial class S2SJwtIssuer : IS2SJwtIssuer
 {
@@ -91,6 +91,11 @@ public sealed partial class S2SJwtIssuer : IS2SJwtIssuer
         if (!string.IsNullOrEmpty(request.MembershipId))
         {
             claims.Add(new Claim("membership_id", request.MembershipId));
+        }
+
+        if (!string.IsNullOrEmpty(request.ProjectId))
+        {
+            claims.Add(new Claim("project_id", request.ProjectId));
         }
 
         if (!string.IsNullOrEmpty(request.TraceId))
