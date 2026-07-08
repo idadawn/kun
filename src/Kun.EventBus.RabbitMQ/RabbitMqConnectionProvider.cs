@@ -57,7 +57,11 @@ public sealed partial class RabbitMqConnectionProvider : IAsyncDisposable
                 _connection = null;
             }
 
-            Log.OpeningConnection(_logger, _options.ConnectionString);
+            // CA1873 flags the argument computation, but masking is a handful
+            // of IndexOf calls — and credentials must NEVER reach the sink.
+#pragma warning disable CA1873
+            Log.OpeningConnection(_logger, SanitizeUri(_options.ConnectionString));
+#pragma warning restore CA1873
 
             var factory = new ConnectionFactory
             {
@@ -97,6 +101,29 @@ public sealed partial class RabbitMqConnectionProvider : IAsyncDisposable
         }
 
         _lock.Dispose();
+    }
+
+    /// <summary>
+    /// Masks the password in an AMQP URI for logging —
+    /// <c>amqp://user:secret@host</c> → <c>amqp://user:***@host</c>.
+    /// Credentials must never reach the log sink.
+    /// </summary>
+    internal static string SanitizeUri(string uri)
+    {
+        var schemeEnd = uri.IndexOf("://", StringComparison.Ordinal);
+        var at = uri.IndexOf('@', StringComparison.Ordinal);
+        if (schemeEnd < 0 || at < 0)
+        {
+            return uri;
+        }
+
+        var colon = uri.IndexOf(':', schemeEnd + 3);
+        if (colon < 0 || colon > at)
+        {
+            return uri;
+        }
+
+        return string.Concat(uri.AsSpan(0, colon + 1), "***", uri.AsSpan(at));
     }
 
     private static partial class Log
