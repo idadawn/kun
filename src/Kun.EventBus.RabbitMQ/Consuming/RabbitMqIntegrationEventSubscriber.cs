@@ -46,6 +46,11 @@ public sealed partial class RabbitMqIntegrationEventSubscriber : BackgroundServi
         _logger = logger;
     }
 
+    private static readonly TimeSpan InitialConnectBackoff = TimeSpan.FromSeconds(1);
+    private static readonly TimeSpan MaxConnectBackoff = TimeSpan.FromSeconds(30);
+    /// <summary>A consume session that survived this long resets the backoff.</summary>
+    private static readonly TimeSpan StableSessionThreshold = TimeSpan.FromMinutes(1);
+
     /// <inheritdoc/>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -55,6 +60,50 @@ public sealed partial class RabbitMqIntegrationEventSubscriber : BackgroundServi
             return;
         }
 
+        // Resilient consume loop: an unreachable broker (at startup, or a
+        // connect/topology failure automatic recovery cannot repair) must
+        // never fault this BackgroundService — the .NET host default
+        // (BackgroundServiceExceptionBehavior.StopHost) would take the whole
+        // consumer host down with the broker. Retry with capped backoff
+        // until the host stops.
+        var backoff = InitialConnectBackoff;
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            var sessionStarted = TimeProvider.System.GetTimestamp();
+            try
+            {
+                await ConsumeUntilStoppedAsync(stoppingToken).ConfigureAwait(false);
+                return; // clean stop via stoppingToken inside the session
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                return;
+            }
+            catch (Exception ex)
+            {
+                if (TimeProvider.System.GetElapsedTime(sessionStarted) >= StableSessionThreshold)
+                {
+                    backoff = InitialConnectBackoff;
+                }
+
+                Log.ConsumeSessionFailed(_logger, ex, backoff.TotalSeconds);
+            }
+
+            try
+            {
+                await Task.Delay(backoff, stoppingToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+
+            backoff = TimeSpan.FromTicks(Math.Min(backoff.Ticks * 2, MaxConnectBackoff.Ticks));
+        }
+    }
+
+    private async Task ConsumeUntilStoppedAsync(CancellationToken stoppingToken)
+    {
         var connection = await _connectionProvider.GetConnectionAsync(stoppingToken).ConfigureAwait(false);
         _channel = await connection.CreateChannelAsync(cancellationToken: stoppingToken).ConfigureAwait(false);
 
@@ -310,5 +359,9 @@ public sealed partial class RabbitMqIntegrationEventSubscriber : BackgroundServi
         [LoggerMessage(EventId = 34, Level = LogLevel.Error,
             Message = "Error processing message {MessageId} ({RoutingKey}) — nacking for requeue.")]
         public static partial void HandlerError(ILogger logger, Exception ex, Guid messageId, string routingKey);
+
+        [LoggerMessage(EventId = 35, Level = LogLevel.Warning,
+            Message = "Consume session failed — reconnecting in {BackoffSeconds}s.")]
+        public static partial void ConsumeSessionFailed(ILogger logger, Exception ex, double backoffSeconds);
     }
 }
