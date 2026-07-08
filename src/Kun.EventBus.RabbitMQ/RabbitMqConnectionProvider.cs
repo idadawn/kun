@@ -41,6 +41,22 @@ public sealed partial class RabbitMqConnectionProvider : IAsyncDisposable
                 return _connection;
             }
 
+            if (_connection is not null)
+            {
+                // A dead cached connection would otherwise keep its automatic-
+                // recovery loop alive forever — dispose before replacing.
+                try
+                {
+                    _connection.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    Log.StaleConnectionDisposeFailed(_logger, ex);
+                }
+
+                _connection = null;
+            }
+
             Log.OpeningConnection(_logger, _options.ConnectionString);
 
             var factory = new ConnectionFactory
@@ -92,5 +108,9 @@ public sealed partial class RabbitMqConnectionProvider : IAsyncDisposable
         [LoggerMessage(EventId = 11, Level = LogLevel.Information,
             Message = "RabbitMQ connection established.")]
         public static partial void ConnectionEstablished(ILogger logger);
+
+        [LoggerMessage(EventId = 12, Level = LogLevel.Debug,
+            Message = "Disposing stale RabbitMQ connection failed (already torn down).")]
+        public static partial void StaleConnectionDisposeFailed(ILogger logger, Exception ex);
     }
 }
