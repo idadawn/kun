@@ -30,7 +30,7 @@ env:
 jobs:
   oss-live-smoke:
     name: OSS Live Smoke
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, qd]
     # Scheduled runs only make sense on the canonical repo, never on forks
     # (which have no secrets and cannot reach the bucket anyway).
     if: github.repository == 'idadawn/kun'

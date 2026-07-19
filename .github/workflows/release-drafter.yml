@@ -16,7 +16,7 @@ permissions:
 jobs:
   update-draft:
     name: Update Release Draft
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, qd]
     permissions:
       contents: write
       pull-requests: write

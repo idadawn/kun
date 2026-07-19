@@ -27,7 +27,7 @@ jobs:
     # Only run on PRs if they carry the "benchmarks" label. Weekly cron +
     # manual dispatch always run. Prevents accidental CI thrash.
     if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'benchmarks')
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, qd]
     strategy:
       fail-fast: false
       matrix:

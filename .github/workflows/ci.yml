@@ -14,7 +14,7 @@ env:
 jobs:
   build:
     name: Build & Test
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, qd]
     # No `services:` block — Testcontainers spins up its own containers on demand.
     # A GitHub-managed postgres/rabbitmq/redis service block wastes time and causes
     # port conflicts when Testcontainers also tries to bind the same ports.
@@ -50,7 +50,7 @@ jobs:
           --collect:"XPlat Code Coverage"
           --filter "FullyQualifiedName!~Kun.IntegrationTests&FullyQualifiedName!~Kun.Sample.Tests&FullyQualifiedName!~Kun.Integration.AotTests"
 
-      # Testcontainers integration tests — Docker is available on ubuntu-latest.
+      # Testcontainers integration tests — Docker is available on the qd runner.
       - name: Integration Tests (Testcontainers)
         run: >
           dotnet test tests/Kun.IntegrationTests
@@ -74,7 +74,7 @@ jobs:
   # and stay covered by the Build & Test job.
   aot-audit:
     name: AOT Audit — ${{ matrix.module }}
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, qd]
     strategy:
       fail-fast: false
       matrix:
@@ -107,7 +107,12 @@ jobs:
           global-json-file: global.json
 
       - name: Install NativeAOT prerequisites
-        run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
+        # qd 机器基线已含 clang/zlib1g-dev；缺失时才回退 sudo apt（ubuntu-latest 两者俱全，通常也跳过）。
+        # qd 无免密 sudo，无条件执行会让 job 挂在密码 prompt 上。
+        run: |
+          if ! command -v clang >/dev/null 2>&1 || [ ! -f /usr/include/zlib.h ]; then
+            sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
+          fi
 
       - name: Publish AOT (zero trim / AOT warnings, warnings-as-errors)
         run: |
@@ -123,7 +128,7 @@ jobs:
   # tests/Kun.Integration.AotTests/AGENTS.md.
   sample-aot-integration:
     name: Sample AOT Integration
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, qd]
 
     steps:
       - uses: actions/checkout@v4
@@ -134,7 +139,12 @@ jobs:
           global-json-file: global.json
 
       - name: Install NativeAOT prerequisites
-        run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
+        # qd 机器基线已含 clang/zlib1g-dev；缺失时才回退 sudo apt（ubuntu-latest 两者俱全，通常也跳过）。
+        # qd 无免密 sudo，无条件执行会让 job 挂在密码 prompt 上。
+        run: |
+          if ! command -v clang >/dev/null 2>&1 || [ ! -f /usr/include/zlib.h ]; then
+            sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
+          fi
 
       - name: Restore
         run: dotnet restore tests/Kun.Integration.AotTests/Kun.Integration.AotTests.csproj
@@ -154,7 +164,7 @@ jobs:
 
   format:
     name: Code Format
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, qd]
 
     steps:
       - uses: actions/checkout@v4
@@ -170,7 +180,7 @@ jobs:
 
   layering:
     name: Layering Check
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, qd]
 
     steps:
       - uses: actions/checkout@v4
