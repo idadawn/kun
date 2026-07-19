@@ -14,7 +14,7 @@ env:
 jobs:
   release:
     name: Build, Pack & Publish
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, qd]
     permissions:
       contents: write
       packages: write
@@ -59,6 +59,14 @@ jobs:
           dotnet test -c Release --no-build \
             --filter "FullyQualifiedName!~IntegrationTests&FullyQualifiedName!~Sample.Tests" \
             --verbosity normal
+
+      - name: Install NativeAOT prerequisites
+        # ubuntu-latest 预装 clang；qd 机器基线已含 clang/zlib1g-dev。缺失时才回退
+        # sudo apt——qd 无免密 sudo，无条件执行会让 job 挂在密码 prompt 上。
+        run: |
+          if ! command -v clang >/dev/null 2>&1 || [ ! -f /usr/include/zlib.h ]; then
+            sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
+          fi
 
       - name: AOT publish verify
         run: |
