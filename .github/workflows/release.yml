@@ -115,13 +115,18 @@ jobs:
 
       - name: Push to GitHub Packages
         run: |
+          KUN_PUBLISH_NUGET_CONFIG=$(mktemp "$RUNNER_TEMP/kun-publish-nuget.XXXXXX")
+          trap 'rm -f "$KUN_PUBLISH_NUGET_CONFIG"' EXIT
+          printf '<configuration><packageSources><clear /></packageSources></configuration>\n' > "$KUN_PUBLISH_NUGET_CONFIG"
           dotnet nuget add source \
+            --configfile "$KUN_PUBLISH_NUGET_CONFIG" \
             --username "${{ github.repository_owner }}" \
             --password "${{ secrets.GITHUB_TOKEN }}" \
             --store-password-in-clear-text \
             --name github \
-            "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" || true
+            "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
           dotnet nuget push artifacts/*.nupkg \
+            --configfile "$KUN_PUBLISH_NUGET_CONFIG" \
             -k "${{ secrets.GITHUB_TOKEN }}" \
             -s "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" \
             --skip-duplicate
