@@ -6,6 +6,8 @@
 
 ## [Unreleased]
 
+## [2026.9.13] - 2026-09-13
+
 ### Fixed — 测试依赖漏洞门禁
 
 - 将 Testcontainers 引入的 SSH.NET 在四个测试项目中明确锁定到修复版本 2026.0.0，保留 NU1903 检测；不向生产包添加该依赖。参见 [GHSA-q939-rpr3-3284](https://github.com/sshnet/SSH.NET/security/advisories/GHSA-q939-rpr3-3284)。
@@ -1051,5 +1053,6 @@ MultiTenancy / Audit / RateLimit / Caching / Observability / Security / Configur
 Sandbox），全仓 AOT 一致性通过审计，Directory.Build.props 统一 AOT 策略，CI 新增
 `aot-audit` 矩阵 job 与 `sample-aot-integration` job。
 
-[Unreleased]: https://github.com/idadawn/kun/compare/v0.1.0-phase1...HEAD
+[Unreleased]: https://github.com/CavaiLAB/kun/compare/v2026.9.13...HEAD
+[2026.9.13]: https://github.com/CavaiLAB/kun/compare/v2026.6.12...v2026.9.13
 [0.1.0-phase1]: https://github.com/idadawn/kun/releases/tag/v0.1.0-phase1
