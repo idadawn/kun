@@ -37,6 +37,14 @@ public sealed class KunGatewayOptions
     public TimeSpan InternalTokenLifetime { get; set; } = TimeSpan.FromSeconds(60);
 
     /// <summary>
+    /// Application claim types to copy from the resolved, authenticated principal.
+    /// Empty by default. Reserved identity, role, signing and lifetime claims cannot be forwarded.
+    /// Configure only claims owned and validated by the external identity boundary, such as
+    /// a session id, authorization revision or permission. Values are never read from plain headers.
+    /// </summary>
+    public string[] ForwardedClaimTypes { get; set; } = [];
+
+    /// <summary>
     /// Absolute path to the PEM-encoded RSA private key file used to sign internal S2S JWTs.
     /// </summary>
     public required string SigningKeyPath { get; set; }

@@ -68,9 +68,7 @@ public sealed class JwksResponseBuilder
         var jwk = JsonWebKeyConverter.ConvertFromRSASecurityKey(rsaKey);
 
         // Derive a stable kid from SHA-256 of the modulus bytes.
-        var modulusBytes = rsa.ExportParameters(false).Modulus ?? [];
-        var hash = SHA256.HashData(modulusBytes);
-        jwk.KeyId = Convert.ToBase64String(hash)[..16];
+        jwk.KeyId = GetKeyId(rsa);
         jwk.Use = "sig";
         jwk.Alg = "RS256";
 
@@ -78,6 +76,12 @@ public sealed class JwksResponseBuilder
         {
             Keys = [new JwkDto(jwk)],
         };
+    }
+
+    internal static string GetKeyId(RSA rsa)
+    {
+        var modulusBytes = rsa.ExportParameters(false).Modulus ?? [];
+        return Convert.ToBase64String(SHA256.HashData(modulusBytes))[..16];
     }
 
     private sealed record CachedJwks(string Path, DateTime LastWriteTimeUtc, JwksResponse Response);

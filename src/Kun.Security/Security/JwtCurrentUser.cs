@@ -34,8 +34,9 @@ public sealed class JwtCurrentUser : ICurrentUser, ITracedCurrentUser
     /// <inheritdoc />
     public IReadOnlyList<string> Roles =>
         Principal?.Claims
-            .Where(c => c.Type == ClaimTypes.Role || c.Type == "role")
+            .Where(c => c.Type == ClaimTypes.Role || c.Type is "role" or "roles")
             .Select(c => c.Value)
+            .Distinct(StringComparer.Ordinal)
             .ToArray()
         ?? [];
 

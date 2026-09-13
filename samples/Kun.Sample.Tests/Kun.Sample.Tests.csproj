@@ -3,6 +3,8 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
+    <!-- Testcontainers 4.0 transitively requests vulnerable SSH.NET 2023; retain the audit gate. -->
+    <PackageReference Include="SSH.NET" PrivateAssets="all" />
     <!--
       Both sample services expose a top-level Program class (global namespace).
       We alias each assembly so that test files can use:

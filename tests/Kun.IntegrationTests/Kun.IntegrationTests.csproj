@@ -5,6 +5,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Testcontainers 4.0 transitively requests vulnerable SSH.NET 2023; retain the audit gate. -->
+    <PackageReference Include="SSH.NET" PrivateAssets="all" />
     <ProjectReference Include="..\..\src\Kun.Auditing\Kun.Auditing.csproj" />
     <ProjectReference Include="..\..\src\Kun.EntityFrameworkCore\Kun.EntityFrameworkCore.csproj" />
     <ProjectReference Include="..\..\src\Kun.Dapper\Kun.Dapper.csproj" />

@@ -33,6 +33,11 @@ jobs:
       - name: Build
         run: dotnet build --configuration Release --no-restore
 
+      - name: Gateway package smoke
+        run: |
+          dotnet pack src/Kun.Gateway -c Release --no-build --no-restore -o artifacts/gateway-package
+          test -f artifacts/gateway-package/Kun.Gateway.*.nupkg
+
       # Unit tests only — fast, no external deps.
       # Kun.IntegrationTests: runs in a separate step below (Testcontainers).
       # Kun.Integration.AotTests: runs in the sample-aot-integration job
