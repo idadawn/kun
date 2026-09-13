@@ -92,6 +92,14 @@ tolerate minor clock drift between hosts. Effective window is therefore up to 90
 
 ---
 
+## Reusing the gateway host extensions
+
+Kun.Gateway remains an executable host and can also be packed as a NuGet dependency.
+Consumers can use its public AddKunGateway, S2sTokenIssuer and JWKS endpoint extensions
+inside an application-specific host without copying the implementation. The consumer
+still owns external authentication, route authorization and internal listener exposure.
+A local package consumer is used to verify this distribution path before release.
+
 ## Explicit application context
 
 The canonical gateway issuer can forward application-specific claim types using

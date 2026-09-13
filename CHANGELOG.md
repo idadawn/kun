@@ -12,6 +12,7 @@
 
 ### Fixed — 网关与服务的身份上下文一致性
 
+- 网关保留可执行宿主，同时支持 NuGet 打包，便于消费方复用既有 AddKunGateway、发行器和公钥端点，而不复制网关实现。
 - 统一网关和下游对 role / roles / ClaimTypes.Role 的处理并去重，避免内部令牌携带的角色在 ICurrentUser 中丢失。
 - 新增显式 ForwardedClaimTypes 白名单，支持会话标识、授权版本和权限字段；保留声明、数量和有效期边界，默认不转发额外字段。
 - 公钥端点明确使用已有源生成序列化上下文，修复 Native AOT 程序实际调用 JWKS 返回 500。

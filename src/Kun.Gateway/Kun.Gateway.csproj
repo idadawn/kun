@@ -4,11 +4,13 @@
     <OutputType>Exe</OutputType>
     <IsAotCandidate>true</IsAotCandidate>
     <HasPublicApi>true</HasPublicApi>
-    <IsPackable>false</IsPackable>
+    <IsPackable>true</IsPackable>
+    <PackageReadmeFile>GATEWAY.md</PackageReadmeFile>
     <Description>Kun Framework — smart gateway: external JWT to internal S2S JWT translation, YARP reverse proxy, rate limiting, JWKS endpoint.</Description>
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="GATEWAY.md" Pack="true" PackagePath="/" />
     <ProjectReference Include="..\Kun.Core\Kun.Core.csproj" />
     <ProjectReference Include="..\Kun.Security\Kun.Security.csproj" />
     <PackageReference Include="Yarp.ReverseProxy" />
