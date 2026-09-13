@@ -1,4 +1,5 @@
 using Kun.Gateway.Configuration;
+using Kun.Gateway.Endpoints;
 
 namespace Kun.Gateway.Jwks;
 
@@ -71,7 +72,7 @@ public static class KunInternalJwksEndpoint
             }
 
             var keySet = builder.Build(opts.PublicKeyPath);
-            return Results.Ok(keySet);
+            return Results.Json(keySet, JwksJsonContext.Default.JwksResponse);
         });
     }
 }

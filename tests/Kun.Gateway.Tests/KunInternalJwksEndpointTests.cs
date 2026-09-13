@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json.Serialization.Metadata;
 using Kun.Gateway.Configuration;
 using Kun.Gateway.Jwks;
 using Microsoft.AspNetCore.Builder;
@@ -157,6 +158,7 @@ public sealed class KunInternalJwksEndpointTests : IAsyncLifetime
                 webHost.ConfigureServices(services =>
                 {
                     services.AddRouting();
+                    services.ConfigureHttpJsonOptions(options => options.SerializerOptions.TypeInfoResolver = JsonTypeInfoResolver.Combine());
                     services.AddSingleton<JwksResponseBuilder>();
                     services.Configure<KunGatewayOptions>(opts =>
                     {

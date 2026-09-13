@@ -92,6 +92,35 @@ tolerate minor clock drift between hosts. Effective window is therefore up to 90
 
 ---
 
+## Explicit application context
+
+The canonical gateway issuer can forward application-specific claim types using
+`KunGatewayOptions.ForwardedClaimTypes`. The default is empty; session identifiers,
+authorization revisions, permissions and personal data are not copied implicitly.
+
+For a consumer that performs shared-session revocation checks, configure an explicit
+allowlist, for example `["sid", "identity_revision", "permission"]`. The issuer copies
+only those claim types from the principal returned by `IS2sPrincipalResolver`, after
+the gateway has validated the external identity. This option never reads plain request
+headers. Reserved issuer, audience, identity, role, trace and lifetime claims cannot be
+added to the allowlist, including case variants; application configuration cannot replace
+the internal token's trust boundary or expiry. The list is limited to 32 types, forwarded
+values to 128 claims and 4,096 characters per value.
+
+Role spellings `role`, `roles` and `ClaimTypes.Role` are normalized into distinct `roles`
+claims. `JwtCurrentUser` recognizes the same spellings after token validation, so roles
+survive a gateway-to-service round trip. The issuer emits a new `jti` for each token and a
+`kid` matching the configured public JWKS. Lifetimes outside `(0, 300]` seconds are
+rejected. The YARP transform awaits `IssueForAsync` and passes the request cancellation
+token to the resolver rather than blocking a request thread.
+
+Forwarding a session id or revision does not itself prove the session is still active.
+The consuming identity boundary must validate those values against its durable authority,
+and services must fail closed if that check is unavailable. This addition is a transport
+contract, not a distributed session or permission store.
+
+---
+
 ## JWKS Endpoint
 
 `Kun.Gateway` serves `/.well-known/jwks.json` via `JwksEndpoint.MapKunJwks` (see

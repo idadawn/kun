@@ -42,7 +42,7 @@ public static class JwksEndpoint
                 }
 
                 var keySet = builder.Build(options.Value.PublicKeyPath);
-                return Results.Ok(keySet);
+                return Results.Json(keySet, JwksJsonContext.Default.JwksResponse);
             });
     }
 }

@@ -113,3 +113,6 @@ Kun.Gateway.RateLimiting.RedisFixedWindowRateLimitStore
 Kun.Gateway.RateLimiting.RedisFixedWindowRateLimitStore.RedisFixedWindowRateLimitStore(StackExchange.Redis.IConnectionMultiplexer! redis, Microsoft.Extensions.Options.IOptions<Kun.Gateway.RateLimiting.RedisRateLimitStoreOptions!>! options) -> void
 Kun.Gateway.RateLimiting.RedisFixedWindowRateLimitStore.HitAsync(string! partitionKey, System.TimeSpan window, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Gateway.RateLimiting.RateLimitHitResult>!
 static Kun.Gateway.RateLimiting.KunRateLimiterExtensions.AddKunRedisRateLimitStore(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.Gateway.RateLimiting.RedisRateLimitStoreOptions!>? configure = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+
+Kun.Gateway.Configuration.KunGatewayOptions.ForwardedClaimTypes.get -> string![]!
+Kun.Gateway.Configuration.KunGatewayOptions.ForwardedClaimTypes.set -> void

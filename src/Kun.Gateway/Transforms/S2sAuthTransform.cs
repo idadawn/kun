@@ -18,7 +18,7 @@ internal sealed class S2sAuthTransform : RequestTransform
     }
 
     /// <inheritdoc />
-    public override ValueTask ApplyAsync(RequestTransformContext context)
+    public override async ValueTask ApplyAsync(RequestTransformContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
 
@@ -27,11 +27,10 @@ internal sealed class S2sAuthTransform : RequestTransform
         // Only replace Authorization when a user principal is present
         if (user.Identity?.IsAuthenticated == true)
         {
-            var token = _issuer.IssueFor(user);
+            var token = await _issuer.IssueForAsync(user, context.HttpContext.RequestAborted)
+                .ConfigureAwait(false);
             context.ProxyRequest.Headers.Remove("Authorization");
             context.ProxyRequest.Headers.TryAddWithoutValidation("Authorization", $"Bearer {token}");
         }
-
-        return ValueTask.CompletedTask;
     }
 }

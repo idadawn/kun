@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using Kun.Gateway.Configuration;
 using Kun.Gateway.Identity;
+using Kun.Gateway.Jwks;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
@@ -24,6 +25,7 @@ public sealed class S2sTokenIssuer
     private readonly KunGatewayOptions _options;
     private readonly IS2sPrincipalResolver _resolver;
     private readonly IHttpContextAccessor? _httpContextAccessor;
+    private readonly HashSet<string> _forwardedClaimTypes;
 
     /// <summary>
     /// Initializes the issuer with an explicit principal resolver. Prefer this ctor —
@@ -47,6 +49,15 @@ public sealed class S2sTokenIssuer
         ArgumentNullException.ThrowIfNull(env);
         ArgumentNullException.ThrowIfNull(resolver);
         _options = options.Value;
+        ArgumentNullException.ThrowIfNull(_options.ForwardedClaimTypes);
+        if (_options.ForwardedClaimTypes.Length > 32
+            || _options.ForwardedClaimTypes.Any(type => string.IsNullOrWhiteSpace(type)
+                || type.Length > 128 || type.Any(char.IsControl) || type != type.Trim()
+                || IsReservedClaim(type)))
+        {
+            throw new ArgumentException("Forwarded claim types must be a bounded allowlist of non-reserved claims.", nameof(options));
+        }
+        _forwardedClaimTypes = _options.ForwardedClaimTypes.ToHashSet(StringComparer.Ordinal);
         _resolver = resolver;
         _httpContextAccessor = httpContextAccessor;
 
@@ -71,7 +82,7 @@ public sealed class S2sTokenIssuer
                 "For development, set ASPNETCORE_ENVIRONMENT=Development.");
         }
 
-        _signingKey = new RsaSecurityKey(rsa);
+        _signingKey = new RsaSecurityKey(rsa) { KeyId = JwksResponseBuilder.GetKeyId(rsa) };
         _credentials = new SigningCredentials(_signingKey, SecurityAlgorithms.RsaSha256);
     }
 
@@ -138,12 +149,19 @@ public sealed class S2sTokenIssuer
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(externalPrincipal);
+        cancellationToken.ThrowIfCancellationRequested();
+        var lifetime = _options.InternalTokenLifetime;
+        if (lifetime <= TimeSpan.Zero || lifetime > TimeSpan.FromMinutes(5))
+        {
+            throw new InvalidOperationException("Internal S2S token lifetime must be greater than zero and at most five minutes.");
+        }
 
         var principal = await _resolver
             .ResolveAsync(externalPrincipal, cancellationToken)
             .ConfigureAwait(false);
 
         ArgumentNullException.ThrowIfNull(principal);
+        cancellationToken.ThrowIfCancellationRequested();
 
         var now = DateTime.UtcNow;
         var claims = new List<Claim>();
@@ -159,12 +177,18 @@ public sealed class S2sTokenIssuer
         if (tenantId is not null)
             claims.Add(new Claim("tenant_id", tenantId.Value));
 
-        // Copy all roles claims
-        foreach (var role in principal.FindAll(ClaimTypes.Role))
-            claims.Add(new Claim("roles", role.Value));
+        // Normalize supported role spellings without duplicating the same grant.
+        foreach (var role in principal.Claims
+                     .Where(claim => claim.Type == ClaimTypes.Role || claim.Type is "role" or "roles")
+                     .Select(claim => claim.Value).Distinct(StringComparer.Ordinal))
+            claims.Add(new Claim("roles", role));
 
-        foreach (var role in principal.FindAll("roles"))
-            claims.Add(new Claim("roles", role.Value));
+        var forwarded = principal.Claims.Where(claim => _forwardedClaimTypes.Contains(claim.Type)).ToArray();
+        if (forwarded.Length > 128 || forwarded.Any(claim => claim.Value.Length > 4096))
+            throw new InvalidOperationException("Forwarded claims exceed the configured token bounds.");
+        foreach (var claim in forwarded)
+            claims.Add(new Claim(claim.Type, claim.Value, claim.ValueType));
+        claims.Add(new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString("N")));
 
         // Emit trace_id claim for OpenTelemetry trace continuity (M3 guard)
         if (_options.EmitTraceIdClaim
@@ -181,7 +205,7 @@ public sealed class S2sTokenIssuer
             Audience = _options.InternalAudience,
             IssuedAt = now,
             NotBefore = now,
-            Expires = now.Add(_options.InternalTokenLifetime),
+            Expires = now.Add(lifetime),
             Subject = new ClaimsIdentity(claims),
             SigningCredentials = _credentials,
         };
@@ -189,4 +213,12 @@ public sealed class S2sTokenIssuer
         var handler = new JsonWebTokenHandler();
         return handler.CreateToken(descriptor);
     }
+
+    private static readonly HashSet<string> ReservedClaimTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "iss", "aud", "sub", "tenant_id", "tenant", "roles", "role", "exp", "iat", "nbf", "jti",
+        "trace_id", "original_token_jti", ClaimTypes.NameIdentifier, ClaimTypes.Role
+    };
+
+    private static bool IsReservedClaim(string type) => ReservedClaimTypes.Contains(type);
 }

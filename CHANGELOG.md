@@ -6,6 +6,18 @@
 
 ## [Unreleased]
 
+### Fixed — 测试依赖漏洞门禁
+
+- 将 Testcontainers 引入的 SSH.NET 在四个测试项目中明确锁定到修复版本 2026.0.0，保留 NU1903 检测；不向生产包添加该依赖。参见 [GHSA-q939-rpr3-3284](https://github.com/sshnet/SSH.NET/security/advisories/GHSA-q939-rpr3-3284)。
+
+### Fixed — 网关与服务的身份上下文一致性
+
+- 统一网关和下游对 role / roles / ClaimTypes.Role 的处理并去重，避免内部令牌携带的角色在 ICurrentUser 中丢失。
+- 新增显式 ForwardedClaimTypes 白名单，支持会话标识、授权版本和权限字段；保留声明、数量和有效期边界，默认不转发额外字段。
+- 公钥端点明确使用已有源生成序列化上下文，修复 Native AOT 程序实际调用 JWKS 返回 500。
+- 内部令牌增加与 JWKS 一致的 kid 及独立 jti，拒绝超过五分钟或非正的 TTL；YARP 转换改为等待异步解析并传播请求取消。
+- 增加实际 JWT 中间件的网关签发到下游身份读取回归，验证角色、租户、会话版本和选定权限字段。
+
 ### Added — OSS Live Smoke 按需 CI 工作流
 
 - 新增 `.github/workflows/oss-live-smoke.yml`：把既有的 `OssFileStorageLiveSmokeTests`（实弹 OSS 预签名 PUT/GET 验证）接入 `workflow_dispatch` + 每日定时（03:27 UTC）的可选 job。此前该测试只能在本地或下游消费者手动跑，从不被任何 CI 触发（见 PR #12 遗留的"实弹 OSS e2e"项）。
