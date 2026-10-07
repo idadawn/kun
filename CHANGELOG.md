@@ -6,6 +6,10 @@
 
 ## [Unreleased]
 
+### Changed — 仓库地址
+
+- 仓库于 2026-10-08 从 CavaiLAB 组织迁回 `idadawn/kun`（<https://github.com/idadawn/kun>），与 iclaw、iclaw-deploy 同一所有者；旧地址自动重定向。GitHub Packages 镜像自下一个版本起发布在 idadawn 名下，nuget.org 上的 `Kun.*` 不受影响。本文件的版本比较链接已改为新地址。
+
 ### Fixed — 发布配置隔离
 
 - GitHub Packages 发布使用当前步骤专属的临时 NuGet 配置，并在步骤退出时删除，避免把短期凭据和额外包源遗留在共享执行器，导致后续还原触发 NU1507。
@@ -1057,6 +1061,6 @@ MultiTenancy / Audit / RateLimit / Caching / Observability / Security / Configur
 Sandbox），全仓 AOT 一致性通过审计，Directory.Build.props 统一 AOT 策略，CI 新增
 `aot-audit` 矩阵 job 与 `sample-aot-integration` job。
 
-[Unreleased]: https://github.com/CavaiLAB/kun/compare/v2026.9.13...HEAD
-[2026.9.13]: https://github.com/CavaiLAB/kun/compare/v2026.6.12...v2026.9.13
+[Unreleased]: https://github.com/idadawn/kun/compare/v2026.9.13...HEAD
+[2026.9.13]: https://github.com/idadawn/kun/compare/v2026.6.12...v2026.9.13
 [0.1.0-phase1]: https://github.com/idadawn/kun/releases/tag/v0.1.0-phase1
