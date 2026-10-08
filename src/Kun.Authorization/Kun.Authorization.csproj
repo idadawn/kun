@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsAotCandidate>true</IsAotCandidate>
+    <HasPublicApi>true</HasPublicApi>
+    <IsPackable>true</IsPackable>
+    <Description>权限判定、数据与字段策略端口；权限引擎由宿主提供。</Description>
+  </PropertyGroup>
+  <ItemGroup><ProjectReference Include="../Kun.Core/Kun.Core.csproj" /></ItemGroup>
+</Project>

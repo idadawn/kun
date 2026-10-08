@@ -91,6 +91,11 @@ graph TD
     Core --> EventBus[Kun.EventBus<br/>事件分发/Outbox 抽象]
     Core --> Security[Kun.Security<br/>S2S JWT/租户上下文]
     Core --> Validation[Kun.Validation<br/>SourceGen 验证器]
+    Core --> Authorization[Kun.Authorization<br/>权限判定端口]
+    Authorization --> Mediator
+    Authorization --> AspNet
+    Authorization --> Grpc
+    Apollo[Kun.Configuration.Apollo<br/>HTTP 配置源]
 
     Infra --> EfCore[Kun.EntityFrameworkCore<br/>写侧持久化/Outbox 实现]
     Infra --> Dapper[Kun.Dapper<br/>读侧查询]
@@ -108,6 +113,8 @@ graph TD
     style Security fill:#ffe1e1
     style Saga fill:#fff4d6
 ```
+
+当前配置与权限端口增量见 [ADR-016](architecture/ADR-016-platform-ports.md)：Kun 只提供权限端口和接入点，平台负责引擎；Apollo 以独立标准配置源落位。
 
 ### 3.2 模块职责清单
 

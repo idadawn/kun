@@ -22,6 +22,15 @@
 | `Kun.Infrastructure` | 仓储 / UoW / 规约 / `IProcessedMessageStore` 抽象 | 持久化层契约，真实实现下沉到 EF 侧 | `IRepository<T>` / `IUnitOfWork` / `ISpecification<T>` | ✅ | — |
 | `Kun.Configuration` | 强类型 Options + DataAnnotations + fail-fast | NeuroAgent 所有服务的配置装配 | `AddKunOptions<T>()` | ✅ | 13 |
 
+### 平台端口增量（2026-10-09）
+
+| 模块 | 职责 | 主要 API | AOT |
+|---|---|---|---|
+| `Kun.Authorization` | 权限判定、数据谓词与字段策略端口，无权限引擎 | `IPermissionChecker`、`IDataPermissionFilter`、`IFieldPolicy` | true，CI 验证 |
+| `Kun.Configuration.Apollo` | HTTP 配置源、长轮询、签名和缓存 | `AddApollo`、`ApolloOptions` | true，CI 验证 |
+
+Mediator、ASP.NET Core 和 gRPC 增加对 Authorization 的依赖；具体语义与迁移见 [ADR-016](ADR-016-platform-ports.md)。历史 Phase 1 表保留为原始版本快照。
+
 ### 持久化（Infrastructure 层）
 
 | 模块 | 职责 | Phase 1 下游用途 | 主要 API | AOT | 测试 |
@@ -90,6 +99,11 @@ graph TD
     Core --> EventBus[Kun.EventBus<br/>事件分发/Outbox 抽象]
     Core --> Security[Kun.Security<br/>S2S JWT/租户上下文]
     Core --> Validation[Kun.Validation<br/>SourceGen 验证器]
+    Core --> Authorization[Kun.Authorization<br/>权限判定端口]
+    Authorization --> Mediator
+    Authorization --> AspNet
+    Authorization --> Grpc
+    Apollo[Kun.Configuration.Apollo<br/>HTTP 配置源]
     Core --> Audit[Kun.Audit<br/>操作审计/哈希链]
 
     Infra --> EfCore[Kun.EntityFrameworkCore<br/>写侧持久化/Outbox 实现]

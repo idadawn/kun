@@ -1,0 +1,33 @@
+#nullable enable
+Kun.Configuration.Apollo.ApolloOptions
+Kun.Configuration.Apollo.ApolloConfigurationExtensions
+Kun.Configuration.Apollo.ApolloOptions.ApolloOptions() -> void
+Kun.Configuration.Apollo.ApolloConfigurationSource
+Kun.Configuration.Apollo.ApolloConfigurationProvider
+Kun.Configuration.Apollo.ApolloOptions.ConfigServers.get -> System.Collections.Generic.IReadOnlyList<System.Uri!>!
+Kun.Configuration.Apollo.ApolloOptions.AppId.get -> string!
+Kun.Configuration.Apollo.ApolloOptions.ConfigServers.init -> void
+Kun.Configuration.Apollo.ApolloOptions.AppId.init -> void
+Kun.Configuration.Apollo.ApolloOptions.Cluster.get -> string!
+Kun.Configuration.Apollo.ApolloConfigurationSource.Build(Microsoft.Extensions.Configuration.IConfigurationBuilder! builder) -> Microsoft.Extensions.Configuration.IConfigurationProvider!
+Kun.Configuration.Apollo.ApolloOptions.Cluster.init -> void
+Kun.Configuration.Apollo.ApolloOptions.Namespaces.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Kun.Configuration.Apollo.ApolloOptions.Label.get -> string?
+Kun.Configuration.Apollo.ApolloOptions.Namespaces.init -> void
+Kun.Configuration.Apollo.ApolloOptions.Label.init -> void
+Kun.Configuration.Apollo.ApolloOptions.CacheDirectory.get -> string?
+Kun.Configuration.Apollo.ApolloOptions.ResolveAccessKey.get -> System.Func<string?>?
+Kun.Configuration.Apollo.ApolloOptions.ResolveAccessKey.init -> void
+Kun.Configuration.Apollo.ApolloOptions.CacheDirectory.init -> void
+Kun.Configuration.Apollo.ApolloOptions.ReloadOnChange.get -> bool
+Kun.Configuration.Apollo.ApolloOptions.ReloadOnChange.init -> void
+Kun.Configuration.Apollo.ApolloOptions.RetryDelay.get -> System.TimeSpan
+Kun.Configuration.Apollo.ApolloOptions.Validate.init -> void
+Kun.Configuration.Apollo.ApolloOptions.RetryDelay.init -> void
+Kun.Configuration.Apollo.ApolloOptions.Validate.get -> System.Func<System.Collections.Generic.IReadOnlyDictionary<string!, string?>!, bool>?
+static Kun.Configuration.Apollo.ApolloConfigurationExtensions.AddApollo(this Microsoft.Extensions.Configuration.IConfigurationBuilder! builder, Kun.Configuration.Apollo.ApolloOptions! options, System.Net.Http.HttpClient? client = null, Microsoft.Extensions.Logging.ILogger? logger = null) -> Microsoft.Extensions.Configuration.IConfigurationBuilder!
+Kun.Configuration.Apollo.ApolloConfigurationProvider.ApolloConfigurationProvider(Kun.Configuration.Apollo.ApolloOptions! options, System.Net.Http.HttpClient? client = null, Microsoft.Extensions.Logging.ILogger? logger = null) -> void
+override Kun.Configuration.Apollo.ApolloConfigurationProvider.Load() -> void
+Kun.Configuration.Apollo.ApolloConfigurationProvider.RefreshAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Configuration.Apollo.ApolloConfigurationProvider.Dispose() -> void
+Kun.Configuration.Apollo.ApolloConfigurationSource.ApolloConfigurationSource(Kun.Configuration.Apollo.ApolloOptions! options, System.Net.Http.HttpClient? client = null, Microsoft.Extensions.Logging.ILogger? logger = null) -> void

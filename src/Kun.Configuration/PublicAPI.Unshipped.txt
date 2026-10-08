@@ -14,3 +14,9 @@ override Kun.Configuration.Attributes.RequiredConfigAttribute.FormatErrorMessage
 override Kun.Configuration.Attributes.UrlConfigAttribute.FormatErrorMessage(string! name) -> string!
 override Kun.Configuration.Attributes.UrlConfigAttribute.IsValid(object? value) -> bool
 static Kun.Configuration.Extensions.KunConfigurationServiceCollectionExtensions.AddKunOptions<TOptions>(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! section) -> Microsoft.Extensions.Options.OptionsBuilder<TOptions!>!
+Kun.Configuration.OptionsSchema<T>
+Kun.Configuration.OptionsSchema<T>.Section.get -> string!
+Kun.Configuration.OptionsSchema<T>.Export() -> System.Text.Json.Nodes.JsonObject!
+static Kun.Configuration.Extensions.KunConfigurationServiceCollectionExtensions.AddKunOptions<TOptions>(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! section, bool critical) -> Microsoft.Extensions.Options.OptionsBuilder<TOptions!>!
+static Kun.Configuration.Extensions.KunConfigurationServiceCollectionExtensions.AddKunOptions<TOptions>(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! section, System.Text.Json.Serialization.Metadata.JsonTypeInfo<TOptions!>! typeInfo, bool critical = true) -> Microsoft.Extensions.Options.OptionsBuilder<TOptions!>!
+Kun.Configuration.OptionsSchema<T>.OptionsSchema(string! section, System.Text.Json.Serialization.Metadata.JsonTypeInfo<T!>! typeInfo) -> void

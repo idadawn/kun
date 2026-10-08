@@ -11,3 +11,6 @@ static Kun.AspNetCore.Endpoints.KunEndpointRouteBuilderExtensions.MapCommand<TCo
 static Kun.AspNetCore.Endpoints.KunEndpointRouteBuilderExtensions.MapQuery<TQuery, TResponse>(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, string! pattern, System.Text.Json.Serialization.Metadata.JsonTypeInfo<TResponse>! responseTypeInfo) -> Microsoft.AspNetCore.Builder.RouteHandlerBuilder!
 static Kun.AspNetCore.HealthChecks.KunHealthChecksExtensions.AddKunHealthChecks(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder!
 static Kun.AspNetCore.Mapping.ErrorToProblemDetailsExtensions.ToProblemDetails(this Kun.Core.Results.Error error) -> Microsoft.AspNetCore.Mvc.ProblemDetails
+static Kun.AspNetCore.Authorization.KunPermissionExtensions.AddKunAuthorization(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Kun.AspNetCore.Authorization.KunPermissionExtensions
+static Kun.AspNetCore.Authorization.KunPermissionExtensions.RequireKunPermission<TBuilder>(this TBuilder builder, string! permission) -> TBuilder

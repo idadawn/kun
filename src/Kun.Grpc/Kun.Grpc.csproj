@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../Kun.Authorization/Kun.Authorization.csproj" />
     <ProjectReference Include="..\Kun.Core\Kun.Core.csproj" />
     <ProjectReference Include="..\Kun.Security\Kun.Security.csproj" />
     <FrameworkReference Include="Microsoft.AspNetCore.App" />

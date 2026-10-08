@@ -1,3 +1,4 @@
+#pragma warning disable KUNLEGACY001 // 旧接口的兼容实现，不作为新代码的入口。
 using Kun.Core.Domain;
 using Kun.Infrastructure.Abstractions;
 using Microsoft.EntityFrameworkCore;

@@ -2,3 +2,21 @@
 Kun.Mediator.IScopedPublisher
 Kun.Mediator.IScopedPublisher.PublishInScope<TNotification>(TNotification notification, System.IServiceProvider! services, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
 Kun.Mediator.KunMediator.PublishInScope<TNotification>(TNotification notification, System.IServiceProvider! services, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Kun.Mediator.Behaviors.PermissionBehaviorExtensions
+Kun.Mediator.CapabilityDescriptor
+Kun.Mediator.Behaviors.PerformanceBehaviorOptions
+Kun.Mediator.Behaviors.PerformanceBehaviorOptions.PerformanceBehaviorOptions() -> void
+Kun.Mediator.ICapabilityRegistry.Find(string! id) -> Kun.Mediator.CapabilityDescriptor?
+Kun.Mediator.ICapabilityRegistry.GetAll() -> System.Collections.Generic.IReadOnlyList<Kun.Mediator.CapabilityDescriptor!>!
+Kun.Mediator.Behaviors.PerformanceBehaviorOptions.ThresholdMs.get -> long
+Kun.Mediator.Behaviors.PerformanceBehaviorOptions.ThresholdMs.set -> void
+Kun.Mediator.CapabilityDescriptor.CapabilityDescriptor(string! id, System.Text.Json.Serialization.Metadata.JsonTypeInfo! request, System.Text.Json.Serialization.Metadata.JsonTypeInfo! response) -> void
+Kun.Mediator.Behaviors.PerformanceBehavior<TRequest, TResponse>.PerformanceBehavior(Microsoft.Extensions.Logging.ILogger<Kun.Mediator.Behaviors.PerformanceBehavior<TRequest, TResponse>!>! logger, Microsoft.Extensions.Options.IOptions<Kun.Mediator.Behaviors.PerformanceBehaviorOptions!>! options) -> void
+static Kun.Mediator.Behaviors.PermissionBehaviorExtensions.AddPermissionBehavior<TRequest, TResponse>(this Kun.Mediator.KunMediatorBuilder! builder, System.Func<Kun.Core.Results.Error!, TResponse>! denied) -> Kun.Mediator.KunMediatorBuilder!
+Kun.Mediator.CapabilityDescriptor.Id.get -> string!
+Kun.Mediator.CapabilityDescriptor.RequestType.get -> System.Type!
+Kun.Mediator.CapabilityDescriptor.ResponseType.get -> System.Type!
+Kun.Mediator.CapabilityDescriptor.RequestSchema.get -> System.Text.Json.Nodes.JsonNode!
+Kun.Mediator.CapabilityDescriptor.ResponseSchema.get -> System.Text.Json.Nodes.JsonNode!
+Kun.Mediator.KunMediatorBuilder.AddRequestHandler<TRequest, TResponse, THandler>(string! capabilityId, System.Text.Json.Serialization.Metadata.JsonTypeInfo<TRequest>! request, System.Text.Json.Serialization.Metadata.JsonTypeInfo<TResponse>! response) -> Kun.Mediator.KunMediatorBuilder!
+Kun.Mediator.ICapabilityRegistry

@@ -7,6 +7,7 @@ namespace Kun.Infrastructure.Abstractions;
 /// 业务可替换为基于数据库唯一索引的实现以获得跨故障域的强一致性。
 /// </para>
 /// </summary>
+[Obsolete("请使用 Kun.EventBus.Idempotency.IProcessedMessageStore。", DiagnosticId = "KUNLEGACY001")]
 public interface IProcessedMessageStore
 {
     /// <summary>

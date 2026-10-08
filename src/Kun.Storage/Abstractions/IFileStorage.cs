@@ -9,6 +9,7 @@ namespace Kun.Storage.Abstractions;
 /// and presigned download URLs, so that browsers never render user-uploaded
 /// active-web types (HTML, SVG, XML, JavaScript, WASM) inline.
 /// </remarks>
+[Obsolete("请引用 Kun.Storage.Abstractions 包里的 Kun.Storage.IFileStorage；旧包仅保留兼容。", DiagnosticId = "KUNLEGACY001")]
 public interface IFileStorage
 {
     /// <summary>Uploads an object to <paramref name="path"/>.</summary>

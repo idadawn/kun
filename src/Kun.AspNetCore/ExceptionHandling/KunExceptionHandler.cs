@@ -4,6 +4,7 @@ using Kun.Core.Results;
 using Kun.Validation;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Kun.AspNetCore.ExceptionHandling;
@@ -66,9 +67,14 @@ public sealed class KunExceptionHandler : IExceptionHandler
             return false; // let default middleware handle it
 
         httpContext.Response.StatusCode = pd.Status ?? 500;
-        httpContext.Response.ContentType = "application/problem+json";
-        await httpContext.Response.WriteAsJsonAsync(pd, cancellationToken);
-        return true;
+        var writer = httpContext.RequestServices.GetService<IProblemDetailsService>();
+        if (writer is null) return false;
+        return await writer.TryWriteAsync(new ProblemDetailsContext
+        {
+            HttpContext = httpContext,
+            ProblemDetails = pd,
+            Exception = exception
+        });
     }
 
     private Microsoft.AspNetCore.Mvc.ProblemDetails BuildValidationProblemDetails(ValidationException ve)

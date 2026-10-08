@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Kun.Mediator.Behaviors;
 
@@ -20,6 +21,7 @@ public sealed partial class PerformanceBehavior<TRequest, TResponse> : IPipeline
     public const long DefaultThresholdMs = 500;
 
     private readonly ILogger<PerformanceBehavior<TRequest, TResponse>> _logger;
+    private readonly long _threshold = DefaultThresholdMs;
 
     /// <summary>
     /// Initialises a new <see cref="PerformanceBehavior{TRequest,TResponse}"/>.
@@ -29,6 +31,15 @@ public sealed partial class PerformanceBehavior<TRequest, TResponse> : IPipeline
     {
         ArgumentNullException.ThrowIfNull(logger);
         _logger = logger;
+    }
+
+    /// <summary>使用宿主的慢请求阈值，保留单 logger 构造器的默认行为。</summary>
+    public PerformanceBehavior(ILogger<PerformanceBehavior<TRequest, TResponse>> logger,
+        IOptions<PerformanceBehaviorOptions> options) : this(logger)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentOutOfRangeException.ThrowIfNegative(options.Value.ThresholdMs);
+        _threshold = options.Value.ThresholdMs;
     }
 
     /// <inheritdoc/>
@@ -41,9 +52,9 @@ public sealed partial class PerformanceBehavior<TRequest, TResponse> : IPipeline
         var response = await next().ConfigureAwait(false);
         sw.Stop();
 
-        if (sw.ElapsedMilliseconds > DefaultThresholdMs)
+        if (sw.ElapsedMilliseconds > _threshold)
         {
-            LogSlowRequest(_logger, typeof(TRequest).Name, sw.ElapsedMilliseconds, DefaultThresholdMs);
+            LogSlowRequest(_logger, typeof(TRequest).Name, sw.ElapsedMilliseconds, _threshold);
         }
 
         return response;

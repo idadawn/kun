@@ -32,3 +32,5 @@ Kun.Dapper.ReadDbOptions
 Kun.Dapper.ReadDbOptions.ConnectionString.get -> string!
 Kun.Dapper.ReadDbOptions.ConnectionString.init -> void
 Kun.Dapper.ReadDbOptions.ReadDbOptions() -> void
+static Kun.Dapper.DependencyInjection.KunDapperServiceCollectionExtensions.AddKunDapper(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Func<Kun.Dapper.ReadDbOptions!>! createOptions) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Kun.Dapper.DependencyInjection.KunDapperServiceCollectionExtensions.AddKunDapperNpgsql(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Func<Kun.Dapper.ReadDbOptions!>! createOptions) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
