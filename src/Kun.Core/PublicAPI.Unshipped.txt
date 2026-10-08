@@ -71,3 +71,6 @@ static Kun.Core.Results.ValueTaskResultExtensions.TapAsync(this System.Threading
 static Kun.Core.Results.ValueTaskResultExtensions.TapAsync(this System.Threading.Tasks.ValueTask<Kun.Core.Results.Result> source, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! onSuccess, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<Kun.Core.Results.Result>
 static Kun.Core.Results.ValueTaskResultExtensions.TapAsync<T>(this System.Threading.Tasks.ValueTask<Kun.Core.Results.Result<T>> source, System.Action<T>! onSuccess) -> System.Threading.Tasks.ValueTask<Kun.Core.Results.Result<T>>
 static Kun.Core.Results.ValueTaskResultExtensions.TapAsync<T>(this System.Threading.Tasks.ValueTask<Kun.Core.Results.Result<T>> source, System.Func<T, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! onSuccess, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<Kun.Core.Results.Result<T>>
+Kun.Core.MultiTenancy.ITenantContext.BeginScope(string? tenantId) -> System.IDisposable!
+Kun.Core.MultiTenancy.TenantIdValidation
+static Kun.Core.MultiTenancy.TenantIdValidation.IsValid(string? tenantId) -> bool

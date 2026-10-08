@@ -85,7 +85,8 @@ public sealed partial class RabbitMqIntegrationEventPublisher : IIntegrationEven
 
         if (message.TenantId is not null)
         {
-            headers["tenantId"] = message.TenantId;
+            headers["tenant_id"] = message.TenantId;
+            headers["tenantId"] = message.TenantId; // 兼容已发布消费者，至少保留两个小版本。
         }
 
         return headers;

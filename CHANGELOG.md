@@ -6,6 +6,15 @@
 
 ## [Unreleased]
 
+### Fixed — 多租户后台链路（S1-KUN-001）
+
+- `ITenantContext.BeginScope` 使消息消费、Outbox 发布和 Saga 执行／补偿显式恢复租户；租户校验复用同一白名单，缺少租户的多租户消息直接进入死信队列。
+- `AddKunSecurity` 与 `AddKunMultiTenancy` 共用 `AsyncLocalTenantContext`，JWT 仅提供已认证的解析来源；显式后台作用域优先且结束后恢复原值。
+- `Production` 模式只接受合法令牌的唯一 `tenant_id`，忽略请求头与默认租户回退，失败返回 401；开发兼容模式仍可显式配置旧 claim 和请求头。
+- 新增 `AddKunTenantRls<TContext>()` 自动装配连接版、事务版拦截器和 `KunMultiTenantModelCacheKeyFactory`；`KunDbContext` 实现统一缓存键接口。无泛型旧重载保留注册语义，已有手动装配继续兼容。
+- RabbitMQ 新增 `tenant_id` 信封头，兼容读取与发送旧 `tenantId` 头（至少两个小版本）；本次不变更 ack／重试／幂等语义。
+
+
 ### Changed — 仓库地址
 
 - 仓库于 2026-10-08 从 CavaiLAB 组织迁回 `idadawn/kun`（<https://github.com/idadawn/kun>），与 iclaw、iclaw-deploy 同一所有者；旧地址自动重定向。GitHub Packages 镜像自下一个版本起发布在 idadawn 名下，nuget.org 上的 `Kun.*` 不受影响。本文件的版本比较链接已改为新地址。

@@ -1,3 +1,4 @@
+using Kun.Core.MultiTenancy;
 using Kun.MultiTenancy.Abstractions;
 using Kun.MultiTenancy.Configuration;
 using Microsoft.AspNetCore.Http;
@@ -27,6 +28,14 @@ public sealed class DefaultTenantResolver : ITenantResolver
     public ValueTask<string?> ResolveTenantIdAsync(HttpContext httpContext)
     {
         ArgumentNullException.ThrowIfNull(httpContext);
+
+        if (_options.Production)
+        {
+            var identities = httpContext.User.Identities.Where(identity => identity.IsAuthenticated);
+            var tenants = identities.SelectMany(identity => identity.FindAll("tenant_id")).ToArray();
+            return ValueTask.FromResult(tenants.Length == 1 && TenantIdValidation.IsValid(tenants[0].Value)
+                ? tenants[0].Value : null);
+        }
 
         foreach (var claim in _options.JwtClaimNames)
         {

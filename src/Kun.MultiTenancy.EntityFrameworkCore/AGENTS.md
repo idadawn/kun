@@ -30,7 +30,7 @@ EF Core integration for `Kun.MultiTenancy`. Ships two things:
 ## Wiring
 
 ```csharp
-services.AddKunMultiTenancy(opts => opts.UseJwtClaim("tid"));
+services.AddKunMultiTenancy(opts => opts.UseJwtClaim("tenant_id"));
 
 services.AddDbContext<AppDbContext>((sp, opts) =>
 {
@@ -66,3 +66,5 @@ inherit from a different DbContext base.
 - Do not introduce runtime reflection here. The `Expression` APIs
   used to compose the filter predicate are compile-time metadata;
   the interceptor relies on the `IMultiTenant` interface cast.
+
+生产装配使用 `options.Production = true`；请求头与默认租户仅供显式开发兼容模式使用。后台通过 `ITenantContext.BeginScope` 回灌，详情见 `docs/security/multi-tenancy-rls.md`。

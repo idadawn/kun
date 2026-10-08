@@ -3,6 +3,7 @@ using Kun.Core.Domain;
 using Kun.Core.MultiTenancy;
 using Kun.EntityFrameworkCore.Interceptors;
 using Kun.EventBus.Outbox;
+using Kun.MultiTenancy.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kun.EntityFrameworkCore;
@@ -14,7 +15,7 @@ namespace Kun.EntityFrameworkCore;
 /// and for <see cref="ISoftDelete"/> entities (excludes soft-deleted rows).
 /// Ensures the Outbox is registered for atomic enqueue.
 /// </remarks>
-public abstract class KunDbContext : DbContext
+public abstract class KunDbContext : DbContext, IKunMultiTenantDbContext
 {
     private readonly ITenantContext _tenantContext;
 

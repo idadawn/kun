@@ -1,4 +1,5 @@
 using Kun.Core.MultiTenancy;
+using Kun.MultiTenancy.Abstractions;
 using Microsoft.AspNetCore.Http;
 
 namespace Kun.Security.MultiTenancy;
@@ -8,7 +9,7 @@ namespace Kun.Security.MultiTenancy;
 /// from the authenticated <see cref="System.Security.Claims.ClaimsPrincipal"/> on the
 /// current HTTP request. Falls back gracefully when unauthenticated.
 /// </summary>
-public sealed class JwtTenantContext : ITenantContext
+public sealed class JwtTenantContext : ITenantContext, ITenantIdSource
 {
     private const string TenantIdClaimType = "tenant_id";
 
@@ -23,8 +24,17 @@ public sealed class JwtTenantContext : ITenantContext
     }
 
     /// <inheritdoc />
-    public string? TenantId =>
-        _httpContextAccessor.HttpContext?.User?.FindFirst(TenantIdClaimType)?.Value;
+    public string? TenantId
+    {
+        get
+        {
+            var claims = _httpContextAccessor.HttpContext?.User.Identities
+                .Where(identity => identity.IsAuthenticated)
+                .SelectMany(identity => identity.FindAll(TenantIdClaimType)).ToArray();
+            return claims is { Length: 1 } && TenantIdValidation.IsValid(claims[0].Value)
+                ? claims[0].Value : null;
+        }
+    }
 
     /// <inheritdoc />
     public bool IsMultiTenant => TenantId is not null;

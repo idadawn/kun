@@ -2,6 +2,9 @@ using Kun.Core.Domain;
 using Kun.EntityFrameworkCore.Interceptors;
 using Kun.EventBus;
 using Kun.EventBus.Outbox;
+using Kun.MultiTenancy.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -46,7 +49,7 @@ public static class KunEntityFrameworkCoreServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Opt-in registration for <see cref="TenantRlsTransactionInterceptor"/>. Consumers must
+    /// 兼容入口：注册 RLS 双拦截器；推荐使用泛型重载自动装配。Consumers must
     /// also wire the interceptor into their DbContext options via DI resolution, e.g.
     /// <code>
     /// services.AddDbContext&lt;CatalogDbContext&gt;((sp, options) =&gt;
@@ -64,7 +67,24 @@ public static class KunEntityFrameworkCoreServiceCollectionExtensions
     public static IServiceCollection AddKunTenantRls(this IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);
+        services.TryAddScoped<TenantRlsConnectionInterceptor>();
         services.TryAddScoped<TenantRlsTransactionInterceptor>();
+        return services;
+    }
+
+    /// <summary>为指定上下文自动装配 RLS 双拦截器与租户模型缓存键。</summary>
+    /// <typeparam name="TContext">声明租户模型缓存键的上下文。</typeparam>
+    /// <param name="services">服务容器。</param>
+    /// <returns>原服务容器。</returns>
+    public static IServiceCollection AddKunTenantRls<TContext>(this IServiceCollection services)
+        where TContext : DbContext, IKunMultiTenantDbContext
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        services.AddKunTenantRls();
+        services.ConfigureDbContext<TContext>((sp, options) => options
+            .AddInterceptors(sp.GetRequiredService<TenantRlsConnectionInterceptor>(),
+                sp.GetRequiredService<TenantRlsTransactionInterceptor>())
+            .ReplaceService<IModelCacheKeyFactory, KunMultiTenantModelCacheKeyFactory>());
         return services;
     }
 }
