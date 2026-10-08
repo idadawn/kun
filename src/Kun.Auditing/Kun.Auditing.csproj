@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Kun.Core\Kun.Core.csproj" />
+    <ProjectReference Include="..\Kun.Audit.EntityFrameworkCore\Kun.Audit.EntityFrameworkCore.csproj" />
     <ProjectReference Include="..\Kun.EventBus\Kun.EventBus.csproj" />
     <ProjectReference Include="..\Kun.EntityFrameworkCore\Kun.EntityFrameworkCore.csproj" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />

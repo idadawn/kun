@@ -111,3 +111,7 @@ services.AddKunMediator(m => m.AddAuditBehavior<CreateOrderCommand, Result<Guid>
 - `Microsoft.Extensions.Options`
 
 <!-- MANUAL: -->
+
+## S1-KUN-005 当前入口
+
+实体审计使用 `Kun.Auditing.AddKunAuditing<TContext>()` 同事务写 `AuditLog` + Outbox；旧事后拦截器和 `kun.audit.record.v1` 路径仅保留兼容并标记废弃。命令审计提供 `UsePostgresChain()` 持久化实现；`ActorType` 含 `agent`，使用 `AuditContentHasher.Compute(entry)` 校验新旧条目。具体装配及迁移以 [审计文档](../../docs/security/audit-log.md) 为准。

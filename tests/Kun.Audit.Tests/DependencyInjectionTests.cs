@@ -1,3 +1,4 @@
+#pragma warning disable KUNAUDIT001 // 仅保留旧 API 兼容测试／历史基线；新宿主使用同事务入口。
 using FluentAssertions;
 using Kun.Audit.Abstractions;
 using Kun.Audit.DependencyInjection;

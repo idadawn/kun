@@ -6,6 +6,14 @@
 
 ## [Unreleased]
 
+### Fixed — 审计原子性与数据约定（S1-KUN-005）
+
+- `AddKunAuditing<TContext>()` 将实体 `AuditLog` 与 `kun.audit.event.v2` Outbox 消息直接登记到业务上下文；保存失败会撤销暂存记录，避免重试生成重复审计。租户、用户来自当前上下文，v2 支持字符串标识；旧 v1 类型保留读取兼容。
+- 事后写入的 `AuditSaveChangesInterceptor`、旧 `UseEventBus()` 与 `kun.audit.record.v1` 路径标记废弃，迁移指引见 [审计文档](docs/security/audit-log.md)。
+- `PostgresAuditChain` 在事务里按租户行锁串行化读取链头、写记录并推进链头，保存原始时间 ticks，支持多副本与哈希重放。`AuditEntry.ActorType` 支持 `agent` 并纳入新哈希，历史 unknown 条目维持旧算法。
+- `EfAuditReader<TContext>` 在数据库端按当前租户、主体、资源、时间窗口过滤并限量。
+- 显式数据约定提供 snake_case、Guid v7 默认主键、可空审计主体及 PostgreSQL `xmin`；`SaveChangesResultAsync()` 将并发冲突映射为 `Result` 的 Conflict。已有非空主键保持不变，旧非空数值主体需要显式迁移。
+
 ## [2026.10.8] - 2026-10-08
 
 ### Fixed — 多租户后台链路（S1-KUN-001）

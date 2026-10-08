@@ -1,3 +1,4 @@
+#pragma warning disable KUNAUDIT001 // 兼容期验证旧拦截器；新路径由真实数据库测试覆盖。
 using FluentAssertions;
 using Kun.Audit.Abstractions;
 using Kun.Audit.DependencyInjection;

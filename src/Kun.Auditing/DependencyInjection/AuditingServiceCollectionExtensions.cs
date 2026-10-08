@@ -1,7 +1,11 @@
 using Kun.Auditing.Events;
 using Kun.Auditing.Middleware;
+using Kun.Core.MultiTenancy;
+using Kun.Core.Security;
+using Kun.EntityFrameworkCore;
 using Kun.EventBus;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -21,6 +25,24 @@ namespace Kun.Auditing.DependencyInjection;
 /// </remarks>
 public static class AuditingServiceCollectionExtensions
 {
+    /// <summary>规范实体审计入口：AuditLog、Outbox 与业务使用同一 DbContext 和事务。</summary>
+    public static IServiceCollection AddKunAuditing<TContext>(this IServiceCollection services)
+        where TContext : KunDbContext
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        services.AddKunAuditing();
+        services.TryAddSingleton<ITenantContext>(_ => NullTenantContext.Instance);
+        services.TryAddScoped<ICurrentUser>(_ => AnonymousCurrentUser.Instance);
+        services.TryAddScoped<TransactionalAuditingSaveChangesInterceptor>();
+        services.ConfigureDbContext<TContext>((sp, options) => options
+            .AddInterceptors(sp.GetRequiredService<TransactionalAuditingSaveChangesInterceptor>())
+            .ReplaceService<IModelCustomizer, AuditingModelCustomizer>());
+        return services;
+    }
+
+    /// <summary>规范字符串租户审计事件的稳定标识；v1 类型仍保留供迁移。</summary>
+    public const string AuditEventV2StableId = "kun.audit.event.v2";
+
     /// <summary>
     /// Registers audit infrastructure into <paramref name="services"/>: the registry, the
     /// default outbox-backed <see cref="IAuditSink"/>, the EF interceptor, the request-scoped
@@ -133,7 +155,8 @@ public static class AuditingServiceCollectionExtensions
     public static IEventTypeRegistrar RegisterAuditing(this IEventTypeRegistrar registrar)
     {
         ArgumentNullException.ThrowIfNull(registrar);
-        return registrar.Register<AuditEventIntegrationEvent>(AuditEventStableId);
+        registrar.Register(AuditEventStableId, AuditJsonContext.Default.AuditEventIntegrationEvent);
+        return registrar.Register(AuditEventV2StableId, AuditJsonContext.Default.AuditEventIntegrationEventV2);
     }
 
     /// <summary>Stable Outbox event id for <see cref="AuditEventIntegrationEvent"/>.</summary>

@@ -25,6 +25,7 @@ namespace Kun.Audit;
 /// should implement a custom <see cref="IAuditWriter"/>.
 /// </para>
 /// </remarks>
+[Obsolete("kun.audit.record.v1 已废弃；实体审计请迁移到 Kun.Auditing.AddKunAuditing<TContext>()。", DiagnosticId = "KUNAUDIT001")]
 public sealed class EventBusAuditWriter : IAuditWriter
 {
     /// <summary>Stable integration-event identifier used when consumers register <see cref="AuditLog"/> with the event-type registry.</summary>

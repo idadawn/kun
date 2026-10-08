@@ -58,3 +58,39 @@ static Kun.Auditing.DependencyInjection.AuditingServiceCollectionExtensions.AddK
 static Kun.Auditing.DependencyInjection.AuditingServiceCollectionExtensions.AddAuditable<TEntity>(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Kun.Auditing.DependencyInjection.AuditingServiceCollectionExtensions.AddAuditingInterceptor(this Microsoft.EntityFrameworkCore.DbContextOptionsBuilder! builder, System.IServiceProvider! serviceProvider) -> Microsoft.EntityFrameworkCore.DbContextOptionsBuilder!
 static Kun.Auditing.DependencyInjection.AuditingServiceCollectionExtensions.RegisterAuditing(this Kun.EventBus.IEventTypeRegistrar! registrar) -> Kun.EventBus.IEventTypeRegistrar!
+Kun.Auditing.Events.AuditEventIntegrationEventV2.UserId.get -> string?
+Kun.Auditing.Events.AuditEventIntegrationEventV2.UserId.init -> void
+Kun.Auditing.Events.AuditEventIntegrationEventV2
+Kun.Auditing.Events.AuditEventIntegrationEventV2.ActorType.get -> string!
+Kun.Auditing.Events.AuditEventIntegrationEventV2.ActorType.init -> void
+Kun.Auditing.Events.AuditEventIntegrationEventV2.ActorId.get -> string?
+Kun.Auditing.Events.AuditEventIntegrationEventV2.ActorId.init -> void
+Kun.Auditing.Events.AuditEventIntegrationEventV2.Action.get -> string!
+Kun.Auditing.Events.AuditEventIntegrationEventV2.ResourceType.get -> string!
+Kun.Auditing.Events.AuditEventIntegrationEventV2.Action.init -> void
+Kun.Auditing.Events.AuditEventIntegrationEventV2.ResourceType.init -> void
+Kun.Auditing.Events.AuditEventIntegrationEventV2.TraceId.get -> string?
+Kun.Auditing.Events.AuditEventIntegrationEventV2.TraceId.init -> void
+Kun.Auditing.Events.AuditEventIntegrationEventV2.ResourceId.get -> string?
+Kun.Auditing.Events.AuditEventIntegrationEventV2.ResourceId.init -> void
+Kun.Auditing.Events.AuditEventIntegrationEventV2.TenantId.get -> string?
+Kun.Auditing.Events.AuditEventIntegrationEventV2.TenantId.init -> void
+Kun.Auditing.Events.AuditEventIntegrationEventV2.CreatedAt.get -> System.DateTimeOffset
+Kun.Auditing.Events.AuditEventIntegrationEventV2.Id.get -> System.Guid
+Kun.Auditing.Events.AuditEventIntegrationEventV2.IpAddress.get -> string?
+Kun.Auditing.Events.AuditEventIntegrationEventV2.Id.init -> void
+Kun.Auditing.Events.AuditEventIntegrationEventV2.IpAddress.init -> void
+Kun.Auditing.Events.AuditEventIntegrationEventV2.CreatedAt.init -> void
+const Kun.Auditing.DependencyInjection.AuditingServiceCollectionExtensions.AuditEventV2StableId = "kun.audit.event.v2" -> string!
+Kun.Auditing.TransactionalAuditingSaveChangesInterceptor
+override Kun.Auditing.TransactionalAuditingSaveChangesInterceptor.SavingChanges(Microsoft.EntityFrameworkCore.Diagnostics.DbContextEventData! eventData, Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult<int> result) -> Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult<int>
+override Kun.Auditing.TransactionalAuditingSaveChangesInterceptor.SavingChangesAsync(Microsoft.EntityFrameworkCore.Diagnostics.DbContextEventData! eventData, Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult<int> result, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult<int>>
+static Kun.Auditing.DependencyInjection.AuditingServiceCollectionExtensions.AddKunAuditing<TContext>(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+override Kun.Auditing.TransactionalAuditingSaveChangesInterceptor.SavedChangesAsync(Microsoft.EntityFrameworkCore.Diagnostics.SaveChangesCompletedEventData! eventData, int result, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<int>
+override Kun.Auditing.TransactionalAuditingSaveChangesInterceptor.SavedChanges(Microsoft.EntityFrameworkCore.Diagnostics.SaveChangesCompletedEventData! eventData, int result) -> int
+override Kun.Auditing.TransactionalAuditingSaveChangesInterceptor.SaveChangesFailed(Microsoft.EntityFrameworkCore.Diagnostics.DbContextErrorEventData! eventData) -> void
+override Kun.Auditing.TransactionalAuditingSaveChangesInterceptor.SaveChangesFailedAsync(Microsoft.EntityFrameworkCore.Diagnostics.DbContextErrorEventData! eventData, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+override Kun.Auditing.TransactionalAuditingSaveChangesInterceptor.SaveChangesCanceled(Microsoft.EntityFrameworkCore.Diagnostics.DbContextEventData! eventData) -> void
+override Kun.Auditing.TransactionalAuditingSaveChangesInterceptor.SaveChangesCanceledAsync(Microsoft.EntityFrameworkCore.Diagnostics.DbContextEventData! eventData, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.Auditing.TransactionalAuditingSaveChangesInterceptor.TransactionalAuditingSaveChangesInterceptor(Kun.Auditing.IAuditableEntityRegistry! registry, Kun.Core.MultiTenancy.ITenantContext! tenant, Kun.Core.Security.ICurrentUser! user, Kun.Auditing.AuditContext! auditContext, System.TimeProvider! clock) -> void
+Kun.Auditing.Events.AuditEventIntegrationEventV2.AuditEventIntegrationEventV2(System.Guid Id, string? TenantId, string? UserId, string! ActorType, string? ActorId, string! Action, string! ResourceType, string? ResourceId, string? TraceId, string? IpAddress, System.DateTimeOffset CreatedAt) -> void

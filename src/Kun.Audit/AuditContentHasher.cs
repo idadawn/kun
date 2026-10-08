@@ -1,6 +1,8 @@
+using System.Buffers;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 
 namespace Kun.Audit;
 
@@ -12,6 +14,35 @@ namespace Kun.Audit;
 /// </summary>
 public static class AuditContentHasher
 {
+    /// <summary>计算包含主体类型的哈希；历史 Unknown 条目兼容既有算法。</summary>
+    public static string Compute(AuditEntry entry)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+        var legacy = Compute(entry.Id, entry.TenantId, entry.ActorId, entry.CommandName,
+            entry.OccurredAt, entry.LatencyMs, entry.Outcome, entry.ErrorCode, entry.PrevHash);
+        if (entry.ActorType == AuditActorType.Unknown) return legacy;
+        ArgumentException.ThrowIfNullOrWhiteSpace(entry.ActorType);
+        var buffer = new ArrayBufferWriter<byte>();
+        using (var json = new Utf8JsonWriter(buffer))
+        {
+            json.WriteStartObject();
+            json.WriteString("id", entry.Id);
+            json.WriteString("tenantId", entry.TenantId);
+            json.WriteString("actorId", entry.ActorId);
+            json.WriteString("actorType", entry.ActorType);
+            json.WriteString("commandName", entry.CommandName);
+            json.WriteString("occurredAt", entry.OccurredAt.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture));
+            json.WriteNumber("latencyMs", entry.LatencyMs);
+            json.WriteNumber("outcome", (int)entry.Outcome);
+            json.WriteString("errorCode", entry.ErrorCode);
+            json.WriteEndObject();
+        }
+        using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        hash.AppendData(Encoding.UTF8.GetBytes(entry.PrevHash ?? string.Empty));
+        hash.AppendData(buffer.WrittenSpan);
+        return Convert.ToHexStringLower(hash.GetHashAndReset());
+    }
+
     /// <summary>Computes the chain hash for one audit entry.</summary>
     /// <param name="id">Entry id.</param>
     /// <param name="tenantId">Tenant id, or <see langword="null"/>.</param>

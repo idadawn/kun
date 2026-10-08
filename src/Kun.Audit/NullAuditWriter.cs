@@ -41,7 +41,7 @@ public sealed partial class NullAuditWriter : IAuditWriter
         [LoggerMessage(
             EventId = 1,
             Level = LogLevel.Warning,
-            Message = "Kun.Audit is wired but no concrete IAuditWriter is registered — audit entries are being dropped. Call services.AddKunAudit().UseEventBus() or register Kun.Audit.EntityFrameworkCore.")]
+            Message = "Kun.Audit is wired but no concrete IAuditWriter is registered — audit entries are being dropped. For entity auditing, call AddKunAuditing<TContext>(); for explicit writes, register an IAuditWriter.")]
         public static partial void DroppingAuditEntries(ILogger logger);
     }
 }

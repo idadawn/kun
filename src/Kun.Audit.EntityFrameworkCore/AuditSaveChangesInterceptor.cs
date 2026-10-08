@@ -39,6 +39,7 @@ namespace Kun.Audit.EntityFrameworkCore;
 /// interceptor stays portable to a future AOT-candidate module.
 /// </para>
 /// </remarks>
+[Obsolete("请迁移到 Kun.Auditing 的 AddKunAuditing<TContext>()，在同事务写入 AuditLog 与 Outbox。", DiagnosticId = "KUNAUDIT001")]
 public sealed partial class AuditSaveChangesInterceptor : SaveChangesInterceptor
 {
     private static readonly AsyncLocal<List<PendingAudit>?> _pendingAudits = new();

@@ -11,6 +11,7 @@
     <ProjectReference Include="..\Kun.Audit\Kun.Audit.csproj" />
     <ProjectReference Include="..\Kun.Core\Kun.Core.csproj" />
     <ProjectReference Include="..\Kun.EntityFrameworkCore\Kun.EntityFrameworkCore.csproj" />
+    <PackageReference Include="Npgsql" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />

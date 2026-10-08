@@ -123,3 +123,8 @@ Kun.Audit.InMemoryAuditSink.Clear() -> void
 Kun.Audit.Behaviors.AuditLogPipelineBehavior<TRequest, TResponse>
 Kun.Audit.Behaviors.AuditLogPipelineBehavior<TRequest, TResponse>.AuditLogPipelineBehavior(Kun.Audit.IAuditSink! sink, Kun.Audit.IAuditChainState! chain, Kun.Core.MultiTenancy.ITenantContext! tenantContext, Kun.Core.Security.ICurrentUser! currentUser, System.TimeProvider! clock, Microsoft.Extensions.Logging.ILogger<Kun.Audit.Behaviors.AuditLogPipelineBehavior<TRequest, TResponse>!>! logger) -> void
 Kun.Audit.Behaviors.AuditLogPipelineBehavior<TRequest, TResponse>.Handle(TRequest request, Kun.Mediator.RequestHandlerDelegate<TResponse>! next, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<TResponse>
+const Kun.Audit.AuditActorType.Agent = "agent" -> string!
+Kun.Audit.AuditEntry.ActorType.get -> string!
+Kun.Audit.Behaviors.AuditLogPipelineBehavior<TRequest, TResponse>.AuditLogPipelineBehavior(Kun.Audit.IAuditSink! sink, Kun.Audit.IAuditChainState! chain, Kun.Core.MultiTenancy.ITenantContext! tenantContext, Kun.Core.Security.ICurrentUser! currentUser, System.TimeProvider! clock, Microsoft.Extensions.Logging.ILogger<Kun.Audit.Behaviors.AuditLogPipelineBehavior<TRequest, TResponse>!>! logger, Microsoft.Extensions.Options.IOptions<Kun.Audit.DependencyInjection.KunAuditOptions!>! options) -> void
+Kun.Audit.AuditEntry.ActorType.init -> void
+static Kun.Audit.AuditContentHasher.Compute(Kun.Audit.AuditEntry! entry) -> string!

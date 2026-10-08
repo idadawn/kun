@@ -1,4 +1,5 @@
 using Kun.Core.Domain;
+using Kun.Core.Security;
 using Kun.EntityFrameworkCore.Interceptors;
 using Kun.EventBus;
 using Kun.EventBus.Outbox;
@@ -87,4 +88,17 @@ public static class KunEntityFrameworkCoreServiceCollectionExtensions
             .ReplaceService<IModelCacheKeyFactory, KunMultiTenantModelCacheKeyFactory>());
         return services;
     }
+    /// <summary>为上下文装配审计字段自动填充；模型内配合 ApplyKunDataConventions。</summary>
+    public static IServiceCollection AddKunDataConventions<TContext>(this IServiceCollection services)
+        where TContext : DbContext
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        services.TryAddSingleton(TimeProvider.System);
+        services.TryAddScoped<ICurrentUser>(_ => AnonymousCurrentUser.Instance);
+        services.TryAddScoped<AuditFieldsSaveChangesInterceptor>();
+        services.ConfigureDbContext<TContext>((sp, options) =>
+            options.AddInterceptors(sp.GetRequiredService<AuditFieldsSaveChangesInterceptor>()));
+        return services;
+    }
+
 }

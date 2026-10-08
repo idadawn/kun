@@ -66,6 +66,7 @@ public static class KunAuditServiceCollectionExtensions
     /// <see cref="EventBusAuditWriter.EventTypeId"/> and for providing a
     /// source-generated <c>JsonTypeInfo&lt;AuditLog&gt;</c>.
     /// </remarks>
+    [Obsolete("kun.audit.record.v1 已废弃；实体审计请迁移到 Kun.Auditing.AddKunAuditing<TContext>()。", DiagnosticId = "KUNAUDIT001")]
     public static KunAuditBuilder UseEventBus(this KunAuditBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);

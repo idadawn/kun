@@ -4,12 +4,27 @@ using Kun.Core.Time;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Npgsql;
 
 namespace Kun.Audit.EntityFrameworkCore.DependencyInjection;
 
 /// <summary>Service-collection extensions that wire up Kun.Audit's EF Core adapter.</summary>
 public static class KunAuditEntityFrameworkCoreServiceCollectionExtensions
 {
+    /// <summary>将链状态与写入端绑定到同一个 PostgreSQL 原子追加实现。</summary>
+    public static KunAuditBuilder UsePostgresChain(this KunAuditBuilder builder, NpgsqlDataSource dataSource,
+        string schema = "audit")
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+        var chain = new PostgresAuditChain(dataSource, schema);
+        builder.Services.RemoveAll<IAuditChainState>();
+        builder.Services.RemoveAll<IAuditSink>();
+        builder.Services.AddSingleton(chain);
+        builder.Services.AddSingleton<IAuditChainState>(chain);
+        builder.Services.AddSingleton<IAuditSink>(chain);
+        return builder;
+    }
+
     /// <summary>
     /// Registers the <see cref="AuditSaveChangesInterceptor"/> so consumers
     /// can attach it to their <c>DbContextOptionsBuilder.AddInterceptors</c>
@@ -18,6 +33,7 @@ public static class KunAuditEntityFrameworkCoreServiceCollectionExtensions
     /// <see cref="UseEntityFramework{TDbContext}"/> to persist audits via
     /// a specific <see cref="DbContext"/>.
     /// </summary>
+    [Obsolete("请迁移到 AddKunAuditing<TContext>()，旧拦截器在业务提交后写入审计。", DiagnosticId = "KUNAUDIT001")]
     public static KunAuditBuilder AddKunAuditEntityFrameworkCore(this KunAuditBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
@@ -40,6 +56,7 @@ public static class KunAuditEntityFrameworkCoreServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(builder);
         builder.Services.RemoveAll<IAuditWriter>();
         builder.Services.AddScoped<IAuditWriter, EfAuditWriter<TDbContext>>();
+        builder.Services.TryAddScoped<IAuditReader, EfAuditReader<TDbContext>>();
         return builder;
     }
 }
