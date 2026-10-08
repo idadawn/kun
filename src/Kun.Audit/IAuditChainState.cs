@@ -11,7 +11,7 @@ public interface IAuditChainState
     /// <summary>
     /// Appends one entry to the tenant's chain. Within <paramref name="computeNewHash"/>
     /// the caller should build the <see cref="AuditEntry"/>, call
-    /// <see cref="AuditContentHasher.Compute"/> with the supplied previous hash, and
+    /// <see cref="AuditContentHasher.Compute(AuditEntry)"/> with the supplied previous hash, and
     /// return the freshly computed hash. The implementation guarantees the
     /// read-compute-write sequence is serialised per <paramref name="tenantKey"/>
     /// so concurrent commands on the same tenant do not fork the chain.

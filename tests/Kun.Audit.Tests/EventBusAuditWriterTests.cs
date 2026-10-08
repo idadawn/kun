@@ -1,3 +1,4 @@
+#pragma warning disable KUNAUDIT001 // 验证兼容期内的旧事件读取与写入。
 using FluentAssertions;
 using Kun.EventBus;
 using NSubstitute;

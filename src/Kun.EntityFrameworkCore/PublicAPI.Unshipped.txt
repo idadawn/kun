@@ -92,3 +92,17 @@ Kun.EntityFrameworkCore.MultiTenancy.DatabasePerTenantProvisioner<TContext>.Data
 virtual Kun.EntityFrameworkCore.MultiTenancy.DatabasePerTenantProvisioner<TContext>.ProvisionAsync(Kun.Core.MultiTenancy.TenantInfo! tenant, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 virtual Kun.EntityFrameworkCore.MultiTenancy.DatabasePerTenantProvisioner<TContext>.DeprovisionAsync(string! tenantId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 static Kun.EntityFrameworkCore.DependencyInjection.KunEntityFrameworkCoreServiceCollectionExtensions.AddKunTenantRls<TContext>(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+const Kun.EntityFrameworkCore.Conventions.KunDataConventions.RowVersionPropertyName = "KunRowVersion" -> string!
+Kun.EntityFrameworkCore.Conventions.KunDataConventions
+Kun.EntityFrameworkCore.Conventions.KunGuidV7ValueGenerator
+Kun.EntityFrameworkCore.Conventions.KunGuidV7ValueGenerator.KunGuidV7ValueGenerator() -> void
+Kun.EntityFrameworkCore.Extensions.KunSaveChangesResultExtensions
+Kun.EntityFrameworkCore.Interceptors.AuditFieldsSaveChangesInterceptor
+override Kun.EntityFrameworkCore.Conventions.KunGuidV7ValueGenerator.GeneratesTemporaryValues.get -> bool
+override Kun.EntityFrameworkCore.Conventions.KunGuidV7ValueGenerator.Next(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry! entry) -> System.Guid
+static Kun.EntityFrameworkCore.Extensions.KunSaveChangesResultExtensions.SaveChangesResultAsync(this Microsoft.EntityFrameworkCore.DbContext! context, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Core.Results.Result<int>>!
+override Kun.EntityFrameworkCore.Interceptors.AuditFieldsSaveChangesInterceptor.SavingChanges(Microsoft.EntityFrameworkCore.Diagnostics.DbContextEventData! eventData, Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult<int> result) -> Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult<int>
+override Kun.EntityFrameworkCore.Interceptors.AuditFieldsSaveChangesInterceptor.SavingChangesAsync(Microsoft.EntityFrameworkCore.Diagnostics.DbContextEventData! eventData, Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult<int> result, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult<int>>
+static Kun.EntityFrameworkCore.DependencyInjection.KunEntityFrameworkCoreServiceCollectionExtensions.AddKunDataConventions<TContext>(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Kun.EntityFrameworkCore.Conventions.KunDataConventions.ApplyKunDataConventions(this Microsoft.EntityFrameworkCore.ModelBuilder! modelBuilder) -> Microsoft.EntityFrameworkCore.ModelBuilder!
+Kun.EntityFrameworkCore.Interceptors.AuditFieldsSaveChangesInterceptor.AuditFieldsSaveChangesInterceptor(Kun.Core.Security.ICurrentUser! currentUser, System.TimeProvider! clock) -> void

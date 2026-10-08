@@ -18,7 +18,7 @@ namespace Kun.Audit;
 /// Business-level Result.Error codes are out of scope for the MVP and can be layered on later.
 /// </param>
 /// <param name="PrevHash">Content hash of the previous entry in the same tenant's chain; <see langword="null"/> for the first entry.</param>
-/// <param name="ContentHash">Lower-case hex SHA-256 chain hash produced by <see cref="AuditContentHasher.Compute"/>.</param>
+/// <param name="ContentHash">Lower-case hex SHA-256 chain hash produced by <see cref="AuditContentHasher.Compute(AuditEntry)"/>.</param>
 public sealed record AuditEntry(
     Guid Id,
     string? TenantId,
@@ -29,4 +29,8 @@ public sealed record AuditEntry(
     AuditOutcome Outcome,
     string? ErrorCode,
     string? PrevHash,
-    string ContentHash);
+    string ContentHash)
+{
+    /// <summary>主体类型；Unknown 保留历史条目的哈希算法。</summary>
+    public string ActorType { get; init; } = AuditActorType.Unknown;
+}

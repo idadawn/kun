@@ -1,10 +1,12 @@
 using System.Diagnostics;
 using System.Runtime.ExceptionServices;
+using Kun.Audit.DependencyInjection;
 using Kun.Core.Cqrs;
 using Kun.Core.MultiTenancy;
 using Kun.Core.Security;
 using Kun.Mediator;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Kun.Audit.Behaviors;
 
@@ -33,6 +35,7 @@ namespace Kun.Audit.Behaviors;
 public sealed partial class AuditLogPipelineBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
 {
+    private readonly KunAuditOptions _options = new();
     private readonly IAuditSink _sink;
     private readonly IAuditChainState _chain;
     private readonly ITenantContext _tenantContext;
@@ -62,6 +65,15 @@ public sealed partial class AuditLogPipelineBehavior<TRequest, TResponse> : IPip
         _currentUser = currentUser;
         _clock = clock;
         _logger = logger;
+    }
+
+    /// <summary>从宿主审计选项选择 user、service、agent 或 system 主体类型。</summary>
+    public AuditLogPipelineBehavior(IAuditSink sink, IAuditChainState chain, ITenantContext tenantContext,
+        ICurrentUser currentUser, TimeProvider clock, ILogger<AuditLogPipelineBehavior<TRequest, TResponse>> logger,
+        IOptions<KunAuditOptions> options) : this(sink, chain, tenantContext, currentUser, clock, logger)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        _options = options.Value;
     }
 
     /// <inheritdoc />
@@ -102,17 +114,6 @@ public sealed partial class AuditLogPipelineBehavior<TRequest, TResponse> : IPip
                 _tenantContext.TenantId,
                 async prev =>
                 {
-                    var hash = AuditContentHasher.Compute(
-                        id,
-                        _tenantContext.TenantId,
-                        _currentUser.UserId,
-                        commandName,
-                        occurredAt,
-                        latencyMs,
-                        outcome,
-                        errorCode,
-                        prev);
-
                     var entry = new AuditEntry(
                         id,
                         _tenantContext.TenantId,
@@ -123,7 +124,12 @@ public sealed partial class AuditLogPipelineBehavior<TRequest, TResponse> : IPip
                         outcome,
                         errorCode,
                         prev,
-                        hash);
+                        string.Empty)
+                    {
+                        ActorType = _currentUser.IsAuthenticated ? _options.DefaultActorType : _options.AnonymousActorType
+                    };
+                    var hash = AuditContentHasher.Compute(entry);
+                    entry = entry with { ContentHash = hash };
 
                     await _sink.WriteAsync(entry, cancellationToken).ConfigureAwait(false);
                     return hash;

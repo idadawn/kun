@@ -14,4 +14,5 @@ namespace Kun.Auditing;
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
     PropertyNameCaseInsensitive = true)]
 [JsonSerializable(typeof(AuditEventIntegrationEvent))]
+[JsonSerializable(typeof(AuditEventIntegrationEventV2))]
 internal sealed partial class AuditJsonContext : JsonSerializerContext;

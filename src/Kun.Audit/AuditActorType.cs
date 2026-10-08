@@ -8,6 +8,9 @@ namespace Kun.Audit;
 /// </summary>
 public static class AuditActorType
 {
+    /// <summary>由 Agent 发起的操作。</summary>
+    public const string Agent = "agent";
+
     /// <summary>Action was attributed to a human end-user (resolved from <c>ICurrentUser.UserId</c>).</summary>
     public const string User = "user";
 
