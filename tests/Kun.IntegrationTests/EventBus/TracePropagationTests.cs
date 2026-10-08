@@ -92,6 +92,8 @@ public sealed class TracePropagationTests : IAsyncLifetime
             .Build();
 
         await _host.StartAsync(TestContext.Current.CancellationToken);
+        await _host.Services.GetRequiredService<Kun.EventBus.RabbitMQ.Consuming.RabbitMqIntegrationEventSubscriber>()
+            .Ready.WaitAsync(TimeSpan.FromSeconds(20), TestContext.Current.CancellationToken);
     }
 
     public async ValueTask DisposeAsync()
@@ -115,6 +117,14 @@ public sealed class TracePropagationTests : IAsyncLifetime
             Assert.Skip("Docker not available.");
             return;
         }
+
+        // 本测试拥有自己的 listener，不能依赖其他并行测试临时注册的全局监听器。
+        using var listener = new ActivityListener
+        {
+            ShouldListenTo = source => source.Name == "RabbitMqIntegrationEventSubscriber",
+            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded
+        };
+        ActivitySource.AddActivityListener(listener);
 
         // Build a W3C traceparent manually so we control the TraceId regardless of whether
         // an ActivityListener is wired up (in CI no listener may be active).

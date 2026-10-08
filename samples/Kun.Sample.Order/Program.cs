@@ -6,7 +6,6 @@ using Kun.EntityFrameworkCore.Behaviors;
 using Kun.EntityFrameworkCore.DependencyInjection;
 using Kun.EntityFrameworkCore.Extensions;
 using Kun.EventBus;
-using Kun.EventBus.Background;
 using Kun.EventBus.DependencyInjection;
 using Kun.Mediator.DependencyInjection;
 using Kun.Saga.DependencyInjection;
@@ -16,7 +15,6 @@ using Kun.Sample.Order.Application.Queries;
 using Kun.Sample.Order.Application.Sagas;
 using Kun.Sample.Order.Application.Sagas.Steps;
 using Kun.Sample.Order.Infrastructure;
-using Kun.Sample.Order.Infrastructure.Outbox;
 using Kun.Sample.Shared;
 using Microsoft.EntityFrameworkCore;
 
@@ -54,7 +52,7 @@ builder.Services.AddKunEventBus(eb =>
 });
 
 // Wire the EF-backed outbox store so OutboxPublisherBackgroundService can read messages.
-builder.Services.AddScoped<IOutboxMessageStore, EfOutboxMessageStore>();
+// AddKunEntityFrameworkCore 已注册带事务行锁的默认 Outbox 存储。
 // No-op IIntegrationEventPublisher — no RabbitMQ configured in this sample.
 // Swap with the RabbitMQ publisher from Kun.EventBus.RabbitMQ in production.
 builder.Services.AddSingleton<IIntegrationEventPublisher, NoOpIntegrationEventPublisher>();

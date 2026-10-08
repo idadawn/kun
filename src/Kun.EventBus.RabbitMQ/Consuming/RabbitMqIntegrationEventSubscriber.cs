@@ -47,6 +47,9 @@ public sealed partial class RabbitMqIntegrationEventSubscriber : BackgroundServi
         _logger = logger;
     }
 
+    private readonly TaskCompletionSource _ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    internal Task Ready => _ready.Task;
+
     private static readonly TimeSpan InitialConnectBackoff = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan MaxConnectBackoff = TimeSpan.FromSeconds(30);
     /// <summary>A consume session that survived this long resets the backoff.</summary>
@@ -166,6 +169,7 @@ public sealed partial class RabbitMqIntegrationEventSubscriber : BackgroundServi
                 Log.Subscribed(_logger, queueName, sub.EventTypeId);
             }
 
+            _ready.TrySetResult();
             // Keep running until stopped.
             await Task.Delay(Timeout.Infinite, stoppingToken).ConfigureAwait(false);
         }
@@ -179,7 +183,7 @@ public sealed partial class RabbitMqIntegrationEventSubscriber : BackgroundServi
 
     private async Task HandleDeliveryAsync(BasicDeliverEventArgs ea, CancellationToken stoppingToken)
     {
-        var routingKey = ea.RoutingKey;
+        var routingKey = ea.BasicProperties.Type ?? ea.RoutingKey;
         var deliveryTag = ea.DeliveryTag;
 
         // Resolve CLR type from stable event ID — no reflection.
@@ -194,7 +198,7 @@ public sealed partial class RabbitMqIntegrationEventSubscriber : BackgroundServi
 
         // Read headers.
         var headers = ea.BasicProperties.Headers;
-        var messageId = ReadHeaderString(headers, "messageId") ?? ea.BasicProperties.MessageId ?? Guid.NewGuid().ToString();
+        var messageId = ReadHeaderString(headers, "messageId") ?? ea.BasicProperties.MessageId;
         var traceParent = ReadHeaderString(headers, "traceparent");
         var traceState = ReadHeaderString(headers, "tracestate");
         var occurredAtRaw = ReadHeaderString(headers, "occurredAt");
@@ -202,7 +206,8 @@ public sealed partial class RabbitMqIntegrationEventSubscriber : BackgroundServi
 
         if (!Guid.TryParse(messageId, out var messageGuid))
         {
-            messageGuid = Guid.NewGuid();
+            await _channel!.BasicNackAsync(deliveryTag, false, false, CancellationToken.None).ConfigureAwait(false);
+            return;
         }
 
         var context = new MessageContext
@@ -228,12 +233,11 @@ public sealed partial class RabbitMqIntegrationEventSubscriber : BackgroundServi
         try
         {
             // Check x-death count for DLX routing.
-            var deathCount = GetDeathCount(headers);
+            var deathCount = ReadAttempt(headers);
             if (deathCount >= _options.MaxDeliveryAttempts)
             {
                 Log.ExceededMaxAttempts(_logger, messageGuid, routingKey, _options.MaxDeliveryAttempts);
-                await _channel!.BasicNackAsync(deliveryTag, multiple: false, requeue: false, CancellationToken.None)
-                    .ConfigureAwait(false);
+                await RetryOrDeadLetterAsync(ea, stoppingToken).ConfigureAwait(false);
                 return;
             }
 
@@ -268,16 +272,68 @@ public sealed partial class RabbitMqIntegrationEventSubscriber : BackgroundServi
             await _channel!.BasicAckAsync(deliveryTag, multiple: false, CancellationToken.None)
                 .ConfigureAwait(false);
         }
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+        {
+            await _channel!.BasicNackAsync(deliveryTag, false, true, CancellationToken.None).ConfigureAwait(false);
+        }
         catch (Exception ex)
         {
             Log.HandlerError(_logger, ex, messageGuid, routingKey);
-            await _channel!.BasicNackAsync(deliveryTag, multiple: false, requeue: true, CancellationToken.None)
-                .ConfigureAwait(false);
+            await RetryOrDeadLetterAsync(ea, stoppingToken).ConfigureAwait(false);
         }
         finally
         {
             activity?.Dispose();
         }
+    }
+
+    private async Task RetryOrDeadLetterAsync(BasicDeliverEventArgs delivery, CancellationToken cancellationToken)
+    {
+        var eventType = delivery.BasicProperties.Type ?? delivery.RoutingKey;
+        var attempt = Math.Min(ReadAttempt(delivery.BasicProperties.Headers), int.MaxValue - 1) + 1;
+        var exhausted = attempt >= _options.MaxDeliveryAttempts;
+        try
+        {
+            var delay = (long)Math.Clamp(_options.RetryBaseDelay.TotalMilliseconds * Math.Pow(2, Math.Min(attempt - 1, 16)), 1, 60_000);
+            var queue = $"{_options.ConsumerName}.{eventType}.retry.{attempt}.{delay}";
+            var connection = await _connectionProvider.GetConnectionAsync(cancellationToken).ConfigureAwait(false);
+            await using var retry = await connection.CreateChannelAsync(
+                new CreateChannelOptions(publisherConfirmationsEnabled: true, publisherConfirmationTrackingEnabled: true), cancellationToken).ConfigureAwait(false);
+            if (!exhausted) await retry.QueueDeclareAsync(queue, durable: true, exclusive: false, autoDelete: false,
+                arguments: new Dictionary<string, object?>
+                {
+                    ["x-queue-type"] = "quorum",
+                    ["x-dead-letter-strategy"] = "at-least-once",
+                    ["x-overflow"] = "reject-publish",
+                    ["x-message-ttl"] = delay,
+                    ["x-dead-letter-exchange"] = "",
+                    ["x-dead-letter-routing-key"] = $"{_options.ConsumerName}.{eventType}"
+                }, cancellationToken: cancellationToken).ConfigureAwait(false);
+            var properties = new BasicProperties(delivery.BasicProperties)
+            {
+                Persistent = true,
+                Type = eventType,
+                Headers = delivery.BasicProperties.Headers is { } oldHeaders
+                    ? new Dictionary<string, object?>(oldHeaders) : new Dictionary<string, object?>()
+            };
+            properties.Headers["x-kun-attempts"] = attempt;
+            await retry.BasicPublishAsync(exhausted ? DeadLetterHandler.GetDlxName(_options.ExchangeName) : "",
+                exhausted ? eventType : queue, mandatory: true, properties, delivery.Body, cancellationToken).ConfigureAwait(false);
+            // 重试副本被 broker 确认后，才释放原始未确认消息。
+            await _channel!.BasicAckAsync(delivery.DeliveryTag, false, CancellationToken.None).ConfigureAwait(false);
+        }
+        catch
+        {
+            await _channel!.BasicNackAsync(delivery.DeliveryTag, false, true, CancellationToken.None).ConfigureAwait(false);
+            throw;
+        }
+    }
+
+    private static int ReadAttempt(IDictionary<string, object?>? headers)
+    {
+        if (headers is not null && headers.TryGetValue("x-kun-attempts", out var value))
+            return value switch { int count => Math.Max(0, count), long count => (int)Math.Clamp(count, 0, int.MaxValue), _ => 0 };
+        return GetDeathCount(headers);
     }
 
     private static async Task DispatchAsync(

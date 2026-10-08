@@ -91,6 +91,8 @@ public sealed class PublishConsumeRoundTripTests : IAsyncLifetime
             .Build();
 
         await _host.StartAsync(TestContext.Current.CancellationToken);
+        await _host.Services.GetRequiredService<Kun.EventBus.RabbitMQ.Consuming.RabbitMqIntegrationEventSubscriber>()
+            .Ready.WaitAsync(TimeSpan.FromSeconds(20), TestContext.Current.CancellationToken);
     }
 
     public async ValueTask DisposeAsync()

@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using RabbitMQ.Client;
 using Xunit;
 
 namespace Kun.IntegrationTests.EventBus;
@@ -135,6 +136,13 @@ public sealed class OutboxPublisherResilienceTests : IAsyncLifetime
         using (var goodHost = BuildHost(_rabbitmq.ConnectionString, "test-resilience-good", goodStore,
                    pollInterval: TimeSpan.FromMilliseconds(200), maxAttempts: 3))
         {
+            var factory = new ConnectionFactory { Uri = new Uri(_rabbitmq.ConnectionString) };
+            await using var connection = await factory.CreateConnectionAsync(ct);
+            await using var channel = await connection.CreateChannelAsync(cancellationToken: ct);
+            await channel.ExchangeDeclareAsync("kun.events", "topic", durable: true, cancellationToken: ct);
+            var queue = "resilience." + Guid.NewGuid().ToString("N");
+            await channel.QueueDeclareAsync(queue, durable: true, exclusive: false, autoDelete: false, cancellationToken: ct);
+            await channel.QueueBindAsync(queue, "kun.events", "integration.test.resilience.v1", cancellationToken: ct);
             await goodHost.StartAsync(ct);
             // Give the background service time to publish.
             await Task.Delay(TimeSpan.FromSeconds(3), ct);
@@ -175,6 +183,7 @@ public sealed class OutboxPublisherResilienceTests : IAsyncLifetime
                     }));
 
                 services.AddSingleton<IOutboxMessageStore>(store);
+                services.AddSingleton<IOutboxLockProvider>(NullOutboxLockProvider.Instance); // 单实例内存替身显式无锁。
 
                 // Register outbox publisher with short poll interval for tests.
                 services.AddKunOutboxPublisher();

@@ -28,7 +28,7 @@ Write-side persistence for Kun Framework: `KunDbContext` base with automatic `IM
 - `EfUnitOfWork.SaveChangesAsync` is the single transaction boundary. Domain event collection, outbox flush, and `DbContext.SaveChangesAsync` must stay in one call — do not split.
 - `UnitOfWorkPipelineBehavior` should be registered after validation behaviors, before logging behaviors.
 - `IMultiTenant` and `ISoftDelete` are both in the `Kun.Core.Domain` namespace (not `Kun.Core.MultiTenancy`).
-- Domain event dispatch (via `IDomainEventDispatcher`) happens AFTER `DbContext.SaveChangesAsync` — events are in-process and non-transactional.
+- 领域事件在 `DbContext.SaveChangesAsync` 前、同一 scope 内派发；派发生成的集成事件与业务一起落库。默认 Outbox 存储用 PostgreSQL SKIP LOCKED 持有批次行锁。
 - `IntegrationEventOutboxAccumulator` uses `JsonSerializer.Serialize<TEvent>` (generic overload) — NOT the non-generic overload, to satisfy CA2263.
 - `TenantRlsConnectionInterceptor` is **opt-in**. The EF global query filter in `KunDbContext` is the first isolation layer; the interceptor is a *second* layer that pairs with RLS policies defined on the database schema. Wiring is explicit — `AddKunEntityFrameworkCore` registers the interceptor as Scoped but does not attach it to any `DbContextOptionsBuilder`. Callers do that per context: `opts.AddInterceptors(sp.GetRequiredService<TenantRlsConnectionInterceptor>())`. See `docs/security/multi-tenancy-rls.md` for the policy template.
 

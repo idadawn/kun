@@ -113,3 +113,10 @@ Kun.EventBus.Outbox.OutboxStatus.Pending = 0 -> Kun.EventBus.Outbox.OutboxStatus
 Kun.EventBus.Outbox.OutboxStatus.Published = 1 -> Kun.EventBus.Outbox.OutboxStatus
 Kun.EventBus.MessageContext.TenantId.get -> string?
 Kun.EventBus.MessageContext.TenantId.init -> void
+Kun.EventBus.Background.IOutboxBatchStore
+Kun.EventBus.Background.IOutboxBatchStore.CompleteBatchAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kun.EventBus.Outbox.OutboxMessage.NextAttemptAt.get -> System.DateTimeOffset?
+Kun.EventBus.Idempotency.IProcessedMessageStore.IsProcessedAsync(string! consumerName, System.Guid messageId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<bool>
+Kun.EventBus.Idempotency.InMemoryProcessedMessageStore.IsProcessedAsync(string! consumerName, System.Guid messageId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<bool>
+Kun.EventBus.Outbox.OutboxMessage.ScheduleRetry(System.DateTimeOffset nextAttemptAt, string! error) -> void
+Kun.EventBus.Idempotency.RedisProcessedMessageStore.IsProcessedAsync(string! consumerName, System.Guid messageId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<bool>

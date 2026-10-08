@@ -5,6 +5,7 @@ using Kun.EntityFrameworkCore;
 using Kun.EntityFrameworkCore.DependencyInjection;
 using Kun.EventBus;
 using Kun.EventBus.DependencyInjection;
+using Kun.Mediator;
 using Kun.Mediator.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,9 +31,20 @@ internal sealed class TestOrder : AggregateRoot<Guid>
 
     public static TestOrder Create(Guid id, string name) =>
         new() { Id = id, Name = name };
+
+    public void RaiseCreated() => AddDomainEvent(new TestOrderCreated(Id, DateTime.UtcNow));
 }
 
 internal sealed record TestOrderPlaced(Guid OrderId);
+internal sealed record TestOrderCreated(Guid Id, DateTime OccurredAt) : IDomainEvent, INotification;
+internal sealed class TestOrderCreatedHandler(IIntegrationEventBus bus) : INotificationHandler<TestOrderCreated>
+{
+    public ValueTask Handle(TestOrderCreated notification, CancellationToken cancellationToken)
+    {
+        bus.Publish(new TestOrderPlaced(notification.Id));
+        return ValueTask.CompletedTask;
+    }
+}
 
 internal sealed class TestDbContext : KunDbContext
 {
@@ -91,7 +103,7 @@ public sealed class OutboxAtomicityTests : IAsyncLifetime
         var services = new ServiceCollection();
 
         services.AddSingleton<ITenantContext>(NullTenantContext.Instance);
-        services.AddKunMediator(_ => { });
+        services.AddKunMediator(builder => builder.AddNotificationHandler<TestOrderCreated, TestOrderCreatedHandler>());
         services.AddKunEventBus(b => b.Register<TestOrderPlaced>("test.order.placed.v1"));
         services.AddKunEntityFrameworkCore();
         services.AddDbContext<TestDbContext>((_, opts) =>
@@ -184,4 +196,18 @@ public sealed class OutboxAtomicityTests : IAsyncLifetime
 
         outboxCount.Should().Be(0, "rollback must leave no outbox rows");
     }
+    [Fact]
+    public async Task DefaultDispatcher_WithoutMediatorSend_ReusesUnitOfWorkScope()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var scope = _services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<TestDbContext>();
+        var order = TestOrder.Create(Guid.NewGuid(), "notification");
+        order.RaiseCreated();
+        db.Orders.Add(order);
+        await scope.ServiceProvider.GetRequiredService<IUnitOfWork>().SaveChangesAsync(ct);
+        Assert.Equal(1, await db.OutboxMessages.CountAsync(ct));
+        Assert.Empty(order.DomainEvents);
+    }
+
 }

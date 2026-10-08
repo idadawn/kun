@@ -43,6 +43,9 @@ public sealed class OutboxMessage
     /// <summary>Gets the number of publish attempts made so far.</summary>
     public int AttemptCount { get; private set; }
 
+    /// <summary>下一次允许重试的时间；null 表示首次发布或无需等待。</summary>
+    public DateTimeOffset? NextAttemptAt { get; private set; }
+
     /// <summary>Gets the error message from the last failed publish attempt; <see langword="null"/> if none.</summary>
     public string? LastError { get; private set; }
 
@@ -96,6 +99,7 @@ public sealed class OutboxMessage
     {
         Status = OutboxStatus.Published;
         PublishedAt = publishedAt;
+        NextAttemptAt = null;
     }
 
     /// <summary>Transitions the message to <see cref="OutboxStatus.Failed"/> and records the error.</summary>
@@ -105,9 +109,18 @@ public sealed class OutboxMessage
     {
         ArgumentNullException.ThrowIfNull(error);
         Status = OutboxStatus.Failed;
-        LastError = error;
+        LastError = error.Length <= 2000 ? error : error[..2000];
+        NextAttemptAt = null;
     }
 
     /// <summary>Increments the publish attempt counter by one.</summary>
     public void IncrementAttempt() => AttemptCount++;
+    /// <summary>记录失败原因与持久化重试时间，不占用工作线程等待。</summary>
+    public void ScheduleRetry(DateTimeOffset nextAttemptAt, string error)
+    {
+        ArgumentNullException.ThrowIfNull(error);
+        NextAttemptAt = nextAttemptAt;
+        LastError = error.Length <= 2000 ? error : error[..2000];
+    }
+
 }

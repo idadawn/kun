@@ -32,12 +32,12 @@ RabbitMQ broker adapter implementing `IIntegrationEventPublisher`. Publishes Out
 - **AOT-safe**: `IsAotCandidate=true`. No `Activator.CreateInstance`, no `MakeGenericType`, no `Type.GetMethod`. `TypedSubscriptionDispatcher<TEvent>` is registered at DI wire-up time (compile-time generic instantiation). `JsonTypeInfo<TEvent>` is passed by the caller from their `JsonSerializerContext`.
 - **Trace context headers are mandatory**: on publish, copy `TraceParent`/`TraceState` from the Outbox row into AMQP `BasicProperties.Headers` as `traceparent`/`tracestate`. On consume, restore via `ActivityContext.TryParse`.
 - **Stable event IDs on the wire**: routing key = `message.EventTypeId` (e.g. `order.placed.v1`). `IEventTypeRegistry.Resolve(routingKey)` converts back to CLR type.
-- **Idempotency pattern**: handler runs first, then `TryMarkProcessedAsync` is called. If the handler throws, no mark is recorded — message is nacked and requeued. If mark returns `false`, a duplicate warning is logged (handler must be idempotent).
-- **Dead-letter**: queue args set `x-dead-letter-exchange` to `{exchange}.dlx`. When `x-death` count ≥ `MaxDeliveryAttempts`, the message is nacked without requeue, routing it to the DLX/DLQ.
+- **幂等与确认**：先查成功记录，执行成功后才标记并 ack；失败经持久化 quorum 队列退避，重试副本被确认后才 ack 原消息。业务 handler 仍必须幂等。
+- **死信**：`x-kun-attempts` 达到 `MaxDeliveryAttempts` 后确认发布到 `{exchange}.dlx`，再 ack 原消息；兼容读取旧 x-death。
 - **RabbitMQ.Client 7.x async API**: `CreateChannelAsync`, `BasicPublishAsync`, `BasicQosAsync`, `ExchangeDeclareAsync`, `QueueDeclareAsync`, `QueueBindAsync`, `BasicConsumeAsync`, `BasicAckAsync`, `BasicNackAsync`. Never use `.Result`/`.Wait()`.
 - **LoggerMessage delegates** (`[LoggerMessage]` on nested `partial class Log`) are used throughout — do not regress to `LogInformation(..., args)`.
 - Payload is already a JSON string from the Outbox — no re-serialization needed on publish. On consume, `JsonSerializer.Deserialize(payload, typeInfo)` uses the caller-supplied `JsonTypeInfo`.
-- Channel per publish (not pooled) — acceptable for Outbox throughput; channel creation is cheap in 7.x.
+- Channel per publish with publisher confirmations and mandatory routing (not pooled) — acceptable for Outbox throughput; channel creation is cheap in 7.x.
 
 ### Testing Requirements
 

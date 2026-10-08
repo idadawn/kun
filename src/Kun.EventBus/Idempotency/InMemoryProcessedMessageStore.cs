@@ -19,6 +19,15 @@ public sealed class InMemoryProcessedMessageStore : IProcessedMessageStore
     /// <summary>Initialises the store using <see cref="TimeProvider.System"/>.</summary>
     public InMemoryProcessedMessageStore() : this(TimeProvider.System) { }
 
+    /// <inheritdoc />
+    public ValueTask<bool> IsProcessedAsync(string consumerName, Guid messageId,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return ValueTask.FromResult(_store.TryGetValue($"{consumerName}:{messageId}", out var expires)
+            && expires > _timeProvider.GetUtcNow());
+    }
+
     /// <inheritdoc/>
     public ValueTask<bool> TryMarkProcessedAsync(
         string consumerName,
@@ -41,8 +50,7 @@ public sealed class InMemoryProcessedMessageStore : IProcessedMessageStore
             if (_timeProvider.GetUtcNow() >= existingExpiry)
             {
                 // Expired: overwrite with the new expiry and treat as a first-time mark.
-                _store[key] = expiry;
-                return ValueTask.FromResult(true);
+                return ValueTask.FromResult(_store.TryUpdate(key, expiry, existingExpiry));
             }
         }
 

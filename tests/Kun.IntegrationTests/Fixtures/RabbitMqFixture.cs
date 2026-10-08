@@ -1,3 +1,5 @@
+using System.Net;
+using System.Net.Sockets;
 using Testcontainers.RabbitMq;
 using Xunit;
 
@@ -11,6 +13,9 @@ public sealed class RabbitMqFixture : IAsyncLifetime
 {
     private RabbitMqContainer? _container;
 
+    /// <summary>重启验收保持宿主端口不变；普通测试继续使用 Docker 随机端口。</summary>
+    public bool PreservePortAcrossRestarts { get; init; }
+
     /// <summary>Gets the AMQP connection string once initialized.</summary>
     public string ConnectionString { get; private set; } = string.Empty;
 
@@ -23,9 +28,18 @@ public sealed class RabbitMqFixture : IAsyncLifetime
     {
         try
         {
-            _container = new RabbitMqBuilder()
-                .WithImage("rabbitmq:3.13-management")
-                .Build();
+            var builder = new RabbitMqBuilder().WithImage("rabbitmq:3.13-management");
+            if (PreservePortAcrossRestarts)
+            {
+                // 先选取当前宿主的空闲端口，再将该端口写进 Docker HostConfig；
+                // HostPort=0 会在每次 stop/start 时重新分配，不能用于连接恢复验收。
+                using var reservation = new TcpListener(IPAddress.Loopback, 0);
+                reservation.Start();
+                var port = ((IPEndPoint)reservation.LocalEndpoint).Port;
+                reservation.Stop();
+                builder = builder.WithPortBinding(port, 5672);
+            }
+            _container = builder.Build();
         }
         catch (ArgumentException ex) when (ex.Message.Contains("Docker", StringComparison.OrdinalIgnoreCase))
         {

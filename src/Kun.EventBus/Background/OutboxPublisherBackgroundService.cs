@@ -84,26 +84,24 @@ public sealed partial class OutboxPublisherBackgroundService : BackgroundService
 
     internal async Task ProcessBatchAsync(CancellationToken cancellationToken)
     {
-        // Acquire a distributed lock so only one pod processes the batch at a time.
-        // The TTL is twice the poll interval to cover slow batches without starving others.
+        await using var scope = _scopeFactory.CreateAsyncScope();
+        var store = scope.ServiceProvider.GetRequiredService<IOutboxMessageStore>();
+        var transactional = store as IOutboxBatchStore;
         var lockTtl = _options.PollInterval + _options.PollInterval;
-        await using var lease = await _lockProvider
-            .TryAcquireAsync("outbox-publisher", lockTtl, cancellationToken)
-            .ConfigureAwait(false);
-
-        if (lease is null)
+        await using var lease = transactional is null
+            ? await _lockProvider.TryAcquireAsync("outbox-publisher", lockTtl, cancellationToken).ConfigureAwait(false)
+            : null;
+        if (transactional is null && lease is null)
         {
             LogLockSkipped(_logger);
             return;
         }
 
-        await using var scope = _scopeFactory.CreateAsyncScope();
-        var store = scope.ServiceProvider.GetRequiredService<IOutboxMessageStore>();
-
         var messages = await store.FetchPendingAsync(_options.BatchSize, cancellationToken).ConfigureAwait(false);
 
         foreach (var message in messages)
         {
+            if (message.NextAttemptAt > _timeProvider.GetUtcNow()) continue;
             ActivityContext parentContext = default;
             if (message.TraceParent is not null)
             {
@@ -153,12 +151,16 @@ public sealed partial class OutboxPublisherBackgroundService : BackgroundService
                 }
                 else
                 {
+                    var delay = TimeSpan.FromMilliseconds(Math.Clamp(_options.RetryBaseDelay.TotalMilliseconds *
+                        Math.Pow(2, Math.Min(message.AttemptCount - 1, 16)), 0, 60_000));
+                    message.ScheduleRetry(_timeProvider.GetUtcNow() + delay, ex.Message);
                     LogRetrying(_logger, message.Id, message.EventTypeId, message.AttemptCount, _options.MaxAttempts, ex);
                 }
             }
 
             await store.UpdateAsync(message, cancellationToken).ConfigureAwait(false);
         }
+        if (transactional is not null) await transactional.CompleteBatchAsync(cancellationToken).ConfigureAwait(false);
     }
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Kun.EventBus outbox publisher started.")]

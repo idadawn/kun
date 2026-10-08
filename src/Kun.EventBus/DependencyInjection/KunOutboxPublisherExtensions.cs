@@ -10,9 +10,8 @@ public static class KunOutboxPublisherExtensions
 {
     /// <summary>
     /// Registers <see cref="OutboxPublisherBackgroundService"/> and its dependencies.
-    /// The default <see cref="IOutboxLockProvider"/> is <see cref="NullOutboxLockProvider"/>,
-    /// which is safe for single-instance deployments. Call <see cref="UseRedisOutboxLock"/>
-    /// afterwards to enable distributed locking for multi-pod deployments.
+    /// 默认 EF 存储使用事务行锁；自定义存储须通过 <see cref="UseRedisOutboxLock"/>
+    /// 配置共享锁。无锁模式只允许宿主显式注册 <see cref="NullOutboxLockProvider"/>。
     /// </summary>
     /// <param name="services">The service collection to configure.</param>
     /// <param name="configure">Optional delegate to configure <see cref="OutboxPublisherOptions"/>.</param>
@@ -21,13 +20,14 @@ public static class KunOutboxPublisherExtensions
         this IServiceCollection services,
         Action<OutboxPublisherOptions>? configure = null)
     {
+        services.AddOptions<OutboxPublisherOptions>();
         if (configure is not null)
         {
             services.Configure(configure);
         }
 
         services.TryAddSingleton(TimeProvider.System);
-        services.TryAddSingleton<IOutboxLockProvider>(NullOutboxLockProvider.Instance);
+        services.TryAddSingleton<IOutboxLockProvider, RequiredOutboxLockProvider>();
         services.AddHostedService<OutboxPublisherBackgroundService>();
         return services;
     }
@@ -46,4 +46,11 @@ public static class KunOutboxPublisherExtensions
         services.Replace(descriptor);
         return services;
     }
+}
+
+// EF 默认存储通过事务行锁自行协调。自定义非事务存储必须显式提供共享锁，禁止静默回退无锁。
+internal sealed class RequiredOutboxLockProvider : IOutboxLockProvider
+{
+    public ValueTask<IAsyncDisposable?> TryAcquireAsync(string lockName, TimeSpan ttl, CancellationToken ct = default) =>
+        throw new InvalidOperationException("请使用框架 EF Outbox 存储，或配置 UseRedisOutboxLock()；单实例无锁仅允许显式注册 NullOutboxLockProvider。");
 }

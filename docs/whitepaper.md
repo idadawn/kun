@@ -327,45 +327,7 @@ Dapper AOT 通过 `[DapperAot]` 特性触发源生成器，在编译期生成 `D
 
 ### 5.3 工作单元与 Outbox 原子化落库
 
-```csharp
-public class EfUnitOfWork : IUnitOfWork
-{
-    private readonly KunDbContext _db;
-    private readonly IEventTypeRegistry _eventTypeRegistry;  // 稳定事件标识符注册表
-
-    public async Task<int> SaveChangesAsync(CancellationToken ct = default)
-    {
-        // 1) 从 ChangeTracker 中收集所有聚合根的领域事件
-        var aggregates = _db.ChangeTracker.Entries<IAggregateRoot>()
-            .Select(e => e.Entity)
-            .Where(a => a.DomainEvents.Any())
-            .ToList();
-
-        var domainEvents = aggregates.SelectMany(a => a.DomainEvents).ToList();
-        aggregates.ForEach(a => a.ClearDomainEvents());
-
-        // 2) 将领域事件转换为 Outbox 消息（使用稳定标识符、注入追踪上下文）
-        var activity = Activity.Current;
-        var outboxMessages = domainEvents.Select(e => new OutboxMessage
-        {
-            Id = Guid.NewGuid(),
-            EventTypeId = _eventTypeRegistry.GetStableId(e.GetType()),  // 如 "order.created.v1"
-            Payload = JsonSerializer.Serialize(e, e.GetType(),
-                        KunJsonContext.Default.GetTypeInfo(e.GetType())!),  // AOT 安全
-            TraceParent = activity?.Id,                                   // W3C Trace Context
-            TraceState  = activity?.TraceStateString,
-            OccurredAt = DateTime.UtcNow,
-            Status = OutboxStatus.Pending
-        }).ToList();
-
-        if (outboxMessages.Count > 0)
-            _db.Set<OutboxMessage>().AddRange(outboxMessages);
-
-        // 3) 关键：聚合根变更 + Outbox 消息在 EF Core 的同一个事务内提交
-        return await _db.SaveChangesAsync(ct);
-    }
-}
-```
+当前入口为 `EfUnitOfWork.SaveChangesAsync`：在提交前、同 scope 派发领域通知，通知将集成事件暂存到 Buffer，再把业务变更与 Outbox 一并保存；不要以 `DbContext.SaveChangesAsync` 直接替代 UoW。完整实现与装配见 [消息指南](guides/outbox-and-integration-events.md)。
 
 **设计要点**：
 
@@ -420,46 +382,9 @@ public class OutboxPublisher : BackgroundService
 
 Outbox 保证"至少一次"投递，消费者必须幂等。`Kun.EventBus` 内置 `IProcessedMessageStore`，消费 Handler 被自动包装一层去重检查：
 
-```csharp
-public interface IProcessedMessageStore
-{
-    Task<bool> TryMarkAsProcessingAsync(Guid messageId, string consumerName, CancellationToken ct);
-    Task MarkAsCompletedAsync(Guid messageId, string consumerName, CancellationToken ct);
-}
+默认存储为 `Kun.EventBus.Idempotency.RedisProcessedMessageStore`。装饰器先调用 `IsProcessedAsync` 检查成功记录，handler 成功后再调用 `TryMarkProcessedAsync` 并 ack；失败不留下成功标记。原先先标记后处理会使失败消息在重投时被误认为成功，S1-KUN-002 已修复。
 
-// 基于 Redis 的默认实现（SETNX + 过期时间，单命令原子）
-public class RedisProcessedMessageStore : IProcessedMessageStore
-{
-    public async Task<bool> TryMarkAsProcessingAsync(Guid messageId, string consumerName, CancellationToken ct)
-    {
-        var key = $"idemp:{consumerName}:{messageId}";
-        // NX + EX，30 分钟处理窗口
-        return await _redis.GetDatabase().StringSetAsync(key, "1", TimeSpan.FromMinutes(30), When.NotExists);
-    }
-}
-
-// 消费端自动注入的幂等包装
-public class IdempotentConsumerDecorator<TEvent> : IIntegrationEventHandler<TEvent>
-    where TEvent : IIntegrationEvent
-{
-    private readonly IIntegrationEventHandler<TEvent> _inner;
-    private readonly IProcessedMessageStore _store;
-
-    public async Task HandleAsync(TEvent @event, MessageContext ctx, CancellationToken ct)
-    {
-        if (!await _store.TryMarkAsProcessingAsync(ctx.MessageId, ctx.ConsumerName, ct))
-        {
-            _logger.LogInformation("消息 {Id} 已被处理，跳过", ctx.MessageId);
-            return;  // 幂等放行
-        }
-
-        await _inner.HandleAsync(@event, ctx, ct);
-        await _store.MarkAsCompletedAsync(ctx.MessageId, ctx.ConsumerName, ct);
-    }
-}
-```
-
-业务开发者只需写纯业务 Handler，幂等由框架自动保障。
+框架提供至少一次投递和成功记录去重；并发重复、业务成功但标记未持久化等窗口仍可能再次调用 handler，业务写入必须用幂等键或同事务消费记录保护。详见 [可靠性边界与迁移](guides/outbox-and-integration-events.md#可靠性边界与迁移s1-kun-002)。
 
 ---
 
