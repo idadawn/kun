@@ -126,6 +126,14 @@ app.Run();
   └────────────┘                      └────────────┘
 ```
 
+## 平台基础端口增量
+
+- `Kun.Authorization`：框架只提供权限、数据与字段判定端口，HTTP、Mediator、gRPC 缺省拒绝；权限引擎由宿主提供。
+- `Kun.Configuration.Apollo`：标准 HTTP 配置源，支持长轮询、签名与缓存；`Kun.Configuration` 运行期校验失败保留最后有效配置。
+- `ICapabilityRegistry`：handler 可携带稳定 ID 与请求／响应 JSON Schema 登记并枚举。
+
+详细语义和兼容入口见 [ADR-016](docs/architecture/ADR-016-platform-ports.md)。
+
 ## 📦 模块矩阵
 
 Phase 1 顶层速览（完整矩阵请见 [`docs/architecture/module-map.md`](docs/architecture/module-map.md)）：

@@ -85,6 +85,8 @@ jobs:
       matrix:
         module:
           - Kun.Audit
+          - Kun.Authorization
+          - Kun.Configuration.Apollo
           - Kun.Caching
           - Kun.Configuration
           - Kun.Core

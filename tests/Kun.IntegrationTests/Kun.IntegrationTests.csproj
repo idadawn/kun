@@ -6,6 +6,9 @@
 
   <ItemGroup>
     <ProjectReference Include="../../samples/Kun.Sample.Catalog/Kun.Sample.Catalog.csproj" />
+    <ProjectReference Include="../../src/Kun.AspNetCore/Kun.AspNetCore.csproj" />
+    <ProjectReference Include="../../src/Kun.Configuration/Kun.Configuration.csproj" />
+    <ProjectReference Include="../../src/Kun.Configuration.Apollo/Kun.Configuration.Apollo.csproj" />
     <!-- Testcontainers 4.0 transitively requests vulnerable SSH.NET 2023; retain the audit gate. -->
     <PackageReference Include="SSH.NET" PrivateAssets="all" />
     <ProjectReference Include="..\..\src\Kun.Auditing\Kun.Auditing.csproj" />

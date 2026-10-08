@@ -31,6 +31,7 @@ public static class KunGrpcServiceCollectionExtensions
         {
             options.Interceptors.Add<KunTracingInterceptor>();
             options.Interceptors.Add<KunServerAuthInterceptor>();
+            options.Interceptors.Add<KunPermissionInterceptor>();
             options.Interceptors.Add<KunResultToRpcInterceptor>();
             configure?.Invoke(options);
         });

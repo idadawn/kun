@@ -6,6 +6,14 @@
 
 ## [Unreleased]
 
+### Added / Fixed — 平台基础端口（S1-KUN-006）
+
+- 配置重载失败保留最后有效值并告警，支持关键／可选配置与源生成 JSON Schema；新增 Apollo HTTP provider（长轮询、AccessKey、通知修订、快照校验与缓存）。
+- 新增 `Kun.Authorization` 权限／数据／字段端口及 HTTP、Mediator、gRPC 四种调用形态集成，缺失引擎时拒绝；不内置 RBAC/ABAC 实现。
+- handler 注册支持 `JsonTypeInfo` 与稳定能力 ID，通过 `ICapabilityRegistry` 枚举请求和响应 Schema。
+- `KunExceptionHandler` 改经 `IProblemDetailsService`，允许宿主接管错误体；Dapper 新增不可变 options 工厂重载；慢调用阈值可配置。
+- 旧基础设施接口与旧存储接口标记 `KUNLEGACY001`，保留兼容实现。下游门禁应区分旧接口 `Kun.Storage.Abstractions.IFileStorage` 与新包中的 `Kun.Storage.IFileStorage`。
+
 ### Fixed — 审计原子性与数据约定（S1-KUN-005）
 
 - `AddKunAuditing<TContext>()` 将实体 `AuditLog` 与 `kun.audit.event.v2` Outbox 消息直接登记到业务上下文；保存失败会撤销暂存记录，避免重试生成重复审计。租户、用户来自当前上下文，v2 支持字符串标识；旧 v1 类型保留读取兼容。
