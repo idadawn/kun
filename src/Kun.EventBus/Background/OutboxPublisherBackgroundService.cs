@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Kun.Core.MultiTenancy;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -120,6 +121,13 @@ public sealed partial class OutboxPublisherBackgroundService : BackgroundService
 
             try
             {
+                var tenantContext = scope.ServiceProvider.GetService<ITenantContext>();
+                if (tenantContext?.IsMultiTenant == true && !TenantIdValidation.IsValid(message.TenantId))
+                {
+                    throw new InvalidOperationException("A multi-tenant outbox message requires a valid tenant identifier.");
+                }
+                using var tenantScope = tenantContext?.IsMultiTenant == true
+                    ? tenantContext.BeginScope(message.TenantId) : null;
                 await _publisher.PublishAsync(message, cancellationToken).ConfigureAwait(false);
                 message.MarkPublished(_timeProvider.GetUtcNow());
                 LogPublished(_logger, message.Id, message.EventTypeId);

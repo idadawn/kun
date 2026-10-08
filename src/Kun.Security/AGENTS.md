@@ -46,3 +46,5 @@ Token issuance and validation round-trips are unit-testable without containers. 
 - `Microsoft.AspNetCore.Authentication.JwtBearer`
 
 <!-- MANUAL: -->
+
+`AddKunSecurity` 当前将 `ITenantContext` 注册为 `AsyncLocalTenantContext`，`JwtTenantContext` 仅以 `ITenantIdSource` 提供已认证的 `tenant_id`；显式后台作用域优先。

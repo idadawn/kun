@@ -1,5 +1,8 @@
 using Kun.MultiTenancy.Abstractions;
+using Kun.MultiTenancy.Configuration;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Kun.MultiTenancy.Middleware;
 
@@ -30,6 +33,12 @@ public sealed class TenantContextMiddleware
         ArgumentNullException.ThrowIfNull(tenantContext);
 
         var tenantId = await resolver.ResolveTenantIdAsync(httpContext).ConfigureAwait(false);
+        if (tenantId is null && httpContext.RequestServices
+            .GetService<IOptions<KunMultiTenancyOptions>>()?.Value.Production == true)
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            return;
+        }
         using (tenantContext.BeginScope(tenantId))
         {
             await _next(httpContext).ConfigureAwait(false);

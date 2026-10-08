@@ -111,3 +111,5 @@ Kun.EventBus.Outbox.OutboxStatus
 Kun.EventBus.Outbox.OutboxStatus.Failed = 2 -> Kun.EventBus.Outbox.OutboxStatus
 Kun.EventBus.Outbox.OutboxStatus.Pending = 0 -> Kun.EventBus.Outbox.OutboxStatus
 Kun.EventBus.Outbox.OutboxStatus.Published = 1 -> Kun.EventBus.Outbox.OutboxStatus
+Kun.EventBus.MessageContext.TenantId.get -> string?
+Kun.EventBus.MessageContext.TenantId.init -> void

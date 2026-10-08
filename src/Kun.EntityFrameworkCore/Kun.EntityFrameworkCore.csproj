@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Kun.Core\Kun.Core.csproj" />
+    <ProjectReference Include="..\Kun.MultiTenancy.EntityFrameworkCore\Kun.MultiTenancy.EntityFrameworkCore.csproj" />
     <ProjectReference Include="..\Kun.Infrastructure\Kun.Infrastructure.csproj" />
     <ProjectReference Include="..\Kun.EventBus\Kun.EventBus.csproj" />
     <ProjectReference Include="..\Kun.Mediator\Kun.Mediator.csproj" />

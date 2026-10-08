@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text;
+using Kun.Core.MultiTenancy;
 using Kun.EventBus.Idempotency;
 using Kun.EventBus.RabbitMQ.Options;
 using Microsoft.Extensions.DependencyInjection;
@@ -209,6 +210,7 @@ public sealed partial class RabbitMqIntegrationEventSubscriber : BackgroundServi
             MessageId = messageGuid,
             EventType = routingKey,
             TraceParent = traceParent,
+            TenantId = ReadHeaderString(headers, "tenant_id") ?? ReadHeaderString(headers, "tenantId"),
             OccurredOn = occurredAt == default ? DateTimeOffset.UtcNow : occurredAt,
         };
 
@@ -236,6 +238,16 @@ public sealed partial class RabbitMqIntegrationEventSubscriber : BackgroundServi
             }
 
             await using var scope = _scopeFactory.CreateAsyncScope();
+            var tenantContext = scope.ServiceProvider.GetService<ITenantContext>();
+            if (tenantContext?.IsMultiTenant == true && !TenantIdValidation.IsValid(context.TenantId))
+            {
+                // 无租户或非法租户信封不能进入 handler，也不能污染幂等记录。
+                await _channel!.BasicNackAsync(deliveryTag, multiple: false, requeue: false, CancellationToken.None)
+                    .ConfigureAwait(false);
+                return;
+            }
+            using var tenantScope = tenantContext?.IsMultiTenant == true
+                ? tenantContext.BeginScope(context.TenantId) : null;
             var store = scope.ServiceProvider.GetRequiredService<IProcessedMessageStore>();
             var idempotency = new IdempotentConsumerDecorator(
                 store,

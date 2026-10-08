@@ -3,8 +3,11 @@ namespace Kun.MultiTenancy.Configuration;
 /// <summary>Options for <c>AddKunMultiTenancy</c>.</summary>
 public sealed class KunMultiTenancyOptions
 {
+    /// <summary>生产模式仅接受已认证身份的 tenant_id，拒绝请求头与默认租户回退。</summary>
+    public bool Production { get; set; }
+
     /// <summary>JWT claim names consulted in order by <c>DefaultTenantResolver</c>. Add via <see cref="UseJwtClaim"/>.</summary>
-    public List<string> JwtClaimNames { get; } = [];
+    public List<string> JwtClaimNames { get; } = ["tenant_id"];
 
     /// <summary>HTTP header names consulted in order by <c>DefaultTenantResolver</c>. Add via <see cref="UseHttpHeader"/>.</summary>
     public List<string> HttpHeaderNames { get; } = [];

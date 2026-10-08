@@ -49,3 +49,5 @@ Integration tests require Docker + Testcontainers and are tracked separately (M2
 - `Microsoft.Extensions.Logging.Abstractions`
 
 <!-- MANUAL: -->
+
+`AddKunTenantRls<TContext>()` 自动装配 RLS 双拦截器与 `KunMultiTenantModelCacheKeyFactory`；上文手动接线说明仅适用于无泛型旧入口。`KunDbContext` 已实现 `IKunMultiTenantDbContext`。

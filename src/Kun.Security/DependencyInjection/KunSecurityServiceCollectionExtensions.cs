@@ -1,5 +1,7 @@
 using Kun.Core.MultiTenancy;
 using Kun.Core.Security;
+using Kun.MultiTenancy;
+using Kun.MultiTenancy.Abstractions;
 using Kun.Security.MultiTenancy;
 using Kun.Security.Security;
 using Microsoft.AspNetCore.Http;
@@ -17,7 +19,7 @@ public static class KunSecurityServiceCollectionExtensions
     /// Registers Kun Security services:
     /// <list type="bullet">
     ///   <item><see cref="IHttpContextAccessor"/> (if not already registered)</item>
-    ///   <item>Scoped <see cref="ITenantContext"/> → <see cref="JwtTenantContext"/></item>
+    ///   <item>Singleton <see cref="ITenantContext"/> → <see cref="AsyncLocalTenantContext"/>，JWT 仅作解析源</item>
     ///   <item>Scoped <see cref="ICurrentUser"/> → <see cref="JwtCurrentUser"/></item>
     /// </list>
     /// Call <c>AddAuthentication().AddKunServiceAuthentication(...)</c> separately to configure
@@ -30,7 +32,9 @@ public static class KunSecurityServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(services);
 
         services.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-        services.TryAddScoped<ITenantContext, JwtTenantContext>();
+        services.TryAddSingleton<ITenantIdSource, JwtTenantContext>();
+        services.TryAddSingleton<AsyncLocalTenantContext>();
+        services.TryAddSingleton<ITenantContext>(sp => sp.GetRequiredService<AsyncLocalTenantContext>());
         services.TryAddScoped<ICurrentUser, JwtCurrentUser>();
 
         return services;

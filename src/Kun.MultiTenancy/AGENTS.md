@@ -42,7 +42,7 @@ ADR-007 for the split decision.
 ## Canonical tenant string
 
 The existing `Kun.Core.MultiTenancy.ITenantContext.TenantId` is
-`string?` — this module stays on the string shape. JWT `tid`
+`string?` — this module stays on the string shape. JWT `tenant_id`
 claims, `X-Tenant-Id` header values, and downstream `TenantId`
 columns are all carried as strings so that Guid / integer / slug
 tenants coexist without framework changes. The SaveChanges
@@ -55,7 +55,7 @@ a Guid-typed tenant.
 ```csharp
 services.AddKunMultiTenancy(opts =>
 {
-    opts.UseJwtClaim("tid");              // primary — S2S JWT
+    opts.UseJwtClaim("tenant_id");              // primary — S2S JWT
     opts.UseHttpHeader("X-Tenant-Id");    // fallback for admin tooling
     opts.FallbackTenantId = "default";    // last resort
 });
@@ -86,3 +86,5 @@ scope returns the resolved id.
 - Tests use `TestServer` + fake `ClaimsPrincipal` middleware — do
   not mock `ITenantResolver` directly; the resolver's HTTP-context
   inspection is part of the contract.
+
+生产装配使用 `options.Production = true`；请求头与默认租户仅供显式开发兼容模式使用。后台通过 `ITenantContext.BeginScope` 回灌，详情见 `docs/security/multi-tenancy-rls.md`。

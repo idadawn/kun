@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Kun.Core.MultiTenancy;
 using Kun.Core.Time;
 using Kun.EntityFrameworkCore;
 using Kun.Saga.Persistence;
@@ -80,7 +81,9 @@ public sealed partial class SagaStepExecutor : BackgroundService
 
         foreach (var entry in entries)
         {
-            await ProcessEntryAsync(entry, store, registry, clock, scope.ServiceProvider, ct).ConfigureAwait(false);
+            await using var entryScope = _scopeFactory.CreateAsyncScope();
+            var entryStore = entryScope.ServiceProvider.GetRequiredService<ISagaInstanceStore>();
+            await ProcessEntryAsync(entry, entryStore, registry, clock, entryScope.ServiceProvider, ct).ConfigureAwait(false);
         }
 
         return entries.Count;
@@ -127,6 +130,13 @@ public sealed partial class SagaStepExecutor : BackgroundService
             return;
         }
 
+        var tenantContext = serviceProvider.GetService<ITenantContext>();
+        if (tenantContext?.IsMultiTenant == true && !TenantIdValidation.IsValid(instance.TenantId))
+        {
+            throw new InvalidOperationException("A multi-tenant saga requires a valid tenant identifier.");
+        }
+        using var tenantScope = tenantContext?.IsMultiTenant == true
+            ? tenantContext.BeginScope(instance.TenantId) : null;
         var dbContext = serviceProvider.GetRequiredService<KunDbContext>();
 
         try
