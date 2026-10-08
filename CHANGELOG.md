@@ -692,7 +692,7 @@ but the new capabilities below require explicit opt-in:
    - Chain `.UseKunSchema("catalog")` on the options builder alongside
      `.UseNpgsql(...)`.
    - Regenerate migrations so they emit `schema: "catalog"` — see
-     [docs/schema-per-service.md](../docs/schema-per-service.md).
+     [docs/schema-per-service.md](docs/schema-per-service.md).
    - `SchemaConsistencyInterceptor` auto-registers via `KunDbContext.OnConfiguring`
      and will throw at first `SaveChangesAsync` if you miss either step.
 2. **trace_id claim** (P0-2). `S2sTokenIssuer` now emits a `trace_id` claim
@@ -726,7 +726,7 @@ but the new capabilities below require explicit opt-in:
 8. **PgBouncer transaction mode** (P1-5). Append
    `No Reset On Close=true;Max Auto Prepare=0` to any Npgsql connection
    string routed through PgBouncer; see
-   [src/Kun.EntityFrameworkCore/README.md](../src/Kun.EntityFrameworkCore/README.md).
+   [src/Kun.EntityFrameworkCore/README.md](src/Kun.EntityFrameworkCore/README.md).
 9. **OpenAPI** (P1-7). `builder.Services.AddOpenApi();` +
    `if (app.Environment.IsDevelopment()) app.MapOpenApi();`. Requires the
    `Microsoft.AspNetCore.OpenApi` package.

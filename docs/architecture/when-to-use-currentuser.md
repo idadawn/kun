@@ -44,9 +44,9 @@ request context.
 | gRPC service handler (S2S JWT) | `ICurrentUser` | S2S tokens only carry `sub` + `roles`; browser fields would always be `null`. |
 | gRPC interceptor / pipeline behaviour | `ICurrentUser` | Same — operates at the S2S boundary. |
 | ASP.NET Core **API** endpoint the browser hits directly | `IAuthenticatedUser` | Cookie middleware populated `TenantId` / `Email` / `Name` / `Principal`; skip the cast. |
-| ASP.NET Core **background** worker (`BackgroundService`) | `ICurrentUser` with a **null check** — no request scope exists; bind `AnonymousCurrentUser` explicitly. |
+| ASP.NET Core **background** worker (`BackgroundService`) | `ICurrentUser` with a **null check** | No request scope exists; bind `AnonymousCurrentUser` explicitly. |
 | Outbox / Saga step executor | `ICurrentUser`, usually `AnonymousCurrentUser`. | Background context — inherit the S2S identity only if the invoker explicitly pushed it into OTel baggage (see `Kun.Observability.Enrichment.KunBaggageKeys`). |
-| Unit test | `ICurrentUser` with a hand-rolled fake (a `record MyUser(…) : ICurrentUser`) or `AnonymousCurrentUser.Instance`. |
+| Unit test | `ICurrentUser` with a hand-rolled fake (a `record MyUser(…) : ICurrentUser`) or `AnonymousCurrentUser.Instance`. | Tests depend only on the narrow interface; no HTTP context is needed. |
 | Component that **reads tenant** (EF filter, cache key) | `ITenantContext`, **not** either of these. | Tenant identity propagation has its own abstraction — don't couple persistence-layer code to an auth interface. |
 
 ## How to extend correctly
