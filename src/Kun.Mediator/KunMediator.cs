@@ -9,8 +9,9 @@ namespace Kun.Mediator;
 /// registered at startup through <see cref="KunMediatorBuilder"/>, so no runtime
 /// scanning or generic type construction is needed — this class is fully AOT-safe.
 /// </summary>
-public sealed class KunMediator : ISender, IPublisher
+public sealed class KunMediator : ISender, IPublisher, IScopedPublisher
 {
+    private readonly AsyncLocal<DispatchScope?> _current = new();
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly FrozenDictionary<Type, RequestHandlerBase> _handlers;
 
@@ -62,7 +63,18 @@ public sealed class KunMediator : ISender, IPublisher
         // Create a child scope so that scoped services (DbContext, UoW, etc.) resolve correctly
         // even though KunMediator itself is a singleton. The scope is disposed after each Send.
         await using var scope = _scopeFactory.CreateAsyncScope();
-        return await typed.Handle(request, scope.ServiceProvider, cancellationToken).ConfigureAwait(false);
+        var previous = _current.Value;
+        var current = new DispatchScope(scope.ServiceProvider);
+        _current.Value = current;
+        try
+        {
+            return await typed.Handle(request, scope.ServiceProvider, cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            current.Services = null;
+            _current.Value = previous;
+        }
     }
 
     /// <summary>
@@ -85,10 +97,38 @@ public sealed class KunMediator : ISender, IPublisher
             return; // no subscribers — no-op
         }
 
-        var dispatcher = (NotificationDispatcher<TNotification>)dispatcherObj;
-
-        // Create a child scope so notification handlers can resolve scoped dependencies.
+        if (_current.Value?.Services is { } services)
+        {
+            await PublishInScope(notification, services, cancellationToken).ConfigureAwait(false);
+            return;
+        }
         await using var scope = _scopeFactory.CreateAsyncScope();
-        await dispatcher.PublishAsync(notification, scope.ServiceProvider, cancellationToken).ConfigureAwait(false);
+        await PublishInScope(notification, scope.ServiceProvider, cancellationToken).ConfigureAwait(false);
     }
+    /// <inheritdoc />
+    public async ValueTask PublishInScope<TNotification>(TNotification notification, IServiceProvider services,
+        CancellationToken cancellationToken = default) where TNotification : INotification
+    {
+        ArgumentNullException.ThrowIfNull(notification);
+        ArgumentNullException.ThrowIfNull(services);
+        if (!_notificationDispatchers.TryGetValue(typeof(TNotification), out var dispatcher)) return;
+        var previous = _current.Value;
+        var current = new DispatchScope(services);
+        _current.Value = current;
+        try
+        {
+            await ((NotificationDispatcher<TNotification>)dispatcher).PublishAsync(notification, services, cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            current.Services = null;
+            _current.Value = previous;
+        }
+    }
+
+    private sealed class DispatchScope(IServiceProvider services)
+    {
+        public IServiceProvider? Services { get; set; } = services;
+    }
+
 }

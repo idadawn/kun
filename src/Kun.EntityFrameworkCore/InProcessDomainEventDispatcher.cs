@@ -22,6 +22,9 @@ public sealed class InProcessDomainEventDispatcher : IDomainEventDispatcher
     private static readonly MethodInfo s_publishMethod =
         typeof(IPublisher).GetMethod(nameof(IPublisher.Publish))!;
 
+    private static readonly MethodInfo s_scopedPublishMethod =
+        typeof(IScopedPublisher).GetMethod(nameof(IScopedPublisher.PublishInScope))!;
+    private readonly IServiceProvider? _services;
     private readonly IPublisher _publisher;
 
     /// <summary>Creates a new <see cref="InProcessDomainEventDispatcher"/>.</summary>
@@ -30,6 +33,13 @@ public sealed class InProcessDomainEventDispatcher : IDomainEventDispatcher
     {
         ArgumentNullException.ThrowIfNull(publisher);
         _publisher = publisher;
+    }
+
+    /// <summary>事务入口：通知处理器在调用方的 DI scope 内解析。</summary>
+    public InProcessDomainEventDispatcher(IPublisher publisher, IServiceProvider services) : this(publisher)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        _services = services;
     }
 
     /// <inheritdoc/>
@@ -44,8 +54,10 @@ public sealed class InProcessDomainEventDispatcher : IDomainEventDispatcher
             if (domainEvent is INotification)
             {
                 var concreteType = domainEvent.GetType();
-                var publishMethod = s_publishMethod.MakeGenericMethod(concreteType);
-                var task = (ValueTask)publishMethod.Invoke(_publisher, [domainEvent, cancellationToken])!;
+                var scoped = _services is not null && _publisher is IScopedPublisher;
+                var publishMethod = (scoped ? s_scopedPublishMethod : s_publishMethod).MakeGenericMethod(concreteType);
+                var task = (ValueTask)publishMethod.Invoke(_publisher, scoped
+                    ? [domainEvent, _services, cancellationToken] : [domainEvent, cancellationToken])!;
                 await task.ConfigureAwait(false);
             }
         }

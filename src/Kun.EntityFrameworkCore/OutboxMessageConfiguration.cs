@@ -21,6 +21,7 @@ public sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<Outbox
         builder.Property(x => x.Status).HasConversion<int>().IsRequired();
         builder.Property(x => x.PublishedAt);
         builder.Property(x => x.AttemptCount);
+        builder.Property(x => x.NextAttemptAt);
         builder.Property(x => x.LastError).HasMaxLength(2000);
         builder.HasIndex(x => new { x.Status, x.OccurredAt })
             .HasDatabaseName("IX_outbox_messages_status_occurredAt");

@@ -115,15 +115,13 @@ Never use EF Core in a Query handler or Dapper in a Command handler — it break
 
 ### Outbox (atomicity is the whole point)
 
-In `Kun.EntityFrameworkCore`'s `UnitOfWork.SaveChangesAsync`:
+在 `Kun.EntityFrameworkCore.EfUnitOfWork.SaveChangesAsync` 中：
 
-1. Collect `IDomainEvent`s from `ChangeTracker.Entries<IAggregateRoot>()`, then `ClearDomainEvents()` on each.
-2. Convert to `OutboxMessage` with a **stable event ID** (`{bounded-context}.{name}.v{version}`, e.g. `order.placed.v1`) looked up from `IEventTypeRegistry` — never `AssemblyQualifiedName`.
-3. Serialize payload via `KunJsonContext.Default.GetTypeInfo(type)!` (AOT-safe).
-4. Capture `Activity.Current?.Id` / `TraceStateString` as `TraceParent` / `TraceState` on the message so the background `OutboxPublisher` can resume the trace on publish.
-5. `DbContext.SaveChangesAsync` commits aggregate changes + outbox rows in **one transaction**. This atomicity is the guarantee; do not split it.
-
-Consumers are wrapped in `IdempotentConsumerDecorator<T>` backed by `IProcessedMessageStore` (Redis `SETNX + EX` by default). Delivery is at-least-once — consumer handlers must be safe to call repeatedly.
+1. 收集并清空聚合领域事件，在提交前通过通知 handler 转换为集成事件；整个过程复用命令／UoW 的同一 scope。
+2. 通知仅向 `IntegrationEventBuffer` 登记稳定事件 ID 与源生成 JSON，不直接调用 broker；默认派发器和 Catalog 派发器支持 `IScopedPublisher`。
+3. 把 buffer 消息加入业务 DbContext，业务与 Outbox 同事务保存；成功后清空 buffer。通知异常后必须释放当前工作单元重新执行命令。
+4. 默认 PostgreSQL 发布存储以 `FOR UPDATE SKIP LOCKED` 领取批次，等 broker publisher confirm 后更新状态并提交；失败退避时间保存在 `NextAttemptAt`。
+5. 消费端查成功标记 → handler → 成功标记 → ack，失败经持久化重试队列退避。业务副作用、Redis 标记、broker 确认之间仍有重放窗口，写类 handler 必须幂等。
 
 > **Design rationale** (type surface, publisher pump, rejected alternatives): see [ADR-015 Outbox pattern design](./docs/architecture/ADR-015-Outbox-pattern.md). The rules above are normative; the ADR explains *why*.
 

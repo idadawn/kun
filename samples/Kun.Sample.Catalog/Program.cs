@@ -48,8 +48,8 @@ builder.Services.AddKunAspNetCore();
 builder.Services.AddSingleton<ITenantContext>(NullTenantContext.Instance);
 
 // ── Domain event dispatcher (must be registered before AddKunEntityFrameworkCore
-//    so TryAddSingleton does not overwrite it with the NoOp default) ──────────
-builder.Services.AddSingleton<IDomainEventDispatcher, MediatorDomainEventDispatcher>();
+//    so TryAddScoped does not overwrite the sample-specific dispatcher) ──────────
+builder.Services.AddScoped<IDomainEventDispatcher, MediatorDomainEventDispatcher>();
 
 // ── EF Core (write side) ─────────────────────────────────────────────────────
 // Register CatalogDbContext so it can be injected directly by command handlers.

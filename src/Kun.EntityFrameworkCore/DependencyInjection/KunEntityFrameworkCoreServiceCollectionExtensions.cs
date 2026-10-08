@@ -2,6 +2,7 @@ using Kun.Core.Domain;
 using Kun.Core.Security;
 using Kun.EntityFrameworkCore.Interceptors;
 using Kun.EventBus;
+using Kun.EventBus.Background;
 using Kun.EventBus.Outbox;
 using Kun.MultiTenancy.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -32,6 +33,8 @@ public static class KunEntityFrameworkCoreServiceCollectionExtensions
 
         services.TryAddScoped<IntegrationEventBuffer>();
         services.TryAddScoped<IUnitOfWork, EfUnitOfWork>();
+        services.TryAddSingleton(TimeProvider.System);
+        services.TryAddScoped<IOutboxMessageStore, EfOutboxMessageStore>();
 
         // IIntegrationEventBus and IOutboxWriter must resolve to the SAME scoped
         // instance of IntegrationEventOutboxAccumulator so non-aggregate collaborators

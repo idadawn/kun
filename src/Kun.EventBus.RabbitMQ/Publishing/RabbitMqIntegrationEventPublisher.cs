@@ -34,7 +34,7 @@ public sealed partial class RabbitMqIntegrationEventPublisher : IIntegrationEven
     {
         var connection = await _connectionProvider.GetConnectionAsync(cancellationToken).ConfigureAwait(false);
 
-        await using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+        await using var channel = await connection.CreateChannelAsync(new CreateChannelOptions(publisherConfirmationsEnabled: true, publisherConfirmationTrackingEnabled: true), cancellationToken).ConfigureAwait(false);
 
         // Declare the topic exchange (idempotent).
         await channel.ExchangeDeclareAsync(
@@ -48,6 +48,7 @@ public sealed partial class RabbitMqIntegrationEventPublisher : IIntegrationEven
         var props = new BasicProperties
         {
             Persistent = true,
+            Type = message.EventTypeId,
             MessageId = message.Id.ToString(),
             Headers = BuildHeaders(message),
         };
@@ -57,7 +58,7 @@ public sealed partial class RabbitMqIntegrationEventPublisher : IIntegrationEven
         await channel.BasicPublishAsync(
             exchange: _options.ExchangeName,
             routingKey: message.EventTypeId,
-            mandatory: false,
+            mandatory: true,
             basicProperties: props,
             body: body,
             cancellationToken: cancellationToken).ConfigureAwait(false);

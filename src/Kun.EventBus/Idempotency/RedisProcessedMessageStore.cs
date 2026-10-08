@@ -21,6 +21,14 @@ public sealed class RedisProcessedMessageStore : IProcessedMessageStore
     public RedisProcessedMessageStore(IConnectionMultiplexer multiplexer)
         : this(multiplexer.GetDatabase()) { }
 
+    /// <inheritdoc />
+    public async ValueTask<bool> IsProcessedAsync(string consumerName, Guid messageId,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return await _db.KeyExistsAsync($"idemp:{consumerName}:{messageId}").ConfigureAwait(false);
+    }
+
     /// <inheritdoc/>
     public async ValueTask<bool> TryMarkProcessedAsync(
         string consumerName,

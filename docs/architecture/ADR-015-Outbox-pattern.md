@@ -46,7 +46,7 @@ lives in `Kun.EntityFrameworkCore`. Two modules because:
 | `Kun.EventBus.Background.IOutboxLockProvider` | Distributed lease so multiple pods don't double-publish. `TryAcquireAsync(lockName, ttl, ct)` returns `IAsyncDisposable?`; `null` means another instance holds it. |
 | `Kun.EventBus.Background.OutboxPublisherBackgroundService` | Hosted service running the read → lock → publish → mark loop. |
 | `Kun.EventBus.Background.OutboxPublisherOptions` | Batch size, poll interval, lease TTL, failure backoff. |
-| `Kun.EventBus.Background.NullOutboxLockProvider` | Single-pod default — always succeeds. |
+| `Kun.EventBus.Background.NullOutboxLockProvider` | Explicit single-pod opt-in only — never the production default. |
 | `Kun.EventBus.Background.RedisOutboxLockProvider` | Multi-pod production default — SET NX + EX. |
 | `Kun.EventBus.Background.Internal.ProcessedMessageStore` | Consumer-side "seen before?" cache backing `IdempotentConsumerDecorator<T>` (ADR-003 trail). |
 | `Kun.EntityFrameworkCore.IntegrationEventOutboxAccumulator` | Collects aggregate-produced `IIntegrationEvent`s during `SaveChangesAsync` and writes `OutboxMessage` rows in the same transaction. |
@@ -79,21 +79,9 @@ by the persisted outbox row.
 `OutboxPublisherBackgroundService` runs in every hosting process
 with the EventBus registered. On each tick:
 
-1. `lockProvider.TryAcquireAsync("outbox-publisher", leaseTtl, ct)`.
-   If `null`, sleep and retry — another pod owns the batch.
-2. `store.ReadPendingBatchAsync(options.BatchSize, ct)` — reads
-   `BatchSize` oldest `Pending` rows. The partial index on
-   `(Status = Pending, CreatedAt ASC)` keeps this O(batchsize)
-   per tick even at 10⁶ total rows.
-3. For each row: publish to the broker (RabbitMQ by default; a
-   null publisher exists for tests). On success →
-   `MarkPublishedAsync`. On exception → `MarkFailedAsync` +
-   increment retry counter. Hit max retries → leave status
-   `Failed` for operator triage; log + metric.
-4. Release the lease (dispose the `IAsyncDisposable`).
+S1-KUN-002（2026-10-09）修订：默认 `EfOutboxMessageStore` 在 PostgreSQL 事务里以 `FOR UPDATE SKIP LOCKED` 领取 Pending 且已到重试时间的消息，持有行锁直到本批次状态提交。broker 发布使用 confirms + mandatory；失败将指数退避时间保存至 `NextAttemptAt`，达到上限保持 Failed 供运维重放。
 
-Backoff + jitter on the outer loop when the lease is contended or
-the batch is empty. Configurable via `OutboxPublisherOptions`.
+自定义非事务存储须显式配置分布式锁；Null 锁仅供明确单实例场景。数据库提交与 broker 确认不构成跨系统事务，确认后崩溃仍可能重放；消费者必须业务幂等。
 
 ### Consumer idempotency
 

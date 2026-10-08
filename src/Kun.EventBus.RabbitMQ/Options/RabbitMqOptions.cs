@@ -18,6 +18,9 @@ public sealed class RabbitMqOptions
     /// <summary>Max redeliveries before a message is routed to the dead-letter exchange. Default 5.</summary>
     public int MaxDeliveryAttempts { get; init; } = 5;
 
+    /// <summary>失败投递在 broker 上持久化延迟重试的起始间隔，按指数增长，封顶一分钟。</summary>
+    public TimeSpan RetryBaseDelay { get; init; } = TimeSpan.FromSeconds(1);
+
     /// <summary>Idempotency key TTL. Default 30 minutes.</summary>
     public TimeSpan IdempotencyTtl { get; init; } = TimeSpan.FromMinutes(30);
 }

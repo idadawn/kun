@@ -43,18 +43,9 @@ public sealed partial class RabbitMqConnectionProvider : IAsyncDisposable
 
             if (_connection is not null)
             {
-                // A dead cached connection would otherwise keep its automatic-
-                // recovery loop alive forever — dispose before replacing.
-                try
-                {
-                    _connection.Dispose();
-                }
-                catch (Exception ex)
-                {
-                    Log.StaleConnectionDisposeFailed(_logger, ex);
-                }
-
-                _connection = null;
+                // 发布器和订阅器共享连接。网络恢复期间替换它会销毁消费者拓扑，
+                // 而订阅循环仍在等待旧连接。保留自动恢复实例，调用方稍后重试。
+                throw new IOException("RabbitMQ 连接正在恢复，暂不能创建发布通道。");
             }
 
             // CA1873 flags the argument computation, but masking is a handful
@@ -136,8 +127,6 @@ public sealed partial class RabbitMqConnectionProvider : IAsyncDisposable
             Message = "RabbitMQ connection established.")]
         public static partial void ConnectionEstablished(ILogger logger);
 
-        [LoggerMessage(EventId = 12, Level = LogLevel.Debug,
-            Message = "Disposing stale RabbitMQ connection failed (already torn down).")]
-        public static partial void StaleConnectionDisposeFailed(ILogger logger, Exception ex);
+
     }
 }

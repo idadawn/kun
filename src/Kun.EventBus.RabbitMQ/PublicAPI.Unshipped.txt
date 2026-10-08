@@ -25,3 +25,5 @@ Kun.EventBus.RabbitMQ.DependencyInjection.KunRabbitMqBuilder
 Kun.EventBus.RabbitMQ.DependencyInjection.KunRabbitMqBuilder.Subscribe<TEvent, THandler>(string! eventTypeId, System.Text.Json.Serialization.Metadata.JsonTypeInfo<TEvent!>! typeInfo) -> Kun.EventBus.RabbitMQ.DependencyInjection.KunRabbitMqBuilder!
 Kun.EventBus.RabbitMQ.DependencyInjection.KunRabbitMqServiceCollectionExtensions
 static Kun.EventBus.RabbitMQ.DependencyInjection.KunRabbitMqServiceCollectionExtensions.AddRabbitMq(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.EventBus.RabbitMQ.Options.RabbitMqOptions!>! configureOptions, System.Action<Kun.EventBus.RabbitMQ.DependencyInjection.KunRabbitMqBuilder!>? configure = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Kun.EventBus.RabbitMQ.Options.RabbitMqOptions.RetryBaseDelay.get -> System.TimeSpan
+Kun.EventBus.RabbitMQ.Options.RabbitMqOptions.RetryBaseDelay.init -> void

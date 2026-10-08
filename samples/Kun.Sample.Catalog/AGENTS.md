@@ -41,11 +41,11 @@ HTTP POST /products
       → Product.Create()  [raises ProductCreatedDomainEvent]
       → db.Products.Add(product)
       → IUnitOfWork.SaveChangesAsync()
-          → drains IntegrationEventBuffer → OutboxMessages (one EF transaction)
-          → dispatches ProductCreatedDomainEvent via MediatorDomainEventDispatcher
+          → dispatches ProductCreatedDomainEvent via MediatorDomainEventDispatcher (same scope, before commit)
               → ProductCreatedHandler.Handle()
                   → IIntegrationEventBus.Publish(ProductPublishedIntegrationEvent)
-                     (staged in IntegrationEventBuffer for next commit)
+                     (staged in the current IntegrationEventBuffer)
+          → drains buffer and commits product + OutboxMessages together
 ```
 
 ## Stable event IDs

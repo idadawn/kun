@@ -9,6 +9,7 @@ namespace Kun.EntityFrameworkCore;
 /// </summary>
 public sealed class EfUnitOfWork : IUnitOfWork
 {
+    private bool _dispatchFailed;
     private readonly KunDbContext _dbContext;
     private readonly IDomainEventDispatcher _domainEvents;
     private readonly IntegrationEventBuffer _integrationBuffer;
@@ -30,38 +31,29 @@ public sealed class EfUnitOfWork : IUnitOfWork
     /// <inheritdoc/>
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        // 1. Collect domain events from all tracked aggregates, then clear them.
-        var aggregates = _dbContext.ChangeTracker
-            .Entries<IAggregateRoot>()
-            .Select(e => e.Entity)
-            .ToList();
-
-        var domainEvents = aggregates
-            .SelectMany(a => a.DomainEvents)
-            .ToList();
-
-        foreach (var agg in aggregates)
+        if (_dispatchFailed) throw new InvalidOperationException("通知处理失败后必须释放当前工作单元并从新作用域重试。");
+        // 提交前派发并 drain 级联领域事件；通知产生的集成事件必须进入本次事务。
+        for (var round = 0; ; round++)
         {
-            agg.ClearDomainEvents();
+            var aggregates = _dbContext.ChangeTracker.Entries<IAggregateRoot>().Select(e => e.Entity).ToArray();
+            var events = aggregates.SelectMany(a => a.DomainEvents).ToArray();
+            if (events.Length == 0) break;
+            if (round >= 100) throw new InvalidOperationException("领域事件级联超过 100 轮，拒绝提交循环事件。");
+            foreach (var aggregate in aggregates) aggregate.ClearDomainEvents();
+            try
+            {
+                await _domainEvents.DispatchAsync(events, cancellationToken).ConfigureAwait(false);
+            }
+            catch
+            {
+                _dispatchFailed = true;
+                throw;
+            }
         }
-
-        // 2. Drain integration event buffer → OutboxMessages (appended atomically).
         var pending = _integrationBuffer.GetPendingMessages();
-        if (pending.Count > 0)
-        {
-            _dbContext.OutboxMessages.AddRange(pending);
-            _integrationBuffer.Clear();
-        }
-
-        // 3. Commit aggregate changes + outbox rows in ONE transaction.
+        if (pending.Count > 0) _dbContext.OutboxMessages.AddRange(pending);
         var affected = await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-
-        // 4. Dispatch domain events in-process AFTER commit (local, non-transactional).
-        if (domainEvents.Count > 0)
-        {
-            await _domainEvents.DispatchAsync(domainEvents, cancellationToken).ConfigureAwait(false);
-        }
-
+        _integrationBuffer.Clear();
         return affected;
     }
 }

@@ -13,6 +13,12 @@
 - `PostgresAuditChain` 在事务里按租户行锁串行化读取链头、写记录并推进链头，保存原始时间 ticks，支持多副本与哈希重放。`AuditEntry.ActorType` 支持 `agent` 并纳入新哈希，历史 unknown 条目维持旧算法。
 - `EfAuditReader<TContext>` 在数据库端按当前租户、主体、资源、时间窗口过滤并限量。
 - 显式数据约定提供 snake_case、Guid v7 默认主键、可空审计主体及 PostgreSQL `xmin`；`SaveChangesResultAsync()` 将并发冲突映射为 `Result` 的 Conflict。已有非空主键保持不变，旧非空数值主体需要显式迁移。
+### Fixed — Outbox 与消费可靠性（S1-KUN-002）
+
+- Catalog 真库测试确认旧领域通知路径会丢失集成事件；领域通知改为提交前同 scope 派发，失败时禁止提交半个通知链。
+- 默认 EF Outbox 存储使用 PostgreSQL `FOR UPDATE SKIP LOCKED` 领取与提交批次；新增持久化 `NextAttemptAt` 指数退避，附两份示例迁移。自定义非事务存储不再默认无锁。
+- RabbitMQ 开启发布确认与 mandatory 路由，消费者成功后才记录幂等并 ack，失败经持久化 quorum 队列退避后进 DLX；保留共享连接自动恢复。业务 handler 仍需幂等。
+- 恢复原先跳过的幂等测试，补齐双副本发布、handler 失败重试与 broker 重启验收；见 [消息指南](docs/guides/outbox-and-integration-events.md) 的迁移边界。
 
 ## [2026.10.8] - 2026-10-08
 

@@ -7,6 +7,10 @@ namespace Kun.EventBus.Idempotency;
 /// </summary>
 public interface IProcessedMessageStore
 {
+    /// <summary>查询成功记录；旧自定义实现默认返回 false，保留至少一次语义，需升级实现以消除重复。</summary>
+    ValueTask<bool> IsProcessedAsync(string consumerName, Guid messageId,
+        CancellationToken cancellationToken = default) => ValueTask.FromResult(false);
+
     /// <summary>
     /// Atomically records <paramref name="messageId"/> as processed by <paramref name="consumerName"/>.
     /// </summary>
