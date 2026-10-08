@@ -6,6 +6,8 @@
 
 ## [Unreleased]
 
+## [2026.10.8] - 2026-10-08
+
 ### Fixed — 多租户后台链路（S1-KUN-001）
 
 - `ITenantContext.BeginScope` 使消息消费、Outbox 发布和 Saga 执行／补偿显式恢复租户；租户校验复用同一白名单，缺少租户的多租户消息直接进入死信队列。
@@ -22,6 +24,10 @@
 ### Fixed — 发布配置隔离
 
 - GitHub Packages 发布使用当前步骤专属的临时 NuGet 配置，并在步骤退出时删除，避免把短期凭据和额外包源遗留在共享执行器，导致后续还原触发 NU1507。
+
+### Fixed — 文档
+
+- 修正本文件两处越出仓库根目录的相对链接；`docs/architecture/when-to-use-currentuser.md` 的决策表补齐两行缺失的列（#42）。
 
 ## [2026.9.13] - 2026-09-13
 
@@ -1070,6 +1076,7 @@ MultiTenancy / Audit / RateLimit / Caching / Observability / Security / Configur
 Sandbox），全仓 AOT 一致性通过审计，Directory.Build.props 统一 AOT 策略，CI 新增
 `aot-audit` 矩阵 job 与 `sample-aot-integration` job。
 
-[Unreleased]: https://github.com/idadawn/kun/compare/v2026.9.13...HEAD
+[Unreleased]: https://github.com/idadawn/kun/compare/v2026.10.8...HEAD
+[2026.10.8]: https://github.com/idadawn/kun/compare/v2026.9.13...v2026.10.8
 [2026.9.13]: https://github.com/idadawn/kun/compare/v2026.6.12...v2026.9.13
 [0.1.0-phase1]: https://github.com/idadawn/kun/releases/tag/v0.1.0-phase1
