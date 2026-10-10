@@ -28,7 +28,7 @@ public sealed class IpRateLimitPartitionResolverTests
     }
 
     [Fact]
-    public void ResolvePartitionKey_PrefersXForwardedFor_WhenPresent()
+    public void ResolvePartitionKey_IgnoresRawXForwardedFor()
     {
         // Arrange
         var context = new DefaultHttpContext();
@@ -38,8 +38,8 @@ public sealed class IpRateLimitPartitionResolverTests
         // Act
         var key = _resolver.ResolvePartitionKey(context);
 
-        // Assert — first IP in X-Forwarded-For is the originating client
-        key.Should().Be("203.0.113.5");
+        // Assert — only a trusted forwarded-header middleware may alter the peer address.
+        key.Should().Be("10.0.0.1");
     }
 
     [Fact]

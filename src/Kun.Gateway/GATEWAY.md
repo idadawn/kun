@@ -8,4 +8,16 @@ ForwardedClaimTypes is an explicit allowlist for application claims such as sid,
 
 Use the gated internal JWKS mapping on an internal listener or network boundary. Configure permitted public routes explicitly; never proxy arbitrary internal endpoints to browsers. The standalone host remains available through dotnet publish, including Native AOT.
 
+## Route and proxy boundary
+
+`AddKunGateway` registers the authenticated fallback policy and fills missing YARP route policies with `Default` authorization and `kun-default` rate limiting (100 requests/minute per tenant, per process). A public route must explicitly set `AuthorizationPolicy: "Anonymous"`. Existing named authorization and rate policies remain effective. Rejection returns HTTP 429 and `Retry-After` when the limiter supplies a retry time. Anonymous routes discard unvalidated incoming Authorization headers.
+
+A consuming host must call `UseForwardedHeaders()`, `UseAuthentication()`, `UseAuthorization()` and `UseRateLimiter()` in that order before `MapReverseProxy()`. The standalone host already does this. Forwarded headers are disabled by default: set `TrustedProxyAddresses` or `TrustedProxyNetworks` to the actual ingress peers and keep `ForwardLimit` bounded. The IP limiter reads only the normalized socket address; it never parses raw X-Forwarded-For.
+
+## Signing keys and telemetry
+
+Replace the private PEM at `SigningKeyPath` atomically. The gateway checks it on signing/JWKS access, at most once per `KeyReloadInterval` (default one second), and shares the resulting key ring between both operations. Old public keys remain for `KeyOverlapPeriod` (default five minutes); old private keys are disposed immediately. Invalid replacements retain the last valid key and emit a warning. `PublicKeyPath` is retained for legacy standalone JWKS mapping; AddKunGateway derives JWKS directly from its signing ring. Restarting loses the in-memory overlap history, so finish overlap before a restart or coordinate rotation across replicas.
+
+The standalone host registers `AddKunObservability` under service name `kun-gateway` with EF instrumentation disabled. `/healthz`, `/readyz` and JWKS are explicitly anonymous; the internal JWKS endpoint retains its existing environment/additional gate. Client-credentials authentication and machine-principal storage belong to the consuming identity authority; this host exchanges already validated external principals.
+
 See the repository's docs/security/s2s-jwt.md for the full contract, key handling and validation requirements. Source and package are MIT licensed.

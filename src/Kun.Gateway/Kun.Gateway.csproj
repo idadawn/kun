@@ -7,12 +7,17 @@
     <IsPackable>true</IsPackable>
     <PackageReadmeFile>GATEWAY.md</PackageReadmeFile>
     <Description>Kun Framework — smart gateway: external JWT to internal S2S JWT translation, YARP reverse proxy, rate limiting, JWKS endpoint.</Description>
+    <!-- Kun.Observability intentionally pins the upstream beta-only EF instrumentation.
+         Central transitive pinning exposes that dependency in this package too.
+         Match its NU5104 exception; native code excludes the EF path via the runtime guard. -->
+    <NoWarn>$(NoWarn);NU5104</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
     <None Include="GATEWAY.md" Pack="true" PackagePath="/" />
     <ProjectReference Include="..\Kun.Core\Kun.Core.csproj" />
     <ProjectReference Include="..\Kun.Security\Kun.Security.csproj" />
+    <ProjectReference Include="..\Kun.Observability\Kun.Observability.csproj" />
     <PackageReference Include="Yarp.ReverseProxy" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
     <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" />

@@ -36,10 +36,5 @@ internal sealed class KunTokenBucketRateLimiterPolicy : IRateLimiterPolicy<strin
         });
     }
 
-    public Func<OnRejectedContext, CancellationToken, ValueTask>? OnRejected =>
-        static (ctx, _) =>
-        {
-            ctx.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-            return ValueTask.CompletedTask;
-        };
+    public Func<OnRejectedContext, CancellationToken, ValueTask>? OnRejected => KunRateLimiterExtensions.Reject;
 }

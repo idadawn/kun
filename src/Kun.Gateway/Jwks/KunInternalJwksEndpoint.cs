@@ -71,8 +71,9 @@ public static class KunInternalJwksEndpoint
                 return Results.NotFound();
             }
 
-            var keySet = builder.Build(opts.PublicKeyPath);
+            var keySet = httpContext.RequestServices.GetService<S2sSigningKeyRing>()?.PublicKeys() ?? builder.Build(opts.PublicKeyPath);
+            httpContext.Response.Headers.CacheControl = "no-store";
             return Results.Json(keySet, JwksJsonContext.Default.JwksResponse);
-        });
+        }).AllowAnonymous();
     }
 }

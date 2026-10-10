@@ -12,8 +12,8 @@
 | 实现 | 分区依据 | 适用 |
 |---|---|---|
 | `IpRateLimitPartitionResolver` | `HttpContext.Connection.RemoteIpAddress` | 匿名 API、防 abuse |
-| `TenantRateLimitPartitionResolver` | S2S JWT 的 `tenant_id` claim | 多租户共享库场景（默认） |
-| `UserPrincipalRateLimitPartitionResolver` | S2S JWT 的 `sub` claim | Free-tier API，per-account 限额 |
+| `TenantRateLimitPartitionResolver` | 已验证外部 JWT 的 `tenant_id` claim | 多租户共享库场景（默认） |
+| `UserPrincipalRateLimitPartitionResolver` | 已验证外部 JWT 的 `sub` claim | Free-tier API，per-account 限额 |
 
 **注册**：任意一种用 `services.AddSingleton<IRateLimitPartitionResolver, XxxResolver>()`。Kun 的 `AddKunXxxRateLimiter()` 系列扩展会用 `TryAddSingleton<...,TenantRateLimitPartitionResolver>()` 做默认，你预先注册就覆盖它。
 
@@ -32,6 +32,12 @@
 ```csharp
 app.MapGet("/orders", handler).RequireRateLimiting(KunRateLimiterExtensions.SlidingWindowPolicyName);
 ```
+
+## 网关默认边界
+
+`AddKunGateway()` 已注册 `kun-default`，并为未显式设置 `RateLimiterPolicy` 的 YARP 路由绑定它。业务路由同时默认要求认证；只有配置 `AuthorizationPolicy: "Anonymous"` 的路由可匿名访问。普通 ASP.NET 端点仍需调用上面的 `RequireRateLimiting`。三种内置策略超限均返回 429；限流器提供重试时间时，响应附整数秒 `Retry-After`。具名自定义策略也沿用默认拒绝回调，除非宿主显式覆盖。
+
+IP 分区仅读取 `Connection.RemoteIpAddress`。宿主须在认证和限流之前调用 `UseForwardedHeaders()`；独立网关已接好。`KunGateway.TrustedProxyAddresses`（IP 列表）和 `TrustedProxyNetworks`（CIDR 列表）只填写实际反向代理出口，`ForwardLimit` 默认 1。两张名单均为空时关闭转发头处理，非信任来源伪造 X-Forwarded-For 不会切换限流桶。不要单独清空框架的 KnownProxies/KnownIPNetworks：框架会将其理解为信任全部。
 
 ## 典型组合
 

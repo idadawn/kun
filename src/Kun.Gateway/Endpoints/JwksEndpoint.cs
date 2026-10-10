@@ -41,9 +41,10 @@ public static class JwksEndpoint
                     return Results.NotFound();
                 }
 
-                var keySet = builder.Build(options.Value.PublicKeyPath);
+                var keySet = httpContext.RequestServices.GetService<S2sSigningKeyRing>()?.PublicKeys() ?? builder.Build(options.Value.PublicKeyPath);
+                httpContext.Response.Headers.CacheControl = "no-store";
                 return Results.Json(keySet, JwksJsonContext.Default.JwksResponse);
-            });
+            }).AllowAnonymous();
     }
 }
 

@@ -7,6 +7,11 @@
   <ItemGroup>
     <ProjectReference Include="../../samples/Kun.Sample.Catalog/Kun.Sample.Catalog.csproj" />
     <ProjectReference Include="../../src/Kun.AspNetCore/Kun.AspNetCore.csproj" />
+    <ProjectReference Include="../../src/Kun.Grpc/Kun.Grpc.csproj" />
+    <PackageReference Include="Grpc.Net.Client" />
+    <PackageReference Include="Grpc.Tools" PrivateAssets="all" />
+    <PackageReference Include="Google.Protobuf" />
+    <Protobuf Include="Grpc/streaming.proto" GrpcServices="Both" />
     <ProjectReference Include="../../src/Kun.Configuration/Kun.Configuration.csproj" />
     <ProjectReference Include="../../src/Kun.Configuration.Apollo/Kun.Configuration.Apollo.csproj" />
     <!-- Testcontainers 4.0 transitively requests vulnerable SSH.NET 2023; retain the audit gate. -->

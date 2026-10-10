@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Kun.Observability.Abstractions;
 using Kun.Observability.Enrichment;
 using Microsoft.Extensions.DependencyInjection;
@@ -84,7 +85,16 @@ public static class KunObservabilityServiceCollectionExtensions
                 }
                 if (snapshot.IncludeEfCore)
                 {
-                    tracing.AddEntityFrameworkCoreInstrumentation();
+                    // 配置开关不是链接期常量。运行时特性守卫使 Native AOT 真正裁掉
+                    // EF instrumentation 的反射路径；不能只把 IncludeEfCore 设为 false。
+                    if (RuntimeFeature.IsDynamicCodeSupported)
+                    {
+                        tracing.AddEntityFrameworkCoreInstrumentation();
+                    }
+                    else
+                    {
+                        throw new NotSupportedException("EF Core instrumentation is unavailable in Native AOT. Set IncludeEfCore to false.");
+                    }
                 }
 
                 if (snapshot.EnrichActivitiesFromBaggage)

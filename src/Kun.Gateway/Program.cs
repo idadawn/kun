@@ -1,7 +1,8 @@
 using Kun.Gateway.DependencyInjection;
 using Kun.Gateway.Endpoints;
-using Kun.Gateway.RateLimiting;
+using Kun.Observability.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,8 +12,13 @@ builder.Services.AddKunGateway(
     opts => builder.Configuration.GetSection("KunGateway").Bind(opts),
     builder.Configuration.GetSection("ReverseProxy"));
 
-// ── Rate limiting (tenant-partitioned, 100 req/min) ───────────────────────────
-builder.Services.AddKunRateLimiter();
+// ── Telemetry for the standalone host ───────────────────────────────────────
+builder.Services.AddKunObservability(options =>
+{
+    options.ServiceName = "kun-gateway";
+    builder.Configuration.GetSection("KunObservability").Bind(options);
+    options.IncludeEfCore = false;
+});
 
 // ── External JWT validation (IdP-issued; gateway validates before proxying) ───
 // Note: AddKunServiceAuthentication is for downstream services validating S2S tokens.
@@ -27,7 +33,8 @@ builder.Services
     .AddJwtBearer(options =>
     {
         options.MetadataAddress = externalJwksUri;
-        options.RequireHttpsMetadata = false; // may be HTTP in dev; enforce in prod via config
+        options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+        options.MapInboundClaims = false;
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -40,11 +47,9 @@ builder.Services
             ClockSkew = TimeSpan.FromSeconds(30),
         };
     });
-
-builder.Services.AddAuthorization();
-
 var app = builder.Build();
 
+app.UseForwardedHeaders();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
@@ -55,6 +60,9 @@ app.UseGrpcWeb(new GrpcWebOptions { DefaultEnabled = true });
 
 // Expose the gateway's public key for downstream S2S JWT validation
 app.MapKunJwks();
+
+app.MapHealthChecks("/healthz", new HealthCheckOptions { Predicate = _ => false }).AllowAnonymous();
+app.MapHealthChecks("/readyz").AllowAnonymous();
 
 // YARP reverse proxy — routes and clusters configured via appsettings.json
 app.MapReverseProxy();

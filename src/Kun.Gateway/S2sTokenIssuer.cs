@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Security.Claims;
-using System.Security.Cryptography;
 using Kun.Gateway.Configuration;
 using Kun.Gateway.Identity;
 using Kun.Gateway.Jwks;
@@ -18,10 +17,10 @@ namespace Kun.Gateway;
 /// When <see cref="KunGatewayOptions.EmitTraceIdClaim"/> is <see langword="true"/> and an active
 /// <see cref="Activity"/> with a valid trace id is present, a <c>trace_id</c> claim is also emitted.
 /// </summary>
-public sealed class S2sTokenIssuer
+public sealed class S2sTokenIssuer : IDisposable
 {
-    private readonly RsaSecurityKey _signingKey;
-    private readonly SigningCredentials _credentials;
+    private readonly S2sSigningKeyRing _keys;
+    private readonly bool _ownsKeys;
     private readonly KunGatewayOptions _options;
     private readonly IS2sPrincipalResolver _resolver;
     private readonly IHttpContextAccessor? _httpContextAccessor;
@@ -44,6 +43,11 @@ public sealed class S2sTokenIssuer
         IHostEnvironment env,
         IS2sPrincipalResolver resolver,
         IHttpContextAccessor? httpContextAccessor = null)
+        : this(options, env, resolver, httpContextAccessor, null)
+    {
+    }
+
+    internal S2sTokenIssuer(IOptions<KunGatewayOptions> options, IHostEnvironment env, IS2sPrincipalResolver resolver, IHttpContextAccessor? httpContextAccessor, S2sSigningKeyRing? keys)
     {
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(env);
@@ -61,29 +65,8 @@ public sealed class S2sTokenIssuer
         _resolver = resolver;
         _httpContextAccessor = httpContextAccessor;
 
-        var rsa = RSA.Create();
-        if (File.Exists(_options.SigningKeyPath))
-        {
-            rsa.ImportFromPem(File.ReadAllText(_options.SigningKeyPath));
-        }
-        else if (env.IsDevelopment())
-        {
-            rsa.KeySize = 2048;
-            EnsureDirectory(_options.SigningKeyPath);
-            File.WriteAllText(_options.SigningKeyPath, rsa.ExportRSAPrivateKeyPem());
-            EnsureDirectory(_options.PublicKeyPath);
-            File.WriteAllText(_options.PublicKeyPath, rsa.ExportRSAPublicKeyPem());
-        }
-        else
-        {
-            throw new InvalidOperationException(
-                $"S2sTokenIssuer: signing key not found at '{_options.SigningKeyPath}'. " +
-                "Production deployments must pre-provision the RSA key pair. " +
-                "For development, set ASPNETCORE_ENVIRONMENT=Development.");
-        }
-
-        _signingKey = new RsaSecurityKey(rsa) { KeyId = JwksResponseBuilder.GetKeyId(rsa) };
-        _credentials = new SigningCredentials(_signingKey, SecurityAlgorithms.RsaSha256);
+        _ownsKeys = keys is null;
+        _keys = keys ?? new S2sSigningKeyRing(options, env, TimeProvider.System, Microsoft.Extensions.Logging.Abstractions.NullLogger<S2sSigningKeyRing>.Instance);
     }
 
     /// <summary>
@@ -107,13 +90,10 @@ public sealed class S2sTokenIssuer
     {
     }
 
-    private static void EnsureDirectory(string filePath)
+    /// <summary>释放通过兼容构造器独立创建的签名状态；DI 共享状态由容器释放。</summary>
+    public void Dispose()
     {
-        var dir = Path.GetDirectoryName(filePath);
-        if (!string.IsNullOrEmpty(dir))
-        {
-            Directory.CreateDirectory(dir);
-        }
+        if (_ownsKeys) _keys.Dispose();
     }
 
     /// <summary>
@@ -207,11 +187,9 @@ public sealed class S2sTokenIssuer
             NotBefore = now,
             Expires = now.Add(lifetime),
             Subject = new ClaimsIdentity(claims),
-            SigningCredentials = _credentials,
         };
 
-        var handler = new JsonWebTokenHandler();
-        return handler.CreateToken(descriptor);
+        return _keys.CreateToken(descriptor);
     }
 
     private static readonly HashSet<string> ReservedClaimTypes = new(StringComparer.OrdinalIgnoreCase)

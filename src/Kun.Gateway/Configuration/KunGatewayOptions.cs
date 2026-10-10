@@ -50,7 +50,8 @@ public sealed class KunGatewayOptions
     public required string SigningKeyPath { get; set; }
 
     /// <summary>
-    /// Absolute path to the PEM-encoded RSA public key file exposed via the JWKS endpoint.
+    /// Legacy public PEM path; generated in Development and used by standalone JWKS mapping.
+    /// With AddKunGateway, JWKS is derived from the active signing key and overlap key ring.
     /// </summary>
     public required string PublicKeyPath { get; set; }
 
@@ -76,4 +77,19 @@ public sealed class KunGatewayOptions
     /// public path (e.g. rate-limiting sidecars that reshape external traffic).
     /// </remarks>
     public bool ExposeInternalJwks { get; set; }
+
+    /// <summary>允许转发客户端地址与协议的代理 IP；缺省不信任任何转发头。</summary>
+    public string[] TrustedProxyAddresses { get; set; } = [];
+
+    /// <summary>允许转发客户端地址与协议的代理 CIDR 网段；应只包含实际代理。</summary>
+    public string[] TrustedProxyNetworks { get; set; } = [];
+
+    /// <summary>最多接受的可信代理跳数，默认一跳。</summary>
+    public int ForwardLimit { get; set; } = 1;
+
+    /// <summary>轮换后旧公钥的重叠发布时长，默认五分钟；消费者仍须执行令牌寿命验证。</summary>
+    public TimeSpan KeyOverlapPeriod { get; set; } = TimeSpan.FromMinutes(5);
+
+    /// <summary>检查私钥文件变更的最短间隔，默认一秒；零表示每次签发或获取 JWKS 都检查。</summary>
+    public TimeSpan KeyReloadInterval { get; set; } = TimeSpan.FromSeconds(1);
 }
