@@ -14,12 +14,12 @@ YARP-based API gateway. Validates external IdP-issued JWTs from incoming client 
 | `Kun.Gateway.csproj` | `IsAotCandidate=true`, `Sdk=Microsoft.NET.Sdk.Web`, `OutputType=Exe` |
 | `Program.cs` | Composition root: external JWT bearer + YARP + rate limiter + JWKS endpoint |
 | `Configuration/KunGatewayOptions.cs` | Options for external IdP, internal issuer/audience, key file paths |
-| `S2sTokenIssuer.cs` | Loads RSA private key from PEM; issues internal S2S JWTs (RS256, 60 s TTL) |
+| `S2sTokenIssuer.cs` | Issues internal S2S JWTs through the shared hot-reloading signing ring (RS256, 60 s TTL) |
 | `Transforms/S2sAuthTransform.cs` | Internal YARP `RequestTransform`; replaces `Authorization` header with minted S2S JWT |
-| `Endpoints/JwksEndpoint.cs` | `MapKunJwks()` extension; serves `/.well-known/jwks.json` from PEM public key |
+| `Endpoints/JwksEndpoint.cs` | `MapKunJwks()` extension; serves `/.well-known/jwks.json` from the active/overlap signing ring |
 | `RateLimiting/IRateLimitPartitionResolver.cs` | Pluggable partition-key interface |
 | `RateLimiting/Resolvers/TenantRateLimitPartitionResolver.cs` | Partitions by `tenant_id` claim; falls back to `"anonymous"` |
-| `RateLimiting/Resolvers/IpRateLimitPartitionResolver.cs` | Partitions by `X-Forwarded-For` / `RemoteIpAddress` |
+| `RateLimiting/Resolvers/IpRateLimitPartitionResolver.cs` | Partitions by normalized `RemoteIpAddress`; raw forwarding headers are never trusted |
 | `RateLimiting/KunRateLimiterExtensions.cs` | `AddKunRateLimiter()` — fixed-window 100 req/min, policy name `kun-default` |
 | `DependencyInjection/KunGatewayServiceCollectionExtensions.cs` | `AddKunGateway()` — registers options, issuer, resolver, YARP with transform |
 | `appsettings.json` | Skeleton config: KunGateway section + sample YARP routes/clusters |
@@ -64,7 +64,10 @@ dotnet publish src/Kun.Gateway -c Release -p:PublishAot=true /warnaserror
 
 - YARP config in `appsettings.json`; dynamic config can use `IProxyConfigProvider` if needed.
 - Custom rate limiting: register `IRateLimitPartitionResolver` before calling `AddKunRateLimiter()`.
-- Key rotation: replace PEM files and restart; serve multiple `kid`s in JWKS via `FileKunJwksProvider` from `Kun.Security` if needed.
+- Key rotation: atomically replace `SigningKeyPath`; `S2sSigningKeyRing` reloads on signing/JWKS access without restart (default minimum interval one second). Old public keys overlap for five minutes; invalid replacements retain the last good key. Restart loses overlap history, so coordinate replicas and restarts.
+- `AddKunGateway` applies authenticated/default-rate policies to routes unless explicitly configured. Public routes require `AuthorizationPolicy: "Anonymous"`; anonymous forwarding strips Authorization.
+- `UseForwardedHeaders` must precede auth and rate limiting. `TrustedProxyAddresses` / `TrustedProxyNetworks` default to empty (processing disabled); never clear KnownProxies alone and assume it means deny all.
+- The standalone host calls `AddKunObservability` with EF instrumentation disabled and remains Native AOT gated.
 
 ## gRPC-Web Support
 
@@ -97,6 +100,7 @@ The gateway transparently proxies gRPC-Web requests (browser clients using `grpc
 ### Internal
 
 - `Kun.Core` — base types.
+- `Kun.Observability` — standalone host telemetry.
 - `Kun.Security` — `S2sTokenOptions`, JWKS provider pattern.
 
 ### External

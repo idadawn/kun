@@ -6,7 +6,7 @@ namespace Kun.Grpc.Interceptors;
 
 /// <summary>
 /// gRPC server interceptor that catches <see cref="ResultFailureException"/> thrown by
-/// <c>Result&lt;T&gt;.EnsureSuccess()</c> in unary handlers and translates the carried
+/// <c>Result&lt;T&gt;.EnsureSuccess()</c> in any RPC handler and translates the carried
 /// <see cref="Error"/> into the appropriate <see cref="RpcException"/>.
 /// </summary>
 internal sealed class KunResultToRpcInterceptor : Interceptor
@@ -25,6 +25,27 @@ internal sealed class KunResultToRpcInterceptor : Interceptor
         {
             throw ToRpcException(ex.Error);
         }
+    }
+
+    /// <inheritdoc />
+    public override Task ServerStreamingServerHandler<TRequest, TResponse>(TRequest request, IServerStreamWriter<TResponse> responseStream, ServerCallContext context, ServerStreamingServerMethod<TRequest, TResponse> continuation)
+        => MapAsync(() => continuation(request, responseStream, context));
+
+    /// <inheritdoc />
+    public override async Task<TResponse> ClientStreamingServerHandler<TRequest, TResponse>(IAsyncStreamReader<TRequest> requestStream, ServerCallContext context, ClientStreamingServerMethod<TRequest, TResponse> continuation)
+    {
+        try { return await continuation(requestStream, context).ConfigureAwait(false); }
+        catch (ResultFailureException error) { throw ToRpcException(error.Error); }
+    }
+
+    /// <inheritdoc />
+    public override Task DuplexStreamingServerHandler<TRequest, TResponse>(IAsyncStreamReader<TRequest> requestStream, IServerStreamWriter<TResponse> responseStream, ServerCallContext context, DuplexStreamingServerMethod<TRequest, TResponse> continuation)
+        => MapAsync(() => continuation(requestStream, responseStream, context));
+
+    private static async Task MapAsync(Func<Task> next)
+    {
+        try { await next().ConfigureAwait(false); }
+        catch (ResultFailureException error) { throw ToRpcException(error.Error); }
     }
 
     /// <summary>

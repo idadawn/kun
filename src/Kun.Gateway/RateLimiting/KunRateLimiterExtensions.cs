@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Threading.RateLimiting;
 using Kun.Gateway.RateLimiting.Resolvers;
 using Microsoft.AspNetCore.RateLimiting;
@@ -30,11 +31,17 @@ public static class KunRateLimiterExtensions
         // Register a default resolver if none has been registered
         services.TryAddSingleton<IRateLimitPartitionResolver, TenantRateLimitPartitionResolver>();
 
-        services.AddRateLimiter(options =>
+        if (!services.Any(descriptor => descriptor.ServiceType == typeof(DefaultPolicyMarker)))
         {
-            options.AddPolicy<string, KunRateLimiterPolicy>(PolicyName);
-            configure?.Invoke(options);
-        });
+            services.AddSingleton<DefaultPolicyMarker>();
+            services.AddRateLimiter(options =>
+            {
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+                options.OnRejected = Reject;
+                options.AddPolicy<string, KunRateLimiterPolicy>(PolicyName);
+            });
+        }
+        if (configure is not null) services.AddRateLimiter(configure);
 
         return services;
     }
@@ -147,6 +154,16 @@ public static class KunRateLimiterExtensions
 
         return services;
     }
+    private sealed class DefaultPolicyMarker;
+
+    internal static ValueTask Reject(OnRejectedContext context, CancellationToken cancellationToken)
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retry))
+            context.HttpContext.Response.Headers.RetryAfter = Math.Max(1, Math.Ceiling(retry.TotalSeconds)).ToString(CultureInfo.InvariantCulture);
+        return ValueTask.CompletedTask;
+    }
+
 }
 
 /// <summary>
@@ -173,10 +190,5 @@ internal sealed class KunRateLimiterPolicy : IRateLimiterPolicy<string>
         });
     }
 
-    public Func<OnRejectedContext, CancellationToken, ValueTask>? OnRejected =>
-        static (ctx, _) =>
-        {
-            ctx.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-            return ValueTask.CompletedTask;
-        };
+    public Func<OnRejectedContext, CancellationToken, ValueTask>? OnRejected => KunRateLimiterExtensions.Reject;
 }

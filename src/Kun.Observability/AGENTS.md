@@ -48,10 +48,12 @@ point — `AddKunObservability` — that:
 | `TracingEnabled` / `MetricsEnabled` / `LoggingEnabled` | `true` | Skip the whole pillar |
 | `IncludeAspNetCore` | `true` | Drop ASP.NET Core server spans + HTTP metrics |
 | `IncludeHttpClient` | `true` | Drop outbound HTTP spans + metrics |
-| `IncludeEfCore` | `true` | Drop EF Core SQL traces |
+| `IncludeEfCore` | `true` | Drop EF Core SQL traces; must be false for Native AOT |
 | `IncludeRuntime` | `true` | Drop GC / threadpool metrics |
 | `EnrichActivitiesFromBaggage` | `false` | Flip to `true` to mirror whitelisted baggage entries onto Kun-sourced span tags (ADR-013) |
 | `EnrichLogsFromBaggage` | `false` | Flip to `true` to mirror the same baggage keys onto `LogRecord.Attributes` — closes the spans↔logs correlation loop (ADR-013 §F1) |
+
+Native AOT must explicitly set `IncludeEfCore=false`: the runtime-feature guard removes the reflection-based EF instrumentation path from the native binary. Requesting EF instrumentation under Native AOT throws instead of silently omitting it. Other tracing/metrics/logging remain enabled, and the standalone gateway exercises this configuration in its executable AOT gate.
 
 W3C Trace Context propagation is the OpenTelemetry 1.x default and is
 left untouched; no custom propagator is registered.

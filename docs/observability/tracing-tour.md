@@ -83,7 +83,8 @@ Tags set on `outbox.publish`:
 
 `KunTracingInterceptor` (see `src/Kun.Grpc/Interceptors/KunTracingInterceptor.cs`) runs first in
 the interceptor chain registered by `AddKunGrpc`. It starts an `ActivityKind.Server` span named
-`grpc.server` for each unary RPC call.
+`grpc.server` for each unary, client-streaming, server-streaming or duplex RPC call. The span
+remains active until the awaited handler completes, including all stream operations.
 
 Tags set:
 
@@ -91,6 +92,8 @@ Tags set:
 |-----|-------|
 | `rpc.system` | `grpc` |
 | `rpc.method` | Full gRPC method path, e.g. `/catalog.CatalogService/GetProduct` |
+| `rpc.type` | `unary`, `client_streaming`, `server_streaming` or `duplex_streaming` |
+| `rpc.grpc.status_code` | Final gRPC status code; faults also mark the activity as Error |
 
 If a downstream service calls a Kun gRPC service, the caller's `HttpClient` instruments propagate
 the `traceparent` header via the standard gRPC client instrumentation wired in
@@ -294,17 +297,15 @@ Avoid `async void` methods and `_ = Task.Run(...)` inside handlers or background
 Exceptions thrown on `async void` paths crash the process without ending any open spans, leaving
 dangling incomplete spans in the Dashboard. Use `async Task` and `await` throughout.
 
-### Gateway observability gap
+### Gateway observability
 
-`Kun.Gateway` is an AOT-candidate host. The OTel packages (`OpenTelemetry.Instrumentation.AspNetCore`
-etc.) are not yet trim/AOT-safe. As a result, `AddKunObservability` is **not** called in the
-Gateway's `Program.cs`. Gateway spans — including the `S2sAuthTransform` and `JwksEndpoint` —
-are currently invisible in the Dashboard.
-
-This is a known gap. Gateway observability will be added once the OTel instrumentation packages
-reach AOT parity, or when the Gateway host opts out of AOT. Until then, correlate Gateway
-requests by looking at the `traceparent` header forwarded into the downstream service's server
-span.
+The standalone `Kun.Gateway` host registers `AddKunObservability` with service name
+`kun-gateway`, configured through `KunObservability`. EF instrumentation is disabled because
+this host does not access EF. Native AOT hosts must set `IncludeEfCore=false`; a runtime-feature
+guard removes that reflection-based path at link time and rejects attempts to enable it at runtime. ASP.NET request spans cover proxy and JWKS requests, while
+HttpClient instrumentation covers downstream calls; there is no separate custom transform span.
+The gateway remains in the Native AOT audit. Consumers that reference the gateway package in
+their own host choose their own observability registration.
 
 ### Key span names to recognize at a glance
 
@@ -312,6 +313,6 @@ span.
 |-----------|--------|---------|
 | `Mediator.Send {Type}` | `Kun.Mediator` | A command or query was dispatched |
 | `outbox.publish` | `Kun.EventBus.Outbox` | An outbox row was published to the broker |
-| `grpc.server` | `Kun.Grpc` | A gRPC unary call was handled |
+| `grpc.server` | `Kun.Grpc` | A unary or streaming gRPC call was handled |
 | `saga.step.execute` | `Kun.Saga` | A saga step ran forward |
 | `saga.step.compensate` | `Kun.Saga` | A saga step ran in compensation |

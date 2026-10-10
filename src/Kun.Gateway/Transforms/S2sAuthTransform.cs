@@ -24,12 +24,14 @@ internal sealed class S2sAuthTransform : RequestTransform
 
         var user = context.HttpContext.User;
 
+        // 未验证的 Authorization 不能穿过显式匿名路由进入下游。
+        context.ProxyRequest.Headers.Remove("Authorization");
+
         // Only replace Authorization when a user principal is present
         if (user.Identity?.IsAuthenticated == true)
         {
             var token = await _issuer.IssueForAsync(user, context.HttpContext.RequestAborted)
                 .ConfigureAwait(false);
-            context.ProxyRequest.Headers.Remove("Authorization");
             context.ProxyRequest.Headers.TryAddWithoutValidation("Authorization", $"Bearer {token}");
         }
     }

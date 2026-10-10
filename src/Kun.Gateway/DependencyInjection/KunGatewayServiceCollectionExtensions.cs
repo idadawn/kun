@@ -1,9 +1,14 @@
+using System.Net;
 using Kun.Gateway.Configuration;
 using Kun.Gateway.Identity;
 using Kun.Gateway.Jwks;
+using Kun.Gateway.RateLimiting;
 using Kun.Gateway.RateLimiting.Resolvers;
 using Kun.Gateway.Transforms;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 using Yarp.ReverseProxy.Configuration;
 
 namespace Kun.Gateway.DependencyInjection;
@@ -44,17 +49,36 @@ public static class KunGatewayServiceCollectionExtensions
         services.AddOptions<KunGatewayOptions>()
             .Configure(configure);
 
+        services.AddHttpContextAccessor();
+        services.AddAuthorization(options => options.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
+        services.AddKunRateLimiter();
+        services.TryAddSingleton(TimeProvider.System);
+        services.TryAddSingleton<S2sSigningKeyRing>();
+        services.AddHealthChecks().AddCheck<GatewaySigningHealthCheck>("gateway-signing", tags: ["ready"]);
+        services.AddOptions<ForwardedHeadersOptions>().Configure<IOptions<KunGatewayOptions>>((forwarded, gateway) =>
+        {
+            var options = gateway.Value;
+            if (options.ForwardLimit <= 0) throw new InvalidOperationException("ForwardLimit must be positive.");
+            forwarded.ForwardLimit = options.ForwardLimit;
+            forwarded.KnownProxies.Clear(); forwarded.KnownIPNetworks.Clear();
+            foreach (var address in options.TrustedProxyAddresses) forwarded.KnownProxies.Add(IPAddress.Parse(address));
+            foreach (var network in options.TrustedProxyNetworks) forwarded.KnownIPNetworks.Add(System.Net.IPNetwork.Parse(network));
+            // 空白名单时关闭处理，不能把清空 KnownProxies 误当成默认拒绝（ASP.NET 会视为信任全部）。
+            forwarded.ForwardedHeaders = options.TrustedProxyAddresses.Length + options.TrustedProxyNetworks.Length > 0
+                ? ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto : ForwardedHeaders.None;
+        });
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IProxyConfigFilter, GatewayRouteDefaults>());
+
         // Default no-op resolver; consumers wanting enrichment register their own
         // IS2sPrincipalResolver before AddKunGateway runs (TryAddSingleton below is a no-op
         // when the slot is already filled).
         services.TryAddSingleton<IS2sPrincipalResolver, NoOpS2sPrincipalResolver>();
 
-        // Shared cache for the public + internal JWKS endpoints; rebuilds only when the
-        // PEM file's last-write time changes, so a key rotation still propagates but
-        // every request outside rotation windows is a single stat call.
+        // Retain the public-file builder for consumers that map JWKS without AddKunGateway.
+        // Gateway endpoints use the shared signing ring, including its overlap keys.
         services.TryAddSingleton<JwksResponseBuilder>();
 
-        services.TryAddSingleton<S2sTokenIssuer>();
+        services.TryAddSingleton(provider => new S2sTokenIssuer(provider.GetRequiredService<IOptions<KunGatewayOptions>>(), provider.GetRequiredService<IHostEnvironment>(), provider.GetRequiredService<IS2sPrincipalResolver>(), provider.GetService<IHttpContextAccessor>(), provider.GetRequiredService<S2sSigningKeyRing>()));
 
         // Default partition resolver — tenant-based; can be overridden before calling AddKunGateway
         services.TryAddSingleton<RateLimiting.IRateLimitPartitionResolver, TenantRateLimitPartitionResolver>();
@@ -117,4 +141,16 @@ internal sealed class ReverseProxyConfigValidationService : IHostedService
 
     /// <inheritdoc/>
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+}
+
+/// <summary>仅为未声明策略的业务路由补默认值；显式 Anonymous 仍是唯一匿名白名单。</summary>
+internal sealed class GatewayRouteDefaults : IProxyConfigFilter
+{
+    public ValueTask<ClusterConfig> ConfigureClusterAsync(ClusterConfig cluster, CancellationToken cancel) => ValueTask.FromResult(cluster);
+    public ValueTask<RouteConfig> ConfigureRouteAsync(RouteConfig route, ClusterConfig? cluster, CancellationToken cancel)
+        => ValueTask.FromResult(route with
+        {
+            AuthorizationPolicy = route.AuthorizationPolicy ?? "Default",
+            RateLimiterPolicy = route.RateLimiterPolicy ?? KunRateLimiterExtensions.PolicyName
+        });
 }

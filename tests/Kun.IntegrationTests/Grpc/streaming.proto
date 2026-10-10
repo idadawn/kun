@@ -1,0 +1,10 @@
+syntax = "proto3";
+option csharp_namespace = "Kun.IntegrationTests.Grpc.Generated";
+package kun.tests.streaming;
+service StreamProbe {
+  rpc Unary(Probe) returns (Probe);
+  rpc Server(Probe) returns (stream Probe);
+  rpc Client(stream Probe) returns (Probe);
+  rpc Duplex(stream Probe) returns (stream Probe);
+}
+message Probe { string value = 1; }

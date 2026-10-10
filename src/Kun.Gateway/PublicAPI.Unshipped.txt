@@ -116,3 +116,14 @@ static Kun.Gateway.RateLimiting.KunRateLimiterExtensions.AddKunRedisRateLimitSto
 
 Kun.Gateway.Configuration.KunGatewayOptions.ForwardedClaimTypes.get -> string![]!
 Kun.Gateway.Configuration.KunGatewayOptions.ForwardedClaimTypes.set -> void
+Kun.Gateway.Configuration.KunGatewayOptions.TrustedProxyAddresses.set -> void
+Kun.Gateway.Configuration.KunGatewayOptions.TrustedProxyNetworks.get -> string![]!
+Kun.Gateway.Configuration.KunGatewayOptions.TrustedProxyNetworks.set -> void
+Kun.Gateway.Configuration.KunGatewayOptions.TrustedProxyAddresses.get -> string![]!
+Kun.Gateway.Configuration.KunGatewayOptions.ForwardLimit.set -> void
+Kun.Gateway.Configuration.KunGatewayOptions.ForwardLimit.get -> int
+Kun.Gateway.Configuration.KunGatewayOptions.KeyOverlapPeriod.get -> System.TimeSpan
+Kun.Gateway.Configuration.KunGatewayOptions.KeyOverlapPeriod.set -> void
+Kun.Gateway.Configuration.KunGatewayOptions.KeyReloadInterval.get -> System.TimeSpan
+Kun.Gateway.Configuration.KunGatewayOptions.KeyReloadInterval.set -> void
+Kun.Gateway.S2sTokenIssuer.Dispose() -> void

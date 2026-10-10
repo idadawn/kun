@@ -162,41 +162,16 @@ refreshing them when an unknown `kid` is encountered.
 
 ## Key Rotation
 
-Key rotation replaces the Gateway's signing key pair without invalidating tokens that are
-currently in-flight. The procedure relies on an overlap window.
+`AddKunGateway` uses one `S2sSigningKeyRing` for issuance and both JWKS endpoints. No endpoint code change or process restart is required:
 
-**Step 1 — Generate a new key pair.**
+1. Generate a new RSA private key of at least 2048 bits outside the process and provision it with restricted file permissions.
+2. Atomically replace the PEM file at the existing `SigningKeyPath`. The next signing/JWKS access after `KeyReloadInterval` (default one second) validates the file and switches the signing key. Changing the configured path still requires host configuration/restart.
+3. New tokens carry the new `kid`. The old **public** key remains in JWKS for `KeyOverlapPeriod` (default five minutes); the old private key is disposed immediately. Invalid/incomplete replacements retain the last valid key and emit a warning without logging key contents.
+4. After the overlap expires, refreshed JWKS contains only current/unexpired overlap keys. No private RSA parameters are published. `PublicKeyPath` remains a compatibility input for standalone JWKS mapping without `AddKunGateway`; gateway rotation does not require changing that public file.
 
-```bash
-# RSA 2048 or 4096
-openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out new-private.pem
-openssl rsa -in new-private.pem -pubout -out new-public.pem
-```
+Set overlap to cover the longest token lifetime plus permitted consumer clock skew and JWKS refresh delay. Consumers must validate lifetime and refresh their key cache; removing a key from the endpoint cannot revoke copies already cached downstream. Both gateway JWKS routes send `Cache-Control: no-store`, which does not override a validator's internal cache. The real HTTP integration test verifies both signatures during overlap, and rejects the old signature against refreshed JWKS after expiry.
 
-**Step 2 — Add the new public key to the JWKS alongside the old one.**
-
-The current `JwksEndpoint` implementation reads a single `PublicKeyPath`. To serve multiple keys
-during the overlap window, update the endpoint to read both public keys and include both in the
-`keys` array. Each key must have a distinct `kid`. The old key's `kid` remains in the response.
-
-Downstream services will now accept tokens signed with either key, because `ValidAlgorithms`
-allows RS256 from any key in the JWKS whose `kid` matches the token header.
-
-**Step 3 — Switch the Gateway to sign with the new private key.**
-
-Update `KunGatewayOptions.SigningKeyPath` to point at the new private key PEM and redeploy (or
-hot-reload) the Gateway. From this point on, all newly issued tokens carry the new `kid`.
-
-**Step 4 — Wait for TTL plus buffer.**
-
-Wait at least `InternalTokenLifetime` (60s) plus a buffer (e.g. 30s) for all tokens signed with
-the old key to expire. No token signed with the old key will be valid after this window.
-
-**Step 5 — Remove the old public key from the JWKS.**
-
-Update the JWKS endpoint to serve only the new public key. Tokens carrying the old `kid` will now
-fail `kid` lookup and be rejected, but since all such tokens are past their TTL they would have
-been rejected by `ValidateLifetime = true` anyway.
+Overlap history is in memory. Complete rotation before restarting, and coordinate key provisioning across gateway replicas; a rolling restart or independent per-pod rotation is not a distributed key-retirement protocol. Missing initial keys still prevent signing in production. Development may generate local keys. Machine client-credentials authentication and credential storage remain responsibilities of the consuming identity authority; Kun provides the exchange/signing boundary, not a product identity database.
 
 ---
 

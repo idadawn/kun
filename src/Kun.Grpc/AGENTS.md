@@ -8,8 +8,8 @@
 Host-layer integration with gRPC (Grpc.AspNetCore). Provides three server interceptors and a DI helper for wiring them into a gRPC host:
 
 - **`KunResultToRpcInterceptor`** — catches `ResultFailureException` (thrown by `Result<T>.EnsureSuccess()`) and translates it into the corresponding `RpcException` status code.
-- **`KunServerAuthInterceptor`** — enforces that every request has an authenticated `ClaimsPrincipal` with a `tenant_id` claim.
-- **`KunTracingInterceptor`** — starts a diagnostic `Activity("grpc.server")` per RPC call, tagged with `rpc.system=grpc` and `rpc.method`.
+- **`KunServerAuthInterceptor`** — enforces that every request has an authenticated `ClaimsPrincipal` with a nonblank `tenant_id` claim before entering a handler or reading a stream frame. Unary, client streaming, server streaming and duplex all use this boundary.
+- **`KunTracingInterceptor`** — starts a diagnostic `Activity("grpc.server")` per RPC call, covering the full awaited lifetime of all four RPC shapes, tagged with `rpc.system=grpc`, `rpc.method`, `rpc.type` and `rpc.grpc.status_code`.
 
 ## Key Files
 
