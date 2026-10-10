@@ -61,7 +61,7 @@ Mediator、ASP.NET Core 和 gRPC 增加对 Authorization 的依赖；具体语�
 | 模块 | 职责 | Phase 1 下游用途 | 主要 API | AOT | 测试 |
 |---|---|---|---|:---:|:---:|
 | `Kun.Security` | S2S JWT 校验 / JWKS 热加载 / `ITenantContext` / `ICurrentUser` 实现 | 每个下游服务都必须装配，验证网关签发的内部 token | `AddKunSecurity()` / `AddKunServiceAuthentication()` | ✅ | 15 |
-| `Kun.Identity` | 外部 IdP（OIDC）客户端 + JWT validator/issuer；**不**自建用户存储 | NeuroAgent 平台登录由外部 IdP（Keycloak 等）提供；Kun 仅做校验 | `AddKunIdentity(...)` | ✅ | 11 |
+| `Kun.Identity` | 外部 IdP（OIDC）客户端、JWT 校验与原子会话；**不**自建用户存储 | 账号和凭据由身份权威提供，Kun 负责依赖方校验与会话 | `AddKunIdentity(...)` | ✅ | 11 |
 | `Kun.MultiTenancy` | `ITenantContext` 实现 + EF 查询过滤器 + SaveChanges 拦截器 | 所有租户隔离业务的透明过滤 | `AddKunMultiTenancy()` / `UseKunMultiTenancy()` | ✅ | 12 |
 | `Kun.MultiTenancy.EntityFrameworkCore` | EF 侧租户过滤器 + `HasTenantFilter<T>()` 扩展 | 与 `Kun.MultiTenancy` 配套的 EF 实现 | `HasTenantFilter<T>()` | ⚠️ trim-safe | — |
 | `Kun.Audit` | 审计写入器抽象 + `NullAuditWriter` / `EventBusAuditWriter` | NeuroAgent 操作审计；通过 Outbox 异步记录 | `AddKunAudit()` / `.UseEventBus()` | ✅ | 13 |
@@ -118,6 +118,11 @@ graph TD
     Mediator --> Grpc[Kun.Grpc<br/>拦截器/Result 映射]
 
     Security --> Gateway[Kun.Gateway<br/>YARP/S2S 签发/限流]
+    Core --> Identity[Kun.Identity<br/>OIDC/原子会话]
+    Caching[Kun.Caching<br/>兼容缓存端口] --> Identity
+    RedisClient[StackExchange.Redis<br/>原子会话索引] --> Identity
+    Identity --> IdentityWeb[Kun.Identity.AspNetCore<br/>Cookie/CSRF/回调]
+    Core --> IdentityWeb
 
     style Core fill:#e1f5ff
     style Mediator fill:#e1f5ff

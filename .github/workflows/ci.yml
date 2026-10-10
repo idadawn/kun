@@ -194,3 +194,6 @@ jobs:
 
       - name: Kun.Core must have no third-party PackageReferences
         run: bash scripts/check-layering.sh
+
+      - name: Identity log privacy and product-neutral defaults
+        run: python3 scripts/check-identity-boundaries.py

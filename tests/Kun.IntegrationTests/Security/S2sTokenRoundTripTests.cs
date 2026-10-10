@@ -84,6 +84,10 @@ public sealed class S2sTokenRoundTripTests : IDisposable
         {
             new(JwtRegisteredClaimNames.Sub, sub),
             new("tenant_id", tenantId),
+            new("principal_kind", "user"),
+            new("membership_id", "00000000-0000-4000-8000-000000000200"),
+            new("session_id", "00000000-0000-4000-8000-000000000100"),
+            new("identity_revision", "0", ClaimValueTypes.Integer64),
         };
         foreach (var role in roles)
             claims.Add(new Claim("roles", role));
@@ -95,7 +99,7 @@ public sealed class S2sTokenRoundTripTests : IDisposable
     public void MintedToken_ValidatesWithGatewayPublicKey()
     {
         // Arrange
-        var principal = BuildPrincipal("user-123", "tenant-abc", "admin", "reader");
+        var principal = BuildPrincipal("user-123", "00000000-0000-4000-8000-000000000002", "admin", "reader");
         var tvp = BuildValidationParams([_publicKey]);
         var handler = new JwtSecurityTokenHandler();
 
@@ -116,7 +120,7 @@ public sealed class S2sTokenRoundTripTests : IDisposable
         // tenant_id claim
         var tenantClaim = jwt.Claims.FirstOrDefault(c => c.Type == "tenant_id");
         tenantClaim.Should().NotBeNull();
-        tenantClaim!.Value.Should().Be("tenant-abc");
+        tenantClaim!.Value.Should().Be("00000000-0000-4000-8000-000000000002");
 
         // roles claims
         var roles = jwt.Claims.Where(c => c.Type == "roles").Select(c => c.Value).ToList();
@@ -133,7 +137,7 @@ public sealed class S2sTokenRoundTripTests : IDisposable
     public void TokenSignedWithDifferentKey_FailsValidation()
     {
         // Arrange — mint with the gateway key, but validate against a different public key
-        var principal = BuildPrincipal("user-456", "tenant-xyz");
+        var principal = BuildPrincipal("user-456", "00000000-0000-4000-8000-000000000048");
         var token = _issuer.IssueFor(principal);
 
         // Generate a completely different RSA key for validation

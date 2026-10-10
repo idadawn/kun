@@ -80,19 +80,28 @@ public sealed class ChallengeHelperTests
     }
 
     [Fact]
-    public void ConsumeChallengeCookie_DeletesCookieAndReturnsPayload()
+    public async Task ProtectedChallenge_RejectsTamperingStateExpiryAndReplay()
     {
-        var ctx = new DefaultHttpContext();
-        var original = new ChallengePayload("authentik", "v", "s", "n", "/");
-        ctx.Request.Headers.Cookie = $"{ChallengeHelper.ChallengeCookieName}={original.Serialize()}";
-
-        var payload = ChallengeHelper.ConsumeChallengeCookie(ctx);
-
-        payload.Should().NotBeNull();
-        payload!.Client.Should().Be("authentik");
-        ctx.Response.Headers.SetCookie.Should().ContainSingle(
-            c => c.ToString()!.Contains(ChallengeHelper.ChallengeCookieName) &&
-                 c.ToString()!.Contains("expires=Thu, 01 Jan 1970"));
+        var clock = new FakeTimeProvider();
+        var monitor = new StaticOptionsMonitor<KunOidcClientOptions>(new Dictionary<string, KunOidcClientOptions> { ["test"] = new() { ClientId = "client" } });
+        var helper = new ChallengeHelper([new FakeOidcClient("test")], monitor, clock);
+        var context = new DefaultHttpContext();
+        var url = await helper.BuildLoginUrlAsync(context, "test", "https://app/callback", cancellationToken: TestContext.Current.CancellationToken);
+        var state = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(new Uri(url).Query)["state"].ToString();
+        var cookie = context.Response.Headers.SetCookie.ToString().Split(';')[0];
+        cookie.Should().NotContain("verifier").And.NotContain("|test|");
+        var callback = new DefaultHttpContext(); callback.Request.Headers.Cookie = cookie;
+        (await helper.ConsumeAsync(callback, "wrong-state", TestContext.Current.CancellationToken)).Should().BeNull();
+        var tampered = new DefaultHttpContext(); tampered.Request.Headers.Cookie = cookie[..^4] + "aaaa";
+        (await helper.ConsumeAsync(tampered, state, TestContext.Current.CancellationToken)).Should().BeNull();
+        var payload = await helper.ConsumeAsync(callback, state, TestContext.Current.CancellationToken);
+        payload.Should().NotBeNull(); payload!.RedirectUri.Should().Be("https://app/callback");
+        (await helper.ConsumeAsync(callback, state, TestContext.Current.CancellationToken)).Should().BeNull();
+        var expiredContext = new DefaultHttpContext();
+        var expiredUrl = await helper.BuildLoginUrlAsync(expiredContext, "test", "https://app/callback", cancellationToken: TestContext.Current.CancellationToken);
+        callback.Request.Headers.Cookie = expiredContext.Response.Headers.SetCookie.ToString().Split(';')[0];
+        clock.Advance(TimeSpan.FromMinutes(6));
+        (await helper.ConsumeAsync(callback, Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(new Uri(expiredUrl).Query)["state"].ToString(), TestContext.Current.CancellationToken)).Should().BeNull();
     }
 
     private sealed class FakeOidcClient(string name) : IOidcClient

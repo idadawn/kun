@@ -2,8 +2,9 @@ namespace Kun.Security.S2SJwt;
 
 /// <summary>
 /// Configuration for S2S JWT issuance and verification using ES256 (ECDSA P-256).
-/// Per the zero-trust policy, ES256 is the required algorithm for NeuroAgent S2S tokens.
+/// Per the zero-trust policy, ES256 is the required algorithm for legacy S2S tokens.
 /// </summary>
+[Obsolete("Use Kun.Gateway.S2sTokenIssuer and Kun.Security service authentication.", DiagnosticId = "KUNS2S001")]
 public sealed class S2SJwtOptions
 {
     /// <summary>ECDSA P-256 private key in PEM format for signing tokens.</summary>
@@ -18,8 +19,8 @@ public sealed class S2SJwtOptions
     /// <summary>Key identifier for the previous signing key. Required when <see cref="PreviousSigningKeyPem"/> is set.</summary>
     public string? PreviousKeyId { get; set; }
 
-    /// <summary>Token issuer. Must be <c>neuroagent-edge</c> per contract.</summary>
-    public string Issuer { get; set; } = "neuroagent-edge";
+    /// <summary>Token issuer. Must be <c>kun-gateway</c> per contract.</summary>
+    public string Issuer { get; set; } = "kun-gateway";
 
     /// <summary>
     /// Default token lifetime. Defaults to 300 seconds (5 minutes), the upper bound of the

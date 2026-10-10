@@ -6,6 +6,14 @@
 
 ## [Unreleased]
 
+### Fixed — Identity 客户端与唯一 S2S 签发入口（S1-KUN-004）
+
+- 授权码交换必须发送原始 PKCE verifier 并验证签名/issuer/audience/nonce；补 refresh、client credentials 与有期限的 discovery 缓存。浏览器事务受保护并防重放，完成辅助服务与认证方案可直接解析，保留宿主显式方案。
+- 内存与 Redis 会话增加原子续期、按用户吊销及带重放保护的后通道登出；吊销后续期不得复活会话。默认验证 cookie 写请求的防跨站令牌；sid 日志只记 SHA256 与错误类型，并加入静态门禁。
+- 网关统一封闭 S2S 形状：aud/roles 数组、规范 UUID、用户/服务主体、会话/修订/成员上下文、1–300 秒 TTL 与每跳受众。拒绝缺失身份，不再转发任意 permission/email/trace 字段；两套旧签发入口标 KUNS2S001。
+- Sandbox 默认模板改为 kun-default，增加调用方命名的 JSON 扩展并防止覆盖核心字段；保留显式旧扩展的兼容序列化，标记废弃。
+- 此版本有迁移要求：规范身份字段、旧 cookie 重新登录、Redis 新键空间和原子接口、Data Protection 共享密钥。详见 [Identity 客户端指南](docs/guides/identity-client.md)。框架协议夹具不能替代尚未交付的真实 Qian 身份服务联调。
+
 ### Fixed — 网关与流式 gRPC 边界（S1-KUN-003）
 
 - 网关业务路由默认认证并绑定限流，显式匿名白名单保留；超限返回 429 和可用的 Retry-After，匿名路由不透传未验证凭据。

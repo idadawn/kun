@@ -48,13 +48,13 @@ public sealed class PrincipalResolverTests : IDisposable
     {
         var issuer = CreateIssuer(NoOpS2sPrincipalResolver.Instance);
 
-        var external = CreatePrincipal(("sub", "alice"), ("tenant_id", "t-42"));
+        var external = CreatePrincipal(("sub", "alice"), ("tenant_id", "00000000-0000-4000-8000-000000000042"));
         var jwt = issuer.IssueFor(external);
 
         var handler = new JwtSecurityTokenHandler();
         var token = handler.ReadJwtToken(jwt);
         Assert.Equal("alice", token.Claims.First(c => c.Type == JwtRegisteredClaimNames.Sub).Value);
-        Assert.Equal("t-42", token.Claims.First(c => c.Type == "tenant_id").Value);
+        Assert.Equal("00000000-0000-4000-8000-000000000042", token.Claims.First(c => c.Type == "tenant_id").Value);
     }
 
     [Fact]
@@ -62,7 +62,7 @@ public sealed class PrincipalResolverTests : IDisposable
     {
         // Resolver injects a synthetic tenant_id the external principal did not have, then
         // issuer copies it into the minted token.
-        var resolver = new EnrichingResolver(addTenantId: "tenant-from-lookup");
+        var resolver = new EnrichingResolver(addTenantId: "00000000-0000-4000-8000-000000000043");
         var issuer = CreateIssuer(resolver);
 
         var external = CreatePrincipal(("sub", "bob"));
@@ -71,7 +71,7 @@ public sealed class PrincipalResolverTests : IDisposable
         var handler = new JwtSecurityTokenHandler();
         var token = handler.ReadJwtToken(jwt);
         Assert.Equal("bob", token.Claims.First(c => c.Type == JwtRegisteredClaimNames.Sub).Value);
-        Assert.Equal("tenant-from-lookup", token.Claims.First(c => c.Type == "tenant_id").Value);
+        Assert.Equal("00000000-0000-4000-8000-000000000043", token.Claims.First(c => c.Type == "tenant_id").Value);
     }
 
     [Fact]
@@ -122,7 +122,7 @@ public sealed class PrincipalResolverTests : IDisposable
     private static ClaimsPrincipal CreatePrincipal(params (string Type, string Value)[] claims)
     {
         var identity = new ClaimsIdentity(claims.Select(c => new Claim(c.Type, c.Value)), "test");
-        return new ClaimsPrincipal(identity);
+        return S2sPrincipalFixture.Complete(new ClaimsPrincipal(identity));
     }
 
     private sealed class EnrichingResolver : IS2sPrincipalResolver

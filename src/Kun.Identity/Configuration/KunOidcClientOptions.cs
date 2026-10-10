@@ -18,4 +18,9 @@ public sealed class KunOidcClientOptions
 
     /// <summary>OIDC client secret. Leave empty when the provider uses PKCE / public clients.</summary>
     public string ClientSecret { get; set; } = string.Empty;
+    /// <summary>Maximum metadata cache age. Defaults to five minutes; zero forces a refresh for every operation.</summary>
+    public TimeSpan DiscoveryRefreshInterval { get; set; } = TimeSpan.FromMinutes(5);
+
+    /// <summary>Require HTTPS for provider metadata and advertised endpoints. Disable only for local test providers.</summary>
+    public bool RequireHttpsMetadata { get; set; } = true;
 }

@@ -40,7 +40,7 @@ public sealed class SignInHelperTests
     }
 
     [Fact]
-    public async Task SignInAsync_WithOidcTokens_ValidatesIdTokenBeforeTrustingClaims()
+    public async Task SignInAsync_WithClientValidatedTokens_UsesVerifiedIdentity()
     {
         var clock = new FakeTimeProvider();
         var store = new InMemorySessionStore(clock);
@@ -54,6 +54,7 @@ public sealed class SignInHelperTests
         var ctx = new DefaultHttpContext();
         var ct = TestContext.Current.CancellationToken;
 
+        tokens = tokens with { ValidatedPrincipal = await new AlwaysValidator().ValidateAsync(tokens.IdToken!, ct) };
         var sid = await helper.SignInAsync(ctx, tokens, ct);
 
         var stored = await store.GetAsync(sid, ct);
@@ -86,7 +87,19 @@ public sealed class SignInHelperTests
         var act = () => helper.SignInAsync(ctx, tokens, ct);
 
         await act.Should().ThrowAsync<InvalidOperationException>()
-            .Where(e => e.Message.Contains("failed validation", StringComparison.OrdinalIgnoreCase));
+            .Where(e => e.Message.Contains("not validated", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task SignInAsync_AdditionalValidatorCannotBeSkippedAfterNonceValidation()
+    {
+        var helper = new SignInHelper(new InMemorySessionStore(), new AlwaysInvalidValidator(), Opts(), TimeProvider.System);
+        var tokens = new OidcTokenResponse("at", "validated.id.token", "rt", "Bearer", 60)
+        { ValidatedPrincipal = await new AlwaysValidator().ValidateAsync("validated.id.token", TestContext.Current.CancellationToken) };
+        var context = new DefaultHttpContext();
+        var signIn = () => helper.SignInAsync(context, tokens, TestContext.Current.CancellationToken);
+        await signIn.Should().ThrowAsync<InvalidOperationException>().WithMessage("Additional ID-token validation failed.");
+        context.Response.Headers.SetCookie.Should().BeEmpty();
     }
 
     [Fact]

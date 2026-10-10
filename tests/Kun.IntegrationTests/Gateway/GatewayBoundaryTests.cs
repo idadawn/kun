@@ -4,8 +4,10 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using System.Text.Json.Nodes;
 using System.Threading.RateLimiting;
 using FluentAssertions;
+using Json.Schema;
 using Kun.Gateway;
 using Kun.Gateway.RateLimiting.Resolvers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -137,6 +139,29 @@ public sealed class GatewayBoundaryTests
         }
     }
 
+    [Theory]
+    [InlineData("user", false, 0)]
+    [InlineData("user", false, 1)]
+    [InlineData("user", true, 2)]
+    [InlineData("service", false, 0)]
+    [InlineData("service", true, 1)]
+    public async Task Gateway_S2sPayload_MatchesFrozen202012Contract(string kind, bool platform, int roles)
+    {
+        // Frozen source: idadawn/qian 5eaed840, contracts/v0/s2s-claims.schema.json.
+        await using var host = await BoundaryHost.StartAsync();
+        host.Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", host.Token(kind, platform, roles));
+        var token = (await host.Client.GetStringAsync("/public", TestContext.Current.CancellationToken))["Bearer ".Length..];
+        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
+        var payload = JsonNode.Parse(jwt.Payload.SerializeToJson())!;
+        var schema = JsonSchema.FromFile(Path.Combine(AppContext.BaseDirectory, "Fixtures", "s2s-claims.schema.json"));
+        schema.Evaluate(payload).IsValid.Should().BeTrue(payload.ToJsonString());
+        payload["aud"].Should().BeOfType<JsonArray>().Which.Should().HaveCount(1);
+        payload["roles"].Should().BeOfType<JsonArray>().Which.Should().HaveCount(roles);
+        (payload["exp"]!.GetValue<long>() - payload["iat"]!.GetValue<long>()).Should().BeInRange(1, 300);
+        if (kind == "service") payload["session_id"]!.GetValue<string>().Should().Be(payload["jti"]!.GetValue<string>());
+        payload.AsObject().Should().NotContainKey("email").And.NotContainKey("trace_id").And.NotContainKey("permission");
+    }
+
     private static ClaimsPrincipal Validate(string token, JsonWebKeySet keys) => new JwtSecurityTokenHandler().ValidateToken(token, new TokenValidationParameters
     {
         ValidateIssuer = true,
@@ -235,9 +260,25 @@ public sealed class GatewayBoundaryTests
             fixture.Client = new HttpClient(new SocketsHttpHandler { UseProxy = false }) { BaseAddress = new UriBuilder(address) { Host = "127.0.0.1" }.Uri };
             return fixture;
         }
-        internal string Token()
+        internal string Token(string kind = "user", bool platform = false, int roleCount = 0)
         {
             var now = DateTime.UtcNow;
+            var claims = new Dictionary<string, object>
+            {
+                ["sub"] = "probe-user",
+                ["principal_kind"] = kind,
+                ["tenant_id"] = platform ? null! : "00000000-0000-4000-8000-000000000046",
+                ["roles"] = Enumerable.Range(0, roleCount).Select(index => "role-" + index).ToArray(),
+                ["scope"] = "catalog.read",
+                ["email"] = "private@example.invalid",
+                ["trace_id"] = "not-a-payload-field",
+                ["permission"] = "not-forwarded"
+            };
+            if (kind == "user")
+            {
+                claims["session_id"] = "00000000-0000-4000-8000-000000000100"; claims["identity_revision"] = 0;
+                if (!platform) claims["membership_id"] = "00000000-0000-4000-8000-000000000200";
+            }
             return new JwtSecurityTokenHandler().CreateEncodedJwt(new SecurityTokenDescriptor
             {
                 Issuer = "https://idp.test",
@@ -245,7 +286,7 @@ public sealed class GatewayBoundaryTests
                 IssuedAt = now,
                 NotBefore = now,
                 Expires = now.AddMinutes(2),
-                Subject = new ClaimsIdentity([new Claim("sub", "probe-user"), new Claim("tenant_id", "tenant-probe")]),
+                Claims = claims,
                 SigningCredentials = new SigningCredentials(new RsaSecurityKey(_externalKey), SecurityAlgorithms.RsaSha256)
             });
         }

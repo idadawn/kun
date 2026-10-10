@@ -1,8 +1,10 @@
-using Kun.Caching.Abstractions;
 using Kun.Identity.Abstractions.Session;
 using Kun.Identity.Implementations.Session;
+using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
+using StackExchange.Redis;
 
 namespace Kun.Identity.Configuration;
 
@@ -12,7 +14,7 @@ namespace Kun.Identity.Configuration;
 /// every <see cref="KunCookieAuthOptions"/> field (so callers write
 /// <c>opts.CookieName = "kun.sid"; opts.SessionTtl = ...;</c> as
 /// expected) and adds the backend-selection methods
-/// <see cref="UseInMemoryStore"/> and <see cref="UseRedisStore"/>.
+/// <see cref="UseInMemoryStore"/> and <see cref="UseRedisStore()"/>.
 /// Exactly one backend call should be made — multiple calls take
 /// last-wins semantics because each call replaces the
 /// <see cref="ISessionStore"/> registration on the underlying service
@@ -44,14 +46,25 @@ public sealed class KunCookieSessionBuilder : KunCookieAuthOptions
 
     /// <summary>
     /// Registers <see cref="RedisSessionStore"/> as the backend. The
-    /// caller is responsible for registering <c>Kun.Caching</c>
-    /// (<c>services.AddKunCaching(...).UseRedis(...)</c>); the
-    /// <see cref="IKunCache"/> dependency is resolved at request time.
+    /// caller registers IConnectionMultiplexer, or configures Kun.Caching UseRedis.
+    /// A direct Redis connection is required for atomic indexes and revocation; no memory fallback is used.
     /// </summary>
-    public KunCookieSessionBuilder UseRedisStore()
+    public KunCookieSessionBuilder UseRedisStore() => UseRedisStore("kun:identity:");
+
+    /// <summary>Registers the atomic Redis backend under an explicitly isolated application prefix.</summary>
+    public KunCookieSessionBuilder UseRedisStore(string keyPrefix)
     {
-        _services.AddSingleton<ISessionStore>(sp =>
-            new RedisSessionStore(sp.GetRequiredService<IKunCache>()));
+        ArgumentException.ThrowIfNullOrWhiteSpace(keyPrefix);
+        _services.TryAddSingleton(TimeProvider.System);
+        _services.TryAddSingleton<IConnectionMultiplexer>(sp =>
+        {
+            var options = sp.GetRequiredService<IOptions<RedisCacheOptions>>().Value;
+            var configuration = options.ConfigurationOptions ?? (string.IsNullOrWhiteSpace(options.Configuration)
+                ? throw new InvalidOperationException("Configure Redis or register IConnectionMultiplexer before UseRedisStore.")
+                : ConfigurationOptions.Parse(options.Configuration));
+            return ConnectionMultiplexer.Connect(configuration);
+        });
+        _services.AddSingleton<ISessionStore>(sp => new RedisSessionStore(sp.GetRequiredService<IConnectionMultiplexer>(), sp.GetRequiredService<TimeProvider>(), keyPrefix));
         return this;
     }
 }

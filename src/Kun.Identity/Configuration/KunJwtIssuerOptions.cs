@@ -3,6 +3,7 @@ using Microsoft.IdentityModel.Tokens;
 namespace Kun.Identity.Configuration;
 
 /// <summary>Signing / claims configuration for <c>KunJwtIssuer</c>.</summary>
+[Obsolete("Use Kun.Gateway.S2sTokenIssuer for canonical short-lived S2S tokens.", DiagnosticId = "KUNS2S001")]
 public sealed class KunJwtIssuerOptions
 {
     /// <summary>Value written to the <c>iss</c> claim. Required.</summary>

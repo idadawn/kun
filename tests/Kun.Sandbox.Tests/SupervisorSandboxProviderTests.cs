@@ -1,3 +1,4 @@
+#pragma warning disable CS0618 // Explicit legacy wire compatibility; default and provider-owned shapes have separate tests.
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -20,6 +21,18 @@ public sealed class SupervisorSandboxProviderTests
     private const string ProcessResponseJson = """
         {"processId":"proc-uuid","exitCode":0,"stdout":"hello\n","stderr":"","durationMs":1823,"truncated":false}
         """;
+
+    [Fact]
+    public async Task CreateAsync_RejectsExtensionsThatOverrideCoreFieldsBeforeSending()
+    {
+        var stub = new StubHttpMessageHandler();
+        using var client = new HttpClient(stub) { BaseAddress = BaseUri };
+        var provider = new SupervisorSandboxProvider(client);
+        using var value = JsonDocument.Parse("999999");
+        var create = () => provider.CreateAsync(new SandboxCreateOptions { ProviderExtensions = new Dictionary<string, JsonElement> { ["CPUCOUNT"] = value.RootElement.Clone() } }, TestContext.Current.CancellationToken);
+        await create.Should().ThrowAsync<ArgumentException>();
+        stub.Requests.Should().BeEmpty();
+    }
 
     [Fact]
     public async Task CreateAsync_sends_camelCase_body_with_neuroagent_extension()

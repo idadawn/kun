@@ -1,3 +1,4 @@
+#pragma warning disable KUNS2S001 // Explicit compatibility tests for retired issuer APIs; new consumers must fail compilation.
 using FluentAssertions;
 using Kun.Identity.Abstractions;
 using Kun.Identity.DependencyInjection;

@@ -1,3 +1,4 @@
+#pragma warning disable CS0618 // Explicit legacy wire compatibility; default and provider-owned shapes have separate tests.
 using System.Text.Json;
 using FluentAssertions;
 using Kun.Sandbox.Abstractions;
@@ -8,6 +9,17 @@ namespace Kun.Sandbox.Tests;
 
 public sealed class SandboxJsonSerializationTests
 {
+    [Fact]
+    public void Defaults_AreProductNeutral_AndExtensionKeysAreCallerOwned()
+    {
+        var defaults = JsonSerializer.Serialize(new SandboxCreateOptions(), SupervisorSandboxProvider.SerializerOptions);
+        defaults.Should().Contain("kun-default").And.NotContain("neuroagent").And.NotContain("iclaw");
+        using var extension = JsonDocument.Parse("""{"networkPolicy":"deny-all"}""");
+        var configured = new SandboxCreateOptions { ProviderExtensions = new Dictionary<string, JsonElement> { ["team-runtime"] = extension.RootElement.Clone() } };
+        using var payload = JsonDocument.Parse(JsonSerializer.Serialize(configured, SupervisorSandboxProvider.SerializerOptions));
+        payload.RootElement.GetProperty("team-runtime").GetProperty("networkPolicy").GetString().Should().Be("deny-all");
+    }
+
     [Fact]
     public void SandboxCreateOptions_serialises_with_camelCase_property_names()
     {

@@ -69,6 +69,9 @@ public class KunCookieAuthOptions
     /// <see langword="true"/>.
     /// </summary>
     public bool SlidingExpiration { get; set; } = true;
+
+    /// <summary>Validate antiforgery tokens on unsafe requests authenticated by the session cookie. Defaults to true.</summary>
+    public bool RequireAntiforgery { get; set; } = true;
 }
 
 /// <summary>

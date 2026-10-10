@@ -1,8 +1,12 @@
+using System.Security.Cryptography;
+using System.Text;
 using Kun.Identity.Abstractions.Session;
 using Kun.Identity.AspNetCore.Internal;
 using Kun.Identity.Configuration;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -63,7 +67,7 @@ public sealed partial class KunCookieAuthMiddleware
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            Log.SessionLookupFailed(_logger, cookie, ex);
+            Log.SessionLookupFailed(_logger, Hash(cookie), ex.GetType().Name);
             await _next(context).ConfigureAwait(false);
             return;
         }
@@ -81,22 +85,24 @@ public sealed partial class KunCookieAuthMiddleware
             return;
         }
 
-        context.User = SessionPrincipalFactory.FromSession(data);
-
         if (_options.SlidingExpiration)
         {
             var now = _timeProvider.GetUtcNow();
             var newExpiry = now.Add(_options.SessionTtl);
             try
             {
-                await _store.SetAsync(cookie, data, _options.SessionTtl, ct).ConfigureAwait(false);
+                if (_store is not ISessionRegistry registry || !await registry.RenewAsync(cookie, _options.SessionTtl, ct).ConfigureAwait(false))
+                {
+                    context.Response.Cookies.Delete(_options.CookieName, new CookieOptions { Path = _options.Path, Domain = _options.Domain });
+                    await _next(context).ConfigureAwait(false);
+                    return;
+                }
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                // Never fail the request on a sliding-refresh failure;
-                // the session is still valid for the remainder of its
-                // original TTL.
-                Log.SessionSlideFailed(_logger, cookie, ex);
+                Log.SessionSlideFailed(_logger, Hash(cookie), ex.GetType().Name);
+                await _next(context).ConfigureAwait(false);
+                return;
             }
 
             context.Response.Cookies.Append(
@@ -105,18 +111,28 @@ public sealed partial class KunCookieAuthMiddleware
                 CookieMapping.ToCookieOptions(_options, newExpiry));
         }
 
+        context.User = SessionPrincipalFactory.FromSession(data);
+        if (_options.RequireAntiforgery && !HttpMethods.IsGet(context.Request.Method) && !HttpMethods.IsHead(context.Request.Method) &&
+            !HttpMethods.IsOptions(context.Request.Method) && !HttpMethods.IsTrace(context.Request.Method) &&
+            context.GetEndpoint()?.Metadata.GetMetadata<IAntiforgeryMetadata>()?.RequiresValidation != false)
+        {
+            try { await context.RequestServices.GetRequiredService<IAntiforgery>().ValidateRequestAsync(context).ConfigureAwait(false); }
+            catch (AntiforgeryValidationException) { context.Response.StatusCode = StatusCodes.Status400BadRequest; return; }
+        }
         await _next(context).ConfigureAwait(false);
     }
+
+    private static string Hash(string sessionId) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(sessionId)));
 
     private static partial class Log
     {
         [LoggerMessage(EventId = 1, Level = LogLevel.Warning,
-            Message = "Kun cookie session lookup failed for sid={SessionId}; request continues anonymously.")]
-        public static partial void SessionLookupFailed(ILogger logger, string sessionId, Exception ex);
+            Message = "Kun cookie session lookup failed for sid_hash={SessionHash}; error_type={ErrorType}; request continues anonymously.")]
+        public static partial void SessionLookupFailed(ILogger logger, string sessionHash, string errorType);
 
         [LoggerMessage(EventId = 2, Level = LogLevel.Warning,
-            Message = "Kun cookie session sliding-refresh failed for sid={SessionId}; original TTL still applies.")]
-        public static partial void SessionSlideFailed(ILogger logger, string sessionId, Exception ex);
+            Message = "Kun cookie session sliding-refresh failed for sid_hash={SessionHash}; error_type={ErrorType}; request continues anonymously.")]
+        public static partial void SessionSlideFailed(ILogger logger, string sessionHash, string errorType);
     }
 }
 

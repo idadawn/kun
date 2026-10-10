@@ -32,6 +32,7 @@ public sealed class KunIdentityBuilder
     }
 
     /// <summary>Registers <see cref="IJwtIssuer"/> for internal S2S token minting.</summary>
+    [Obsolete("Use Kun.Gateway.S2sTokenIssuer.", DiagnosticId = "KUNS2S001")]
     public KunIdentityBuilder AddS2SIssuer(Action<KunJwtIssuerOptions> configure)
     {
         ArgumentNullException.ThrowIfNull(configure);
@@ -52,6 +53,7 @@ public sealed class KunIdentityBuilder
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentNullException.ThrowIfNull(configure);
         Services.AddHttpClient(OidcHttpClientName(name));
+        Services.TryAddSingleton(TimeProvider.System);
 
         // Register the options twice: once as a named options entry so
         // downstream helpers (e.g. Kun.Identity.AspNetCore.ChallengeHelper)
@@ -70,7 +72,7 @@ public sealed class KunIdentityBuilder
             configure(options);
             options.Name = name;
             var factory = sp.GetRequiredService<IHttpClientFactory>();
-            return new KunOidcClient(options, factory);
+            return new KunOidcClient(options, factory, sp.GetRequiredService<TimeProvider>());
         });
         return this;
     }
@@ -117,6 +119,7 @@ public sealed class KunIdentityBuilder
             opts.Secure = builder.Secure;
             opts.SessionTtl = builder.SessionTtl;
             opts.SlidingExpiration = builder.SlidingExpiration;
+            opts.RequireAntiforgery = builder.RequireAntiforgery;
         });
         Services.TryAddSingleton(TimeProvider.System);
         return this;

@@ -149,7 +149,7 @@ Phase 1 顶层速览（完整矩阵请见 [`docs/architecture/module-map.md`](do
 | `Kun.EventBus.RabbitMQ` | RabbitMQ 传输、消费端幂等 | ✅ |
 | `Kun.Saga` | Saga Orchestration 编排器 | ⚠️ trim-safe（Phase 2 拆 EF 子模块） |
 | `Kun.Security` | S2S JWT 签发/校验、租户上下文注入 | ✅ |
-| `Kun.Identity` | 外部 OIDC 客户端 + JWT validator/issuer | ✅ |
+| `Kun.Identity` | 外部 OIDC 客户端、JWT 校验与原子会话 | ✅ |
 | `Kun.MultiTenancy` | `ITenantContext` + EF 查询过滤器 | ✅ |
 | `Kun.Audit` | 双通道审计：writer/reader 抽象 + `EventBusAuditWriter` + SHA-256 哈希链 Mediator Pipeline Behavior | ✅ |
 | `Kun.RateLimit` | 按租户 / IP 分区限流 | ✅ |
@@ -192,7 +192,7 @@ via OTLP. Defaults are safe for both HTTP services and background workers.
 // Program.cs / host composition root
 builder.Services.AddKunObservability(o =>
 {
-    o.ServiceName = "neuroagent-platform";
+    o.ServiceName = "sample-platform";
     o.ServiceVersion = "1.4.2";
     // o.OtlpEndpoint = new Uri(...);     // optional — falls back to OTEL_EXPORTER_OTLP_ENDPOINT
     // o.IncludeAspNetCore = false;       // background worker without HTTP
@@ -210,6 +210,7 @@ for the span catalog.
 
 ## Docs
 
+- [Identity client and browser sessions](docs/guides/identity-client.md) — PKCE/nonce、原子会话、后通道登出与升级边界
 - [Getting started](docs/getting-started.md) — 10-minute hands-on tutorial: run the samples, trigger all three saga paths, observe traces
 - [Why CQRS?](docs/architecture/why-cqrs.md) — write/read split, EF Core vs Dapper, pipeline behaviors
 - [Why Outbox?](docs/architecture/why-outbox.md) — dual-write problem, atomic enqueue, background publisher, consumer idempotency
@@ -260,6 +261,7 @@ dotnet run --project samples/Kun.Sample.AppHost
 
 ## 📚 文档
 
+- [Identity client and browser sessions](docs/guides/identity-client.md) — PKCE/nonce、原子会话、后通道登出与升级边界
 - [Getting started](docs/getting-started.md) — 10 分钟上手教程
 - [Why CQRS?](docs/architecture/why-cqrs.md) · [Why Outbox?](docs/architecture/why-outbox.md) · [Why Saga?](docs/architecture/why-saga.md) — 架构决策说明
 - [📖 架构设计白皮书](docs/whitepaper.md) — 完整设计哲学、模块细节、代码示例

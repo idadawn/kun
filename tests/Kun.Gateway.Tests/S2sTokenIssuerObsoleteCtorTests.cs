@@ -61,14 +61,14 @@ public sealed class S2sTokenIssuerObsoleteCtorTests : IDisposable
 #pragma warning restore KUN0002
 
         var identity = new ClaimsIdentity(
-            [new Claim("sub", "compat-user"), new Claim("tenant_id", "t-compat")],
+            [new Claim("sub", "compat-user"), new Claim("tenant_id", "00000000-0000-4000-8000-000000000044")],
             authenticationType: "test");
-        var principal = new ClaimsPrincipal(identity);
+        var principal = S2sPrincipalFixture.Complete(new ClaimsPrincipal(identity));
 
         var jwt = issuer.IssueFor(principal);
 
         var parsed = new JwtSecurityTokenHandler().ReadJwtToken(jwt);
         Assert.Equal("compat-user", parsed.Claims.First(c => c.Type == "sub").Value);
-        Assert.Equal("t-compat", parsed.Claims.First(c => c.Type == "tenant_id").Value);
+        Assert.Equal("00000000-0000-4000-8000-000000000044", parsed.Claims.First(c => c.Type == "tenant_id").Value);
     }
 }

@@ -14,6 +14,7 @@ namespace Kun.Identity.Implementations;
 /// RSA key — supplied either as a PEM string or as a
 /// pre-built <see cref="SecurityKey"/> (the test-friendly path).
 /// </summary>
+[Obsolete("Use Kun.Gateway.S2sTokenIssuer for canonical short-lived S2S tokens.", DiagnosticId = "KUNS2S001")]
 public sealed class KunJwtIssuer : IJwtIssuer
 {
     private readonly KunJwtIssuerOptions _options;

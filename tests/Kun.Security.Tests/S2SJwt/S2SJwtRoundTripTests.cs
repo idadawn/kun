@@ -1,3 +1,4 @@
+#pragma warning disable KUNS2S001 // Explicit compatibility tests for retired issuer APIs; new consumers must fail compilation.
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -27,7 +28,7 @@ public sealed class S2SJwtRoundTripTests : IDisposable
         {
             SigningKeyPem = _privateKeyPem,
             KeyId = "test-key-1",
-            Issuer = "neuroagent-edge",
+            Issuer = "kun-gateway",
             DefaultLifetimeSeconds = 300,
         };
 
@@ -71,7 +72,7 @@ public sealed class S2SJwtRoundTripTests : IDisposable
         var now = DateTime.UtcNow;
         var descriptor = new SecurityTokenDescriptor
         {
-            Issuer = "neuroagent-edge",
+            Issuer = "kun-gateway",
             Audience = "neuroagent-platform",
             NotBefore = now.AddMinutes(-5),
             IssuedAt = now.AddMinutes(-5),
@@ -122,7 +123,7 @@ public sealed class S2SJwtRoundTripTests : IDisposable
         {
             SigningKeyPem = prevKeyPem,
             KeyId = "prev-key",
-            Issuer = "neuroagent-edge",
+            Issuer = "kun-gateway",
             DefaultLifetimeSeconds = 300,
         };
 
@@ -135,7 +136,7 @@ public sealed class S2SJwtRoundTripTests : IDisposable
             KeyId = "test-key-1",
             PreviousSigningKeyPem = prevKeyPem,
             PreviousKeyId = "prev-key",
-            Issuer = "neuroagent-edge",
+            Issuer = "kun-gateway",
             DefaultLifetimeSeconds = 300,
         };
         var verifier = CreateVerifier(rotationOptions);
@@ -290,7 +291,7 @@ public sealed class S2SJwtRoundTripTests : IDisposable
         {
             SigningKeyPem = _privateKeyPem,
             KeyId = "test-key-1",
-            Issuer = "neuroagent-edge",
+            Issuer = "kun-gateway",
             // DefaultLifetimeSeconds left at the type default (300s = 5 minutes,
             // upper bound of whitepaper §9.6 zero-trust TTL range).
         };

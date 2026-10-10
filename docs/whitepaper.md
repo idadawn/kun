@@ -107,6 +107,11 @@ graph TD
     Mediator --> Grpc[Kun.Grpc<br/>拦截器/Result 映射]
 
     Security --> Gateway[Kun.Gateway<br/>YARP/S2S 签发/限流]
+    Core --> Identity[Kun.Identity<br/>OIDC/原子会话]
+    Caching[Kun.Caching<br/>兼容缓存端口] --> Identity
+    RedisClient[StackExchange.Redis<br/>原子会话索引] --> Identity
+    Identity --> IdentityWeb[Kun.Identity.AspNetCore<br/>Cookie/CSRF/回调]
+    Core --> IdentityWeb
 
     style Core fill:#e1f5ff
     style Mediator fill:#e1f5ff
@@ -1023,7 +1028,7 @@ CI 流水线中对所有应当走 AOT 的服务执行 `dotnet publish -p:Publish
 |---|---|---|
 | `Kun.Storage` | `AddKunStorage()` → `KunStorageBuilder` | 7-method `IFileStorage` 契约 + 本地磁盘 / S3 两个官方实现 |
 | `Kun.Security` | `AddKunSecurity()` / `AddKunServiceAuthentication()` | S2S JWT 签发/校验 + JWKS + `ICurrentUser` / `ITracedCurrentUser` |
-| `Kun.Identity` | `AddKunIdentity()` | 外部 OIDC 客户端抽象 + JWT validator/issuer；不重新发明 user store |
+| `Kun.Identity` | `AddKunIdentity()` | 外部 OIDC 客户端、JWT 校验与原子会话；不自建账号存储 |
 | `Kun.MultiTenancy` | `AddKunMultiTenancy()` / `UseKunMultiTenancy()` | `ITenantContext` + EF 查询过滤器 + SaveChanges 拦截器 |
 | `Kun.Audit` | `AddKunAudit()` → `KunAuditBuilder.UseEventBus()` | 审计写入器抽象 + Null/EventBus 实现；EF 持久化在 `Kun.Audit.EntityFrameworkCore` |
 | `Kun.RateLimit` | `AddKunRateLimit()` | 按租户分区限流器（基于 `.NET 10 RateLimiter`）+ 网关侧 IP fallback |

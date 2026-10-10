@@ -11,6 +11,7 @@ namespace Kun.Security.S2SJwt;
 /// Verifies S2S JWT tokens using ES256 and the configured signing keys.
 /// Supports key rotation by accepting both current and previous signing keys.
 /// </summary>
+[Obsolete("Use Kun.Gateway.S2sTokenIssuer and Kun.Security service authentication.", DiagnosticId = "KUNS2S001")]
 public sealed partial class S2SJwtVerifier : IS2SJwtVerifier
 {
     private readonly TokenValidationParameters _validationParams;

@@ -37,10 +37,8 @@ public sealed class KunGatewayOptions
     public TimeSpan InternalTokenLifetime { get; set; } = TimeSpan.FromSeconds(60);
 
     /// <summary>
-    /// Application claim types to copy from the resolved, authenticated principal.
-    /// Empty by default. Reserved identity, role, signing and lifetime claims cannot be forwarded.
-    /// Configure only claims owned and validated by the external identity boundary, such as
-    /// a session id, authorization revision or permission. Values are never read from plain headers.
+    /// Compatibility allowlist option. Only canonical scope/session/revision/project/plugin field names are accepted;
+    /// the canonical field set is fixed and does not require an allowlist. Arbitrary application claims are rejected.
     /// </summary>
     public string[] ForwardedClaimTypes { get; set; } = [];
 
@@ -56,12 +54,10 @@ public sealed class KunGatewayOptions
     public required string PublicKeyPath { get; set; }
 
     /// <summary>
-    /// When <see langword="true"/> (default), the gateway emits a <c>trace_id</c> claim in the
-    /// minted S2S JWT if an active OpenTelemetry <see cref="System.Diagnostics.Activity"/> with a
-    /// valid <see cref="System.Diagnostics.ActivityTraceId"/> is present on the request.
-    /// Set to <see langword="false"/> to suppress trace propagation via JWT (e.g. for compliance).
+    /// Retained for configuration compatibility; no longer changes the closed JWT payload.
+    /// Trace context is propagated through standard HTTP headers.
     /// </summary>
-    public bool EmitTraceIdClaim { get; set; } = true;
+    public bool EmitTraceIdClaim { get; set; }
 
     /// <summary>
     /// When <see langword="true"/>, the gateway exposes the internal JWKS endpoint
