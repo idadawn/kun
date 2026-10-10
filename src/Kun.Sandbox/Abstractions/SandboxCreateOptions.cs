@@ -1,22 +1,16 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Kun.Sandbox.Abstractions;
 
 /// <summary>
-/// Options for <see cref="ISandboxProvider.CreateAsync"/>. Field names
-/// and JSON wire names match the E2B v2 <c>POST /v2/sandboxes</c>
-/// payload verbatim (see NeuroAgent Sandbox Spec v1.1 §4.3). The
-/// NeuroAgent-specific extensions — secret scope, egress policy,
-/// browser control, per-sandbox command cap — live under
-/// <see cref="NeuroagentExtension"/> and serialise as the
-/// <c>neuroagent</c> sub-object. E2B SDKs ignore it; our Supervisor
-/// reads it.
+/// Sandbox create options use the portable E2B v2 fields plus explicitly named provider-owned extension data.
 /// </summary>
 public sealed class SandboxCreateOptions
 {
-    /// <summary>Template id (e.g. <c>neuroagent-default</c>).</summary>
+    /// <summary>Template id (e.g. <c>kun-default</c>).</summary>
     [JsonPropertyName("templateId")]
-    public string TemplateId { get; init; } = "neuroagent-default";
+    public string TemplateId { get; init; } = "kun-default";
 
     /// <summary>vCPU count requested for the sandbox.</summary>
     [JsonPropertyName("cpuCount")]
@@ -41,8 +35,7 @@ public sealed class SandboxCreateOptions
     public IReadOnlyDictionary<string, string>? Envs { get; init; }
 
     /// <summary>
-    /// Free-form metadata attached to the sandbox. NeuroAgent
-    /// conventionally populates <c>workspaceId</c>, <c>threadId</c>,
+    /// Free-form application metadata, such as <c>workspaceId</c>, <c>threadId</c>,
     /// <c>tenantId</c>, <c>agentDefId</c> for audit correlation.
     /// </summary>
     [JsonPropertyName("metadata")]
@@ -50,21 +43,23 @@ public sealed class SandboxCreateOptions
     public IReadOnlyDictionary<string, string>? Metadata { get; init; }
 
     /// <summary>
-    /// NeuroAgent-specific configuration — serialised as the top-level
-    /// <c>neuroagent</c> sub-object, isolated from the E2B-compatible
-    /// fields.
+    /// Legacy explicit wire field. Retained for existing consumers; never emitted by default.
     /// </summary>
     [JsonPropertyName("neuroagent")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [Obsolete("Use ProviderExtensions with an explicitly selected provider-owned key.")]
     public NeuroagentSandboxExtension? NeuroagentExtension { get; init; }
+    /// <summary>Provider-owned top-level JSON members. The caller explicitly chooses keys and values; core fields cannot be overridden.</summary>
+    // 源生成的扩展数据需要普通 setter；init 会被当作构造参数而无法绑定。
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? ProviderExtensions { get; set; }
+
 }
 
 /// <summary>
-/// NeuroAgent-only extension to <see cref="SandboxCreateOptions"/>.
-/// These fields sit outside the E2B-compatible schema and are only
-/// interpreted by the NeuroAgent Supervisor backend; E2B Cloud will
-/// ignore them.
+/// Compatibility shape for the legacy explicit supervisor extension. New integrations choose their own provider extension contract.
 /// </summary>
+[Obsolete("Use provider-owned JSON extension data on SandboxCreateOptions.ProviderExtensions.")]
 public sealed class NeuroagentSandboxExtension
 {
     /// <summary>Secret scope configuration — names of secret bundles to be made available via the metadata service.</summary>

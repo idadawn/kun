@@ -26,7 +26,7 @@ namespace Kun.Identity.AspNetCore;
 public sealed class SignInHelper
 {
     private readonly ISessionStore _store;
-    private readonly IJwtValidator _idTokenValidator;
+    private readonly IJwtValidator? _idTokenValidator;
     private readonly KunCookieAuthOptions _options;
     private readonly TimeProvider _timeProvider;
 
@@ -45,6 +45,13 @@ public sealed class SignInHelper
         _idTokenValidator = idTokenValidator;
         _options = options.Value;
         _timeProvider = timeProvider;
+    }
+
+    /// <summary>Creates a helper for nonce-validated OIDC responses and trusted application session data.</summary>
+    public SignInHelper(ISessionStore store, IOptions<KunCookieAuthOptions> options, TimeProvider timeProvider)
+    {
+        ArgumentNullException.ThrowIfNull(store); ArgumentNullException.ThrowIfNull(options); ArgumentNullException.ThrowIfNull(timeProvider);
+        _store = store; _options = options.Value; _timeProvider = timeProvider;
     }
 
     /// <summary>
@@ -70,9 +77,8 @@ public sealed class SignInHelper
     }
 
     /// <summary>
-    /// Convenience overload that validates <paramref name="tokens"/>.IdToken
-    /// through <see cref="IJwtValidator"/>, builds <see cref="SessionData"/>
-    /// from the resulting claims, and delegates to
+    /// Accepts only <paramref name="tokens"/> with a client-validated identity,
+    /// builds <see cref="SessionData"/> from those claims, and delegates to
     /// <see cref="SignInAsync(HttpContext, SessionData, CancellationToken)"/>.
     /// </summary>
     /// <remarks>
@@ -90,8 +96,15 @@ public sealed class SignInHelper
             throw new InvalidOperationException("OIDC token response is missing the id-token; cannot materialise a session without a verified identity.");
         }
 
-        var principal = await _idTokenValidator.ValidateAsync(tokens.IdToken, cancellationToken).ConfigureAwait(false)
-            ?? throw new InvalidOperationException("OIDC id-token failed validation.");
+        var principal = tokens.ValidatedPrincipal;
+        if (principal?.Identity?.IsAuthenticated != true)
+            throw new InvalidOperationException("OIDC id-token was not validated by the PKCE/nonce exchange. Use OidcLoginService or KunOidcClient.");
+        if (_idTokenValidator is not null)
+        {
+            // 兼容构造器中的自定义校验器仍作为额外策略执行，不能替代前面的 nonce 绑定校验。
+            principal = await _idTokenValidator.ValidateAsync(tokens.IdToken, cancellationToken).ConfigureAwait(false);
+            if (principal?.Identity?.IsAuthenticated != true) throw new InvalidOperationException("Additional ID-token validation failed.");
+        }
 
         var data = BuildSessionData(principal, tokens, _timeProvider.GetUtcNow());
         return await SignInAsync(context, data, cancellationToken).ConfigureAwait(false);
@@ -147,7 +160,11 @@ public sealed class SignInHelper
             Roles: roles,
             AccessToken: tokens.AccessToken,
             RefreshToken: tokens.RefreshToken,
-            ExpiresAt: now.AddSeconds(tokens.ExpiresIn));
+            ExpiresAt: now.AddSeconds(tokens.ExpiresIn))
+        {
+            Issuer = principal.FindFirstValue("iss"),
+            ProviderSessionId = principal.FindFirstValue("sid")
+        };
     }
 
     private static string CreateSessionId()

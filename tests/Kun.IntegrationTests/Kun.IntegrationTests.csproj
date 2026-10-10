@@ -8,6 +8,7 @@
     <ProjectReference Include="../../samples/Kun.Sample.Catalog/Kun.Sample.Catalog.csproj" />
     <ProjectReference Include="../../src/Kun.AspNetCore/Kun.AspNetCore.csproj" />
     <ProjectReference Include="../../src/Kun.Grpc/Kun.Grpc.csproj" />
+    <ProjectReference Include="../../src/Kun.Identity.AspNetCore/Kun.Identity.AspNetCore.csproj" />
     <PackageReference Include="Grpc.Net.Client" />
     <PackageReference Include="Grpc.Tools" PrivateAssets="all" />
     <PackageReference Include="Google.Protobuf" />
@@ -26,6 +27,8 @@
     <ProjectReference Include="..\..\src\Kun.Storage\Kun.Storage.csproj" />
     <ProjectReference Include="..\..\src\Kun.Storage.Abstractions\Kun.Storage.Abstractions.csproj" />
     <ProjectReference Include="..\..\src\Kun.Storage.S3\Kun.Storage.S3.csproj" />
+    <PackageReference Include="JsonSchema.Net" PrivateAssets="all" />
+    <None Update="Fixtures/s2s-claims.schema.json" CopyToOutputDirectory="PreserveNewest" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="xunit.runner.visualstudio" />

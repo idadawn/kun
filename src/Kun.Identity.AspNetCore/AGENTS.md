@@ -46,39 +46,14 @@ declared on `KunCookieAuthOptions`:
 - Sliding expiration rewrites both the cookie `Max-Age` and the
   `ISessionStore` entry TTL in one call site so a stale half never
   exists.
-- `ChallengeHelper` writes the one-shot PKCE / state / nonce cookie
-  with `HttpOnly=true`, `Secure=Always`, `SameSite=None` (the IdP's
-  redirect is cross-site so Lax would drop the cookie) and a short
-  TTL (5 minutes). Consumers that want to harden this further should
-  wrap the value in `IDataProtector` at the callsite.
+- ChallengeHelper protects the PKCE/state/nonce/redirect/return transaction with IDataProtector, five-minute expiry and an atomic replay registry. ConsumeAsync validates state and rejects replay. Share protection keys and Redis namespace across replicas.
+- AddKunIdentityAspNetCore wires helpers, current-user aliases, antiforgery and an opaque-cookie authentication scheme without replacing host defaults. UseKunCookieAuth runs before authentication/authorization; failed renewal stays anonymous and never recreates a revoked session.
+- Cookie-authenticated unsafe methods require antiforgery by default. The signed back-channel endpoint explicitly uses token authentication, not browser CSRF credentials. Log only SHA256 sid hashes and error types, never backend exception content.
+- Current complete wiring and migration are in [identity-client.md](../../docs/guides/identity-client.md).
 
 ## Wiring
 
-```csharp
-services.AddKunIdentity(id =>
-{
-    id.AddOidcClient("authentik", opts => { ... });
-    id.AddCookieSession(opts =>
-    {
-        opts.CookieName = "kun.sid";
-        opts.SessionTtl = TimeSpan.FromHours(8);
-        opts.UseRedisStore();   // or .UseInMemoryStore() for tests/dev
-    });
-});
-
-app.UseKunCookieAuth();
-// Your endpoints can now inject IAuthenticatedUser / ICurrentUser.
-
-app.MapGet("/auth/login", async (HttpContext ctx, ChallengeHelper challenger, CancellationToken ct) =>
-    Results.Redirect(await challenger.BuildLoginUrlAsync(ctx, "authentik", "/", ct)));
-
-app.MapGet("/auth/callback", async (HttpContext ctx, IOidcClient oidc, SignInHelper signer, CancellationToken ct) =>
-{
-    var tokens = await oidc.ExchangeCodeAsync(code: ..., redirectUri: ..., ct);
-    await signer.SignInAsync(ctx, tokens, ct);
-    return Results.Redirect("/");
-});
-```
+Use the complete flow in [the identity client guide](../../docs/guides/identity-client.md): AddKunIdentity + AddKunIdentityAspNetCore, protected ChallengeHelper, OidcLoginService, and MapKunBackChannelLogout. Do not manually parse challenge cookies or turn raw token responses into browser sessions. Additional IJwtValidator policies on the compatibility SignInHelper constructor still execute after nonce-bound validation.
 
 ## For AI Agents
 

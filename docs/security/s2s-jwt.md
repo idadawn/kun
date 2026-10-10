@@ -19,7 +19,7 @@ The external IdP — your OpenID Connect provider — issues JWTs to end users a
 Gateway validates these tokens using the IdP's published JWKS. External tokens are accepted only
 at `Kun.Gateway`; no downstream service ever sees or validates an external token directly.
 
-The external JWT may use any algorithm the IdP supports. `KunGatewayOptions.ExternalJwksUri`
+The standalone gateway accepts RS256 and ES256 external JWTs. `KunGatewayOptions.ExternalJwksUri`
 points to the IdP's JWKS endpoint. The Gateway fetches and caches keys from there.
 
 ### Internal key pair (Gateway-owned)
@@ -81,11 +81,9 @@ public string SigningAlgorithm { get; init; } = "RS256";
 The default TTL is **60 seconds**, set in both `S2sTokenOptions.Lifetime` and
 `KunGatewayOptions.InternalTokenLifetime`. The short TTL is intentional:
 
-- A stolen token is useless within one minute of capture.
-- There is no revocation list to maintain. Expiry is the revocation mechanism.
-- Services re-acquire a fresh token on each outbound request via `PropagateS2sTokenHandler` — the
-  latency overhead is zero because the handler copies the already-minted token from the incoming
-  request header rather than calling the Gateway again.
+- Configured lifetime must be between one and 300 seconds; expiry plus verifier clock skew bounds replay.
+- Session/revision revocation remains an authority check; token expiry alone does not implement immediate user logout.
+- `PropagateS2sTokenHandler` copies the existing bearer token. It does not mint or extend one, and must not be used to cross an audience boundary without a new authorized exchange.
 
 `TokenValidationParameters.ClockSkew` is set to 30 seconds in `AddKunServiceAuthentication` to
 tolerate minor clock drift between hosts. Effective window is therefore up to 90 seconds.
@@ -100,32 +98,26 @@ inside an application-specific host without copying the implementation. The cons
 still owns external authentication, route authorization and internal listener exposure.
 A local package consumer is used to verify this distribution path before release.
 
-## Explicit application context
+## Canonical identity context
 
-The canonical gateway issuer can forward application-specific claim types using
-`KunGatewayOptions.ForwardedClaimTypes`. The default is empty; session identifiers,
-authorization revisions, permissions and personal data are not copied implicitly.
+`S2sTokenIssuer` is the single supported issuer. It always writes one closed shape, including `aud` and `roles` arrays even when empty/single-valued. The current contract fixture is copied from [Qian contracts/v0](https://github.com/idadawn/qian/blob/5eaed840/contracts/v0/s2s-claims.schema.json) and tested through the real gateway HTTP boundary.
 
-For a consumer that performs shared-session revocation checks, configure an explicit
-allowlist, for example `["sid", "identity_revision", "permission"]`. The issuer copies
-only those claim types from the principal returned by `IS2sPrincipalResolver`, after
-the gateway has validated the external identity. This option never reads plain request
-headers. Reserved issuer, audience, identity, role, trace and lifetime claims cannot be
-added to the allowlist, including case variants; application configuration cannot replace
-the internal token's trust boundary or expiry. The list is limited to 32 types, forwarded
-values to 128 claims and 4,096 characters per value.
+| Field | Issuance rule |
+|---|---|
+| `iss`, `aud` | Configured issuer and a single downstream audience; `IssueForAudienceAsync` selects one hop without changing global options. |
+| `sub`, `principal_kind` | Authenticated subject; kind must explicitly be user or service. Agent/delegation issuance is reserved and rejected. |
+| `tenant_id` | Explicit UUID or a claim with JSON-null value type for platform context. Absence is rejected. |
+| `roles`, `scope` | Distinct coarse roles (maximum 32, each at most 64 chars) and bounded OAuth scope text. Roles do not replace permission decisions. |
+| `session_id`, `jti` | Lowercase UUIDs; each token gets a fresh jti. A user supplies the authoritative session UUID; service session_id equals the new jti. |
+| `membership_id`, `identity_revision` | User with a tenant requires membership UUID; every user requires a nonnegative revision. Service membership is rejected. |
+| `project_id`, `plugin_id` | Optional UUID project and dotted component identifier. |
+| `iat`, `nbf`, `exp` | Issuer-controlled numeric dates; caller claims cannot extend the 1–300 second lifetime. |
 
-Role spellings `role`, `roles` and `ClaimTypes.Role` are normalized into distinct `roles`
-claims. `JwtCurrentUser` recognizes the same spellings after token validation, so roles
-survive a gateway-to-service round trip. The issuer emits a new `jti` for each token and a
-`kid` matching the configured public JWKS. Lifetimes outside `(0, 300]` seconds are
-rejected. The YARP transform awaits `IssueForAsync` and passes the request cancellation
-token to the resolver rather than blocking a request thread.
+Use `IS2sPrincipalResolver` to project authoritative identity context after authentication. Do not fabricate missing session/revision/membership values or read them from plain headers. Existing opaque tenant identifiers must be migrated/mapped to the canonical UUID contract before upgrade. Missing/ambiguous required claims prevent issuance.
 
-Forwarding a session id or revision does not itself prove the session is still active.
-The consuming identity boundary must validate those values against its durable authority,
-and services must fail closed if that check is unavailable. This addition is a transport
-contract, not a distributed session or permission store.
+`ForwardedClaimTypes` remains a compatibility setting but only accepts canonical field names; it does not enable arbitrary extra claims. Email, raw provider sid, permission lists and trace_id are not emitted. `EmitTraceIdClaim` is retained but ignored; tracing uses W3C headers. A canonical session UUID is distinct from a provider's opaque sid and the local browser cookie.
+
+The YARP transform awaits the resolver and honors request cancellation. Kernel issuance does not replace product-side session/revision validity checks, membership authorization, or per-service route policy.
 
 ---
 
@@ -282,69 +274,8 @@ must come before `UseAuthorization` in the middleware pipeline.
 
 ---
 
-## NeuroAgent S2S JWT (Kun.Security.S2SJwt)
+## Retired issuer APIs
 
-Alongside the Kun-canonical Gateway issuer documented above, the repository ships a second
-implementation under `src/Kun.Security/S2SJwt/` that satisfies the NeuroAgent SAD v3.0 §12 claim
-contract. The two implementations coexist because they answer different questions:
+`Kun.Identity.IJwtIssuer`/`KunJwtIssuer` and the `Kun.Security.S2SJwt` issuer/verifier/JWKS registration surface are obsolete (`KUNS2S001`). They remain only for binary/source migration compatibility. New code uses `Kun.Gateway.S2sTokenIssuer`, its shared JWKS ring and `Kun.Security` service authentication; do not introduce a second issuer or key lifecycle.
 
-- `Kun.Gateway.S2sTokenIssuer` (Set A, the one described above) is the zero-trust primitive of the
-  Kun framework itself — RS256, 60-second TTL, minted on every request as the external token is
-  swapped for the internal one. It intentionally emits only the claims the framework needs.
-- `Kun.Security.S2SJwt.S2SJwtIssuer` (Set B) is the NeuroAgent-specific issuer consumed by
-  `neuroagent-csharp`. It uses ES256, a 15-minute default TTL, and the richer SAD §12 claim set
-  below. It is **not** used by `Kun.Gateway` and does not replace Set A.
-
-Use Set B when you are implementing a NeuroAgent service that must mint its own S2S tokens (the
-edge gateway, offline workers, batch jobs). Use Set A when you are within the Kun request pipeline
-behind `Kun.Gateway`.
-
-### Claim shape (SAD v3.0 §12)
-
-| Claim | Required | Source | Notes |
-|---|:---:|---|---|
-| `sub` | ✓ | `S2SJwtIssueRequest.UserId` | UUID of the authenticating user. |
-| `jti` | ✓ | auto | Generated per-issue; `Guid.NewGuid("N")`. |
-| `tenant_id` | ✓ | `S2SJwtIssueRequest.TenantId` | UUID of the owning tenant. |
-| `aud` | ✓ | `S2SJwtIssueRequest.Audience` | Single value ⇒ string `aud`; multiple ⇒ payload `aud` array. |
-| `roles` | — | `S2SJwtIssueRequest.Roles` | Each role is emitted as a distinct `roles` claim (not joined). |
-| `scope` | — | `S2SJwtIssueRequest.Scopes` | Space-joined OAuth2-style scopes; emitted as a single `scope` claim when set. |
-| `session_id` | — | `S2SJwtIssueRequest.SessionId` | Opaque session identifier for revocation support. |
-| `membership_id` | — | `S2SJwtIssueRequest.MembershipId` | Active tenant membership, when a user has more than one. |
-| `trace_id` | — | `S2SJwtIssueRequest.TraceId` | W3C trace id (hex) for OpenTelemetry trace continuity. |
-
-### TTL and lifetime override
-
-`S2SJwtOptions.DefaultLifetimeSeconds` defaults to **900** (15 minutes) per SAD §12. Individual
-calls may shorten the window via `S2SJwtIssueRequest.Lifetime`, for example when minting a token
-for a batch step that is expected to complete in under a minute.
-
-### Registration
-
-```csharp
-// src/Kun.Security/S2SJwt/KunSecurityS2SJwtServiceCollectionExtensions.cs
-services.AddS2SJwt(options =>
-{
-    options.SigningKeyPem = File.ReadAllText("keys/current.pem");
-    options.KeyId         = "k1";
-    options.Issuer        = "neuroagent-edge";
-    // options.PreviousSigningKeyPem + PreviousKeyId for rotation
-});
-```
-
-The `AddS2SJwt` extension registers both `IS2SJwtIssuer` and `IS2SJwtVerifier`, plus the JWKS
-middleware that exposes the current public key at `/internal/.well-known/jwks.json` when invoked
-via `app.UseS2SJwksEndpoint()`.
-
-### Why two implementations and not one
-
-- **Algorithm**: Kun framework treats RS256 as the lingua franca; NeuroAgent's platform contract
-  standardised on ES256 before Kun's issuer existed.
-- **Claim surface area**: NeuroAgent needs `membership_id` and multi-role RBAC; Kun's internal
-  calls don't.
-- **Lifetime**: Kun's 60-second TTL is a deliberate zero-trust primitive that pairs with
-  `PropagateS2sTokenHandler` copying the inbound token unchanged — it would be wrong to push that
-  to 15 minutes. NeuroAgent's 15-minute default is a product decision, not a framework decision.
-
-Consolidating the two into one issuer is possible and may be revisited once the NeuroAgent claim
-contract stabilises, but keeping them separate today makes the blast radius of each change small.
+Migrate callers to authoritative canonical principal projection, per-service audience selection, and the closed payload described above. Do not copy old permission/email/trace fields or inherit an old long token lifetime. The identity browser client, atomic session registry and back-channel logout setup are covered in [the identity client guide](../guides/identity-client.md).

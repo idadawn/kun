@@ -8,6 +8,7 @@ namespace Kun.Identity.Abstractions;
 /// registered <c>KunJwtIssuerOptions</c>; callers pass the claims
 /// describing <i>this</i> token (subject, tenant, roles, …).
 /// </summary>
+[Obsolete("Use Kun.Gateway.S2sTokenIssuer for canonical short-lived S2S tokens.", DiagnosticId = "KUNS2S001")]
 public interface IJwtIssuer
 {
     /// <summary>

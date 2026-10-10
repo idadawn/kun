@@ -187,7 +187,7 @@ public sealed partial class OssFileStorage : IFileStorage
         ArgumentException.ThrowIfNullOrWhiteSpace(objectKey);
 
         // OSS supports browser POST-policy uploads, but with its own policy document and an
-        // HMAC-SHA1 signature distinct from S3's. iclaw's upload path uses the PUT presigned URL
+        // HMAC-SHA1 signature distinct from S3's. a consumer upload path uses the PUT presigned URL
         // (GetPresignedUploadAsync), so a POST-policy variant is deferred to Phase 2 rather than
         // shipped unverified: its signature cannot be validated without a live OSS endpoint, and
         // a wrong-but-plausible implementation would be worse than an explicit gap.

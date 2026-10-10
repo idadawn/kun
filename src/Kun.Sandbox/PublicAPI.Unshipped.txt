@@ -119,3 +119,5 @@ Kun.Sandbox.Implementations.SupervisorSandboxProvider
 Kun.Sandbox.Implementations.SupervisorSandboxProvider.CreateAsync(Kun.Sandbox.Abstractions.SandboxCreateOptions! options, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Kun.Sandbox.Abstractions.ISandboxHandle!>!
 Kun.Sandbox.Implementations.SupervisorSandboxProvider.SupervisorSandboxProvider(System.Net.Http.HttpClient! httpClient) -> void
 static Kun.Sandbox.Extensions.KunSandboxServiceCollectionExtensions.AddKunSandbox(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.Sandbox.Extensions.KunSandboxOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Kun.Sandbox.Abstractions.SandboxCreateOptions.ProviderExtensions.get -> System.Collections.Generic.Dictionary<string!, System.Text.Json.JsonElement>?
+Kun.Sandbox.Abstractions.SandboxCreateOptions.ProviderExtensions.set -> void

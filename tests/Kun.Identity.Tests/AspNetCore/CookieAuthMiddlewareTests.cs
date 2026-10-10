@@ -36,6 +36,7 @@ public sealed class CookieAuthMiddlewareTests
             next: _ => Task.CompletedTask,
             store, Opts(), new FakeTimeProvider(), NullLogger<KunCookieAuthMiddleware>.Instance);
         var ctx = new DefaultHttpContext();
+        ctx.Request.Method = HttpMethods.Get;
 
         await middleware.InvokeAsync(ctx);
 
@@ -54,6 +55,7 @@ public sealed class CookieAuthMiddlewareTests
             next: _ => Task.CompletedTask,
             store, Opts(o => o.SlidingExpiration = false), clock, NullLogger<KunCookieAuthMiddleware>.Instance);
         var ctx = new DefaultHttpContext();
+        ctx.Request.Method = HttpMethods.Get;
         ctx.Request.Headers.Cookie = "kun.sid=sid-ok";
 
         await middleware.InvokeAsync(ctx);
@@ -70,6 +72,7 @@ public sealed class CookieAuthMiddlewareTests
             next: _ => Task.CompletedTask,
             store, Opts(), new FakeTimeProvider(), NullLogger<KunCookieAuthMiddleware>.Instance);
         var ctx = new DefaultHttpContext();
+        ctx.Request.Method = HttpMethods.Get;
         ctx.Request.Headers.Cookie = "kun.sid=never-existed";
 
         await middleware.InvokeAsync(ctx);
@@ -89,6 +92,7 @@ public sealed class CookieAuthMiddlewareTests
             next: _ => Task.CompletedTask,
             store, Opts(o => o.SessionTtl = TimeSpan.FromHours(2)), clock, NullLogger<KunCookieAuthMiddleware>.Instance);
         var ctx = new DefaultHttpContext();
+        ctx.Request.Method = HttpMethods.Get;
         ctx.Request.Headers.Cookie = "kun.sid=sid-slide";
 
         await middleware.InvokeAsync(ctx);
@@ -108,6 +112,7 @@ public sealed class CookieAuthMiddlewareTests
             next: _ => Task.CompletedTask,
             store, Opts(), new FakeTimeProvider(), NullLogger<KunCookieAuthMiddleware>.Instance);
         var ctx = new DefaultHttpContext();
+        ctx.Request.Method = HttpMethods.Get;
         var pre = new System.Security.Claims.ClaimsPrincipal(
             new System.Security.Claims.ClaimsIdentity(
                 new[] { new System.Security.Claims.Claim("existing", "yes") },

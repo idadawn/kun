@@ -83,14 +83,14 @@ public sealed class S2sTokenIssuerTests : IDisposable
         foreach (var role in roles)
             claims.Add(new Claim("roles", role));
 
-        return new ClaimsPrincipal(new ClaimsIdentity(claims, "test"));
+        return S2sPrincipalFixture.Complete(new ClaimsPrincipal(new ClaimsIdentity(claims, "test")));
     }
 
     [Fact]
     public void IssueFor_ValidPrincipal_ProducesValidToken()
     {
         // Arrange
-        var principal = BuildPrincipal("user-123", "tenant-abc");
+        var principal = BuildPrincipal("user-123", "00000000-0000-4000-8000-000000000002");
 
         // Act
         var token = _issuer.IssueFor(principal);
@@ -105,7 +105,7 @@ public sealed class S2sTokenIssuerTests : IDisposable
     public void IssueFor_CopiesSub_IntoToken()
     {
         // Arrange
-        var principal = BuildPrincipal("user-xyz", "t1");
+        var principal = BuildPrincipal("user-xyz", "00000000-0000-4000-8000-000000000001");
 
         // Act
         var token = _issuer.IssueFor(principal);
@@ -122,7 +122,7 @@ public sealed class S2sTokenIssuerTests : IDisposable
     public void IssueFor_CopiesTenantId_IntoToken()
     {
         // Arrange
-        var principal = BuildPrincipal("user-1", "tenant-99");
+        var principal = BuildPrincipal("user-1", "00000000-0000-4000-8000-000000000099");
 
         // Act
         var token = _issuer.IssueFor(principal);
@@ -132,14 +132,14 @@ public sealed class S2sTokenIssuerTests : IDisposable
         var jwt = handler.ReadJwtToken(token);
         var tenantClaim = jwt.Claims.FirstOrDefault(c => c.Type == "tenant_id");
         tenantClaim.Should().NotBeNull();
-        tenantClaim!.Value.Should().Be("tenant-99");
+        tenantClaim!.Value.Should().Be("00000000-0000-4000-8000-000000000099");
     }
 
     [Fact]
     public void IssueFor_CopiesRoles_IntoToken()
     {
         // Arrange
-        var principal = BuildPrincipal("user-1", "t1", "admin", "reader");
+        var principal = BuildPrincipal("user-1", "00000000-0000-4000-8000-000000000001", "admin", "reader");
 
         // Act
         var token = _issuer.IssueFor(principal);
@@ -170,7 +170,7 @@ public sealed class S2sTokenIssuerTests : IDisposable
     public void IssueFor_TokenExpiry_IsWithinLifetime()
     {
         // Arrange
-        var principal = BuildPrincipal("u1", "t1");
+        var principal = BuildPrincipal("u1", "00000000-0000-4000-8000-000000000001");
         var before = DateTime.UtcNow;
 
         // Act
@@ -235,7 +235,7 @@ public sealed class S2sTokenIssuerTests : IDisposable
             File.Exists(privatePath).Should().BeTrue("private key should be generated");
             File.Exists(publicPath).Should().BeTrue("public key should be generated");
 
-            var principal = BuildPrincipal("user-dev", "tenant-dev");
+            var principal = BuildPrincipal("user-dev", "00000000-0000-4000-8000-000000000047");
             var token = issuer.IssueFor(principal);
             token.Should().NotBeNullOrEmpty();
 

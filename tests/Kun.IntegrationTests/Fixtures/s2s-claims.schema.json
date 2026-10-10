@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qian.dev/contracts/v0/s2s-claims.schema.json",
+  "title": "S2SClaims",
+  "description": "服务间（S2S）JWT 的 payload：qian.gateway 换签后下行到各服务，与 iClaw s2s-jwt-claims 同形、各签各的（ADR-010 D10.4、ADR-016 D16.3/D16.5、PRD §13.3.1）。新能力授权 = 增加 scope 串，不新增 claim。JSON Schema 表达不了的规则（时间窗、session_id 取值）见 contracts/v0/README.md「S2S claim」。",
+  "x-status": "draft",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["iss", "aud", "sub", "principal_kind", "tenant_id", "roles", "scope", "session_id", "iat", "nbf", "exp", "jti"],
+  "properties": {
+    "iss": {
+      "description": "签发方：网关 S2sTokenIssuer 的规范 issuer（每环境一个，可配置）。",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "aud": {
+      "description": "受众：目标服务标识（qian-platform、qian-identity、<service 组件 id>），每跳一个；校验方检查其中含自己。",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1, "maxLength": 255 }
+    },
+    "sub": {
+      "description": "主体：user 为 person_id；service 为 client_id；agent（S4）为 Agent 客户端 id。",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "principal_kind": {
+      "description": "统一主体模型（PRD 7.18 第 3 项）：审计 actor_type、计量 principal_kind 取同一值。agent 为 S4 预留，S1 不签发。",
+      "enum": ["user", "service", "agent"]
+    },
+    "tenant_id": {
+      "description": "租户 id；null 表示平台级主体（平台运营者、平台级服务调用），租户域端点见 null 一律拒绝（fail-closed）。",
+      "oneOf": [{ "$ref": "#/$defs/Uuid" }, { "type": "null" }]
+    },
+    "membership_id": {
+      "description": "租户成员 id：user 且 tenant_id 非 null 时必填；service 不得出现。",
+      "$ref": "#/$defs/Uuid"
+    },
+    "identity_revision": {
+      "description": "身份修订号：权限 / 身份变更即递增，服务端据此让权限缓存失效（ADR-006 D6.7）。user 必填。",
+      "type": "integer",
+      "minimum": 0
+    },
+    "project_id": {
+      "description": "可选：租户下的项目 id，Qian 只透传不解释（R24）。",
+      "$ref": "#/$defs/Uuid"
+    },
+    "plugin_id": {
+      "description": "可选：service 主体是某个插件时的组件 id。",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+$"
+    },
+    "roles": {
+      "description": "粗粒度角色代码（与 iClaw 同形的例外，R24）：不是权限点集合，服务不得仅凭它放行，必须调用决策端口。可为空数组。",
+      "type": "array",
+      "uniqueItems": true,
+      "maxItems": 32,
+      "items": { "type": "string", "minLength": 1, "maxLength": 64 }
+    },
+    "scope": {
+      "description": "OAuth 2.0 scope 串，空格分隔（RFC 6749 §3.3）；可为空串。",
+      "type": "string",
+      "maxLength": 4096,
+      "pattern": "^([\\x21\\x23-\\x5B\\x5D-\\x7E]+( [\\x21\\x23-\\x5B\\x5D-\\x7E]+)*)?$"
+    },
+    "session_id": {
+      "description": "SSO 会话 id（吊销清单键）；没有交互会话的 service 主体取本令牌的 jti。",
+      "$ref": "#/$defs/Uuid"
+    },
+    "act": {
+      "description": "委托链（RFC 8693 §4.1，S4 启用）：当前行事方；嵌套 act 表示更早的行事方。S1 只预留，不签发。",
+      "$ref": "#/$defs/Actor"
+    },
+    "iat": { "$ref": "#/$defs/NumericDate" },
+    "nbf": { "$ref": "#/$defs/NumericDate" },
+    "exp": { "$ref": "#/$defs/NumericDate" },
+    "jti": { "$ref": "#/$defs/Uuid" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "principal_kind": { "const": "user" } } },
+      "then": { "required": ["identity_revision"] }
+    },
+    {
+      "if": {
+        "properties": { "principal_kind": { "const": "user" }, "tenant_id": { "type": "string" } }
+      },
+      "then": { "required": ["membership_id"] }
+    },
+    {
+      "if": { "properties": { "principal_kind": { "const": "service" } } },
+      "then": { "not": { "required": ["membership_id"] } }
+    }
+  ],
+  "$defs": {
+    "Uuid": {
+      "description": "小写规范形式的 UUID（Qian 主键默认 v7）。",
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "NumericDate": {
+      "description": "RFC 7519 NumericDate：自 1970-01-01T00:00:00Z 起的秒数。",
+      "type": "integer",
+      "minimum": 0
+    },
+    "Actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sub", "principal_kind"],
+      "properties": {
+        "sub": { "type": "string", "minLength": 1, "maxLength": 255 },
+        "principal_kind": { "enum": ["user", "service", "agent"] },
+        "act": { "$ref": "#/$defs/Actor" }
+      }
+    }
+  }
+}

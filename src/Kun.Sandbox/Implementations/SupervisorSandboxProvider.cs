@@ -8,8 +8,8 @@ namespace Kun.Sandbox.Implementations;
 
 /// <summary>
 /// Production <see cref="ISandboxProvider"/> that talks to the
-/// NeuroAgent Supervisor's <c>/v2/sandboxes/*</c> endpoints
-/// (NeuroAgent Sandbox Spec v1.1 §4). The HTTP client is supplied by
+/// configured supervisor's <c>/v2/sandboxes/*</c> endpoints.
+/// The HTTP client is supplied by
 /// the caller — typically via <see cref="System.Net.Http.IHttpClientFactory"/>
 /// — so delegating handlers can attach S2S JWT, mTLS client cert, and
 /// OpenTelemetry instrumentation without this class knowing about them.
@@ -25,6 +25,8 @@ public sealed class SupervisorSandboxProvider : ISandboxProvider
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
     };
 
+    private static readonly HashSet<string> CoreFields = new(StringComparer.OrdinalIgnoreCase)
+    { "templateId", "cpuCount", "memoryMB", "diskMB", "timeoutMs", "envs", "metadata" };
     private readonly HttpClient _httpClient;
 
     /// <summary>Creates the provider with a caller-configured <see cref="HttpClient"/>. The <see cref="HttpClient.BaseAddress"/> must point at the Supervisor (e.g. <c>https://sandbox-supervisor.internal:8443/</c>).</summary>
@@ -45,6 +47,13 @@ public sealed class SupervisorSandboxProvider : ISandboxProvider
     public async Task<ISandboxHandle> CreateAsync(SandboxCreateOptions options, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(options);
+        if (options.ProviderExtensions is not null)
+        {
+#pragma warning disable CS0618 // An explicitly used legacy field must not collide with provider-owned extension data.
+            if (options.ProviderExtensions.Keys.Any(key => CoreFields.Contains(key) || options.NeuroagentExtension is not null && key.Equals("neuroagent", StringComparison.OrdinalIgnoreCase)))
+                throw new ArgumentException("Provider extensions cannot override core or existing legacy fields.", nameof(options));
+#pragma warning restore CS0618
+        }
 
         using var response = await _httpClient.PostAsJsonAsync(
             "v2/sandboxes",

@@ -1,5 +1,7 @@
 # ADR-008: Introduce `Kun.Identity` Module — Reversing ADR-001
 
+> Implementation update (S1-KUN-004): the [identity client guide](../guides/identity-client.md) and [canonical S2S guide](../security/s2s-jwt.md) supersede the legacy issuer and incomplete cookie-flow examples below. The original rationale is retained as history.
+
 **Status**: Accepted
 **Date**: 2026-04-22
 **Author**: claude-kun (Kun framework specialist)

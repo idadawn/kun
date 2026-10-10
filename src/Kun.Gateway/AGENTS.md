@@ -31,6 +31,7 @@ YARP-based API gateway. Validates external IdP-issued JWTs from incoming client 
 - **This module issues S2S tokens; it does not trust any inbound S2S token.** Inbound traffic must present a valid *external* JWT (IdP-signed) or be rate-limited anonymous traffic for public endpoints.
 - **YARP transform**: the internal `S2sAuthTransform` runs on every forwarded request; it reads `HttpContext.User`, asks `S2sTokenIssuer.IssueFor(principal)` for a token, and writes `Authorization: Bearer {token}` on the outbound request — replacing any existing Authorization header.
 - **JWKS for S2S keys** is served from `/.well-known/jwks.json`. The `kid` is a SHA-256 hash of the RSA modulus (first 16 Base64Url chars) for stable identification across restarts.
+- **Canonical S2S**: only authenticated user/service principals with complete scope/session/revision/tenant context may be issued. aud/roles are arrays, UUIDs are canonical, lifetime is 1–300 seconds; arbitrary forwarded/trace claims are not supported. See GATEWAY.md.
 - **Rate limiting** partitions by `tenant_id` claim (default) or IP. Override by registering your own `IRateLimitPartitionResolver` singleton before `AddKunGateway`.
 - **Do NOT use `AddKunServiceAuthentication`** here — that extension is for downstream services validating *incoming* S2S tokens. The gateway validates *external* IdP tokens directly via `AddJwtBearer`.
 - **`S2sAuthTransform` is `internal sealed`** — it is wired by `AddKunGateway` and does not need to be referenced directly.

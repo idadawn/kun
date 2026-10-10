@@ -2,7 +2,7 @@ namespace Kun.Security.S2SJwt;
 
 /// <summary>
 /// Input for <see cref="IS2SJwtIssuer.IssueAsync(S2SJwtIssueRequest, System.Threading.CancellationToken)"/>.
-/// Carries the full SAD v3.0 §12 NeuroAgent S2S claim set.
+/// Carries the full SAD v3.0 §12 legacy S2S claim set.
 /// </summary>
 /// <param name="UserId">User subject (UUID). Emitted as the <c>sub</c> claim.</param>
 /// <param name="TenantId">Tenant identifier (UUID). Emitted as <c>tenant_id</c>.</param>
@@ -36,6 +36,7 @@ namespace Kun.Security.S2SJwt;
 /// Optional per-call override for token lifetime. When <see langword="null"/>,
 /// <see cref="S2SJwtOptions.DefaultLifetimeSeconds"/> applies.
 /// </param>
+[Obsolete("Use Kun.Gateway.S2sTokenIssuer and Kun.Security service authentication.", DiagnosticId = "KUNS2S001")]
 public sealed record S2SJwtIssueRequest(
     string UserId,
     string TenantId,

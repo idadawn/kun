@@ -6,13 +6,13 @@
 ## Purpose
 
 A .NET sandbox abstraction for Kun consumers (C# business services in
-`neuroagent-csharp`, any future Kun-based service). Models the E2B v2
+any Kun-based application). Models the E2B v2
 REST API shape in idiomatic C#:
 
 ```csharp
 var sandbox = await provider.CreateAsync(new SandboxCreateOptions
 {
-    TemplateId = "neuroagent-default",
+    TemplateId = "kun-default",
     CpuCount = 2,
     MemoryMB = 2048,
     TimeoutMs = 300_000,
@@ -51,7 +51,7 @@ services.AddKunSandbox(opts => opts.UseE2BCloud(apiKey, teamId));
   implementations, DI.
 - **Out of scope**: *running a sandbox*. No Docker, no gVisor, no
   process supervision. The runtime lives in
-  `neuroagent-python/sandbox_supervisor`. Spec v1.1 §14 pins the
+  the configured external supervisor. Spec v1.1 §14 pins the
   Supervisor to Python — this module is only the .NET client.
 
 ## Layer and AOT
@@ -71,7 +71,7 @@ services.AddKunSandbox(opts => opts.UseE2BCloud(apiKey, teamId));
 | Provider | When to use | Requires |
 |----------|-------------|----------|
 | `InMemorySandboxProvider` | Unit tests, dev-loop prototyping. No isolation, no network. | — |
-| `SupervisorSandboxProvider` | Phase 1 production path. Calls `/v2/sandboxes/*` on the NeuroAgent Supervisor. | Supervisor URL, mTLS client cert, S2S JWT issuer (via delegating handler). |
+| `SupervisorSandboxProvider` | Phase 1 production path. Calls `/v2/sandboxes/*` on a configured supervisor. | Supervisor URL, mTLS client cert, S2S JWT issuer (via delegating handler). |
 | `E2BCloudSandboxProvider` | **Phase 2+ only.** Currently throws `NotImplementedException` — waiting on Mode D scoping in Spec v1.1 §14.4. | E2B API key + team ID. |
 
 ## Shape contract — E2B v2
@@ -116,4 +116,6 @@ will ignore it; our Supervisor reads it.
   it is not a functional backend.
 - **Do** use `InMemorySandboxProvider` for business-service unit
   tests. Integration tests that want a real Supervisor belong under
-  `Kun.IntegrationTests` or `neuroagent-csharp/tests`, not here.
+  `Kun.IntegrationTests`, not here.
+
+S1-KUN-004: ProviderExtensions carries explicitly named provider-owned JSON members; core fields cannot be overridden. The old named extension/property remains obsolete compatibility only and is omitted by default. Do not silently discard a caller's explicitly configured legacy policy. Use a set accessor for JsonExtensionData: source-generated constructor binding does not support an init-only extension property.

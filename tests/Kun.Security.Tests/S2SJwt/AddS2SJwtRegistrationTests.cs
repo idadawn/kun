@@ -1,3 +1,4 @@
+#pragma warning disable KUNS2S001 // Explicit compatibility tests for retired issuer APIs; new consumers must fail compilation.
 using System.Security.Cryptography;
 using FluentAssertions;
 using Kun.Security.S2SJwt;
@@ -32,7 +33,7 @@ public sealed class AddS2SJwtRegistrationTests : IDisposable
         {
             options.SigningKeyPem = _privateKeyPem;
             options.KeyId = "k1";
-            options.Issuer = "neuroagent-edge";
+            options.Issuer = "kun-gateway";
         });
 
         await using var provider = services.BuildServiceProvider();

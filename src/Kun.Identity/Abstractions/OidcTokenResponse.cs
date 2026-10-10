@@ -1,3 +1,5 @@
+using System.Security.Claims;
+
 namespace Kun.Identity.Abstractions;
 
 /// <summary>Result of an OIDC authorization-code exchange.</summary>
@@ -11,4 +13,8 @@ public sealed record OidcTokenResponse(
     string? IdToken,
     string? RefreshToken,
     string TokenType,
-    int ExpiresIn);
+    int ExpiresIn)
+{
+    /// <summary>Identity validated by the OIDC client for this grant; null for machine grants without an ID Token.</summary>
+    public ClaimsPrincipal? ValidatedPrincipal { get; internal init; }
+}

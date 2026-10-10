@@ -17,7 +17,7 @@ The module adds three abstractions:
 |-------------|---------|
 | `IJwtValidator` | Validate a Bearer token against a JWKS URI / static signing keys; return `ClaimsPrincipal?`. Framework-neutral — usable from ASP.NET Core, gRPC interceptors, or background workers. |
 | `IJwtIssuer` | Mint a signed JWT for S2S communication. Replaces per-service hand-rolled issuers. |
-| `IOidcClient` | Discover an OIDC provider's metadata and exchange an authorization code for tokens. Covers the code-flow half of OIDC; token-refresh is a follow-up. |
+| `IOidcClient` | Discover an OIDC provider's metadata and exchange an authorization code for tokens. Validates PKCE/nonce-bound code flow, refresh, machine credentials and signed logout tokens. |
 
 ## Layer and AOT
 
@@ -42,11 +42,7 @@ materialised: three business repositories each carry their own
 + `OpenIdConnectMessage` wiring, all slightly different. The
 abstractions here pull that surface back into the framework.
 
-The existing `Kun.Security.S2SJwt` types stay in place for backward
-compatibility. `Kun.Identity.IJwtIssuer` provides a canonical
-abstraction that new code should prefer; a future migration can
-wire `Kun.Gateway.S2sTokenIssuer` and `Kun.Security.S2SJwtIssuer` to
-implement the new interface rather than duplicating behaviour.
+S1-KUN-004 retires both legacy issuer surfaces with KUNS2S001. Use Kun.Gateway.S2sTokenIssuer and its canonical payload/JWKS ring. The Identity module retains OIDC validation and session responsibilities, not a competing issuer. Current usage and migration: [identity client guide](../../docs/guides/identity-client.md).
 
 ## Wiring
 
@@ -69,13 +65,7 @@ services.AddKunIdentity(id =>
         opts.ClientSecret = Environment.GetEnvironmentVariable("AUTHENTIK_SECRET")!;
     });
 
-    id.AddS2SIssuer(opts =>
-    {
-        opts.Issuer = "kun.internal";
-        opts.Audience = "kun-internal";
-        opts.SigningKeyPem = File.ReadAllText("/secrets/s2s-private.pem");
-        opts.DefaultLifetime = TimeSpan.FromSeconds(60);
-    });
+
 });
 ```
 
@@ -86,10 +76,8 @@ services.AddKunIdentity(id =>
   `ValidateAsync` without pulling in the ASP.NET Core auth pipeline.
   The consumer wires `AddJwtBearer` using `Kun.Security.AddKunServiceAuthentication`
   (for S2S flows) or their own bearer pipeline using `KunJwtBearerOptions`.
-- The OIDC client only implements discovery + `authorization_code`
-  exchange. Refresh-token, client-credentials, and device-flow
-  grants are out of scope — add them in follow-up work rather than
-  overloading this module.
+- Code exchange must use OidcCodeExchange with original PKCE verifier/nonce. The legacy signature fails closed; tokens are signed, issuer/audience/lifetime checked. Refresh requires expected subject. Device flow remains outside this task.
+- Browser sessions use ISessionRegistry atomic renewal/revocation/replay. Redis uses a direct connection and application prefix; never use a memory fallback for session security. The byte-cache constructor is compatibility-only (KUNSESSION001).
 - `KunJwtIssuer` signs with RSA keys loaded from PEM. Extending to
   EC keys or HSM-backed keys is a future option; keep the abstraction
   shape stable so we only add options, not interface methods.

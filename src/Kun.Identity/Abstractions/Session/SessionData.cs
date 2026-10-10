@@ -43,4 +43,11 @@ public sealed record SessionData(
     IReadOnlyList<string> Roles,
     string AccessToken,
     string? RefreshToken,
-    DateTimeOffset ExpiresAt);
+    DateTimeOffset ExpiresAt)
+{
+    /// <summary>Verified identity-provider issuer, used to scope back-channel logout.</summary>
+    public string? Issuer { get; init; }
+
+    /// <summary>Verified provider sid; distinct from the opaque local browser cookie.</summary>
+    public string? ProviderSessionId { get; init; }
+}

@@ -12,6 +12,7 @@ namespace Kun.Security.S2SJwt;
 /// ASP.NET Core middleware that serves the JWKS at <c>/.well-known/jwks.json</c>.
 /// Includes both the current and previous signing keys (for graceful rotation).
 /// </summary>
+[Obsolete("Use Kun.Gateway.S2sTokenIssuer and Kun.Security service authentication.", DiagnosticId = "KUNS2S001")]
 public sealed partial class JwksEndpointMiddleware
 {
     private readonly RequestDelegate _next;
@@ -93,6 +94,7 @@ public sealed partial class JwksEndpointMiddleware
 /// <summary>
 /// Extension methods for registering the S2S JWKS endpoint middleware.
 /// </summary>
+[Obsolete("Use Kun.Gateway.S2sTokenIssuer and Kun.Security service authentication.", DiagnosticId = "KUNS2S001")]
 public static class JwksEndpointExtensions
 {
     /// <summary>

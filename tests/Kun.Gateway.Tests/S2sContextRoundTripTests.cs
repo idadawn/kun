@@ -38,7 +38,7 @@ public sealed class S2sContextRoundTripTests : IDisposable
             ExternalJwksUri = "https://identity.invalid/jwks",
             SigningKeyPath = Path.Combine(_directory, "private.pem"),
             PublicKeyPath = Path.Combine(_directory, "public.pem"),
-            ForwardedClaimTypes = ["sid", "identity_revision", "permission"]
+            ForwardedClaimTypes = ["scope", "session_id", "identity_revision"]
         };
         File.WriteAllText(_options.SigningKeyPath, key.ExportRSAPrivateKeyPem());
         File.WriteAllText(_options.PublicKeyPath, key.ExportRSAPublicKeyPem());
@@ -49,14 +49,14 @@ public sealed class S2sContextRoundTripTests : IDisposable
 
     private S2sTokenIssuer Issuer() => new(Options.Create(_options), _environment, NoOpS2sPrincipalResolver.Instance);
 
-    private static ClaimsPrincipal Principal() => new(new ClaimsIdentity(
+    private static ClaimsPrincipal Principal() => S2sPrincipalFixture.Complete(new ClaimsPrincipal(new ClaimsIdentity(
     [
-        new Claim("sub", "user.one"), new Claim("tenant_id", "tenant.one"),
+        new Claim("sub", "user.one"), new Claim("tenant_id", "00000000-0000-4000-8000-000000000045"),
         new Claim("role", "role.writer"), new Claim("role", "role.operator"), new Claim("roles", "role.operator"), new Claim(ClaimTypes.Role, "role.reader"),
-        new Claim("sid", "session.one"), new Claim("identity_revision", "7", ClaimValueTypes.Integer64),
-        new Claim("permission", "platform.system.manage"), new Claim("permission", "platform.application.manage"),
+        new Claim("session_id", "00000000-0000-4000-8000-000000000101"), new Claim("identity_revision", "7", ClaimValueTypes.Integer64),
+        new Claim("scope", "platform.system.manage platform.application.manage"),
         new Claim("email", "private@example.invalid"), new Claim("exp", "9999999999", ClaimValueTypes.Integer64)
-    ], "validated-external"));
+    ], "validated-external")));
 
     [Fact]
     public async Task GatewayToken_WhenValidatedByService_PreservesOnlyApprovedContext()
@@ -83,8 +83,8 @@ public sealed class S2sContextRoundTripTests : IDisposable
         service.UseAuthentication(); service.UseAuthorization();
         service.MapGet("/context", (ICurrentUser user, ITenantContext tenant, Microsoft.AspNetCore.Http.HttpContext context) =>
             string.Join('|', user.UserId, tenant.TenantId, string.Join(',', user.Roles.Order(StringComparer.Ordinal)),
-                context.User.FindFirst("sid")?.Value, context.User.FindFirst("identity_revision")?.Value,
-                string.Join(',', context.User.FindAll("permission").Select(claim => claim.Value).Order(StringComparer.Ordinal))))
+                context.User.FindFirst("session_id")?.Value, context.User.FindFirst("identity_revision")?.Value,
+                context.User.FindFirst("scope")?.Value))
             .RequireAuthorization();
         await service.StartAsync(TestContext.Current.CancellationToken);
         using var client = service.GetTestClient();
@@ -96,18 +96,18 @@ public sealed class S2sContextRoundTripTests : IDisposable
 
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
         (await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)).Should().Be(
-            "user.one|tenant.one|role.operator,role.reader,role.writer|session.one|7|platform.application.manage,platform.system.manage");
+            "user.one|00000000-0000-4000-8000-000000000045|role.operator,role.reader,role.writer|00000000-0000-4000-8000-000000000101|7|platform.system.manage platform.application.manage");
         _options.InternalAudience = "external-app";
         client.DefaultRequestHeaders.Authorization = new("Bearer", await Issuer().IssueForAsync(Principal(), TestContext.Current.CancellationToken));
         (await client.GetAsync("/context", TestContext.Current.CancellationToken)).StatusCode.Should().Be(System.Net.HttpStatusCode.Unauthorized);
     }
 
     [Fact]
-    public async Task IssueForAsync_WhenNoAllowlist_DropsApplicationClaims()
+    public async Task IssueForAsync_WhenNoAllowlist_StillUsesCanonicalClosedClaims()
     {
         _options.ForwardedClaimTypes = [];
         var token = await Issuer().IssueForAsync(Principal(), TestContext.Current.CancellationToken);
-        new JwtSecurityTokenHandler().ReadJwtToken(token).Claims.Should().NotContain(claim => claim.Type == "sid" || claim.Type == "identity_revision" || claim.Type == "permission" || claim.Type == "email");
+        new JwtSecurityTokenHandler().ReadJwtToken(token).Claims.Should().NotContain(claim => claim.Type == "sid" || claim.Type == "permission" || claim.Type == "email");
     }
 
     [Theory]
@@ -116,6 +116,9 @@ public sealed class S2sContextRoundTripTests : IDisposable
     [InlineData("tenant_id")]
     [InlineData("roles")]
     [InlineData("iss")]
+    [InlineData("permission")]
+    [InlineData("sid")]
+    [InlineData("trace_id")]
     public void Constructor_WhenReservedClaimIsConfigured_RejectsOverride(string type)
     {
         _options.ForwardedClaimTypes = [type];
@@ -132,6 +135,31 @@ public sealed class S2sContextRoundTripTests : IDisposable
         _options.InternalTokenLifetime = TimeSpan.FromSeconds(seconds);
         var action = () => Issuer().IssueForAsync(Principal(), TestContext.Current.CancellationToken);
         await action.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Theory]
+    [InlineData("sub")]
+    [InlineData("tenant_id")]
+    [InlineData("principal_kind")]
+    [InlineData("session_id")]
+    [InlineData("membership_id")]
+    [InlineData("identity_revision")]
+    public async Task IssueForAsync_MissingCanonicalIdentity_FailsClosed(string missing)
+    {
+        var principal = Principal(); var identity = principal.Identities.Single();
+        identity.RemoveClaim(identity.FindFirst(missing)!);
+        using var issuer = Issuer();
+        var issue = () => issuer.IssueForAsync(principal, TestContext.Current.CancellationToken);
+        await issue.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task IssueForAudienceAsync_BindsOneHop_WithoutChangingDefaultAudience()
+    {
+        using var issuer = Issuer(); var reader = new JwtSecurityTokenHandler();
+        var selected = await issuer.IssueForAudienceAsync(Principal(), "selected-service", TestContext.Current.CancellationToken);
+        reader.ReadJwtToken(selected).Audiences.Should().Equal("selected-service");
+        reader.ReadJwtToken(await issuer.IssueForAsync(Principal(), TestContext.Current.CancellationToken)).Audiences.Should().Equal(_options.InternalAudience);
     }
 
     [Fact]

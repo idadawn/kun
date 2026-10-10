@@ -10,6 +10,7 @@ namespace Kun.Security.S2SJwt;
 /// <summary>
 /// Issues S2S JWT tokens signed with ES256 for internal service-to-service authentication.
 /// </summary>
+[Obsolete("Use Kun.Gateway.S2sTokenIssuer and Kun.Security service authentication.", DiagnosticId = "KUNS2S001")]
 public interface IS2SJwtIssuer
 {
     /// <summary>

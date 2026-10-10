@@ -1,8 +1,12 @@
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using Kun.Identity.Abstractions;
+using Kun.Identity.Abstractions.Session;
 using Kun.Identity.AspNetCore.Internal;
 using Kun.Identity.Configuration;
+using Kun.Identity.Implementations.Session;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 
@@ -28,12 +32,19 @@ public sealed class ChallengeHelper
     private readonly IEnumerable<IOidcClient> _oidcClients;
     private readonly IOptionsMonitor<KunOidcClientOptions> _oidcOptions;
     private readonly TimeProvider _timeProvider;
+    private readonly IDataProtector _protector;
+    private readonly ISessionRegistry _registry;
 
     /// <summary>Creates the helper.</summary>
     public ChallengeHelper(
         IEnumerable<IOidcClient> oidcClients,
         IOptionsMonitor<KunOidcClientOptions> oidcOptions,
         TimeProvider timeProvider)
+        : this(oidcClients, oidcOptions, timeProvider, new EphemeralDataProtectionProvider(), new InMemorySessionStore(timeProvider)) { }
+
+    /// <summary>Creates a helper with shared data protection and an atomic replay registry.</summary>
+    public ChallengeHelper(IEnumerable<IOidcClient> oidcClients, IOptionsMonitor<KunOidcClientOptions> oidcOptions,
+        TimeProvider timeProvider, IDataProtectionProvider protection, ISessionRegistry registry)
     {
         ArgumentNullException.ThrowIfNull(oidcClients);
         ArgumentNullException.ThrowIfNull(oidcOptions);
@@ -41,6 +52,8 @@ public sealed class ChallengeHelper
         _oidcClients = oidcClients;
         _oidcOptions = oidcOptions;
         _timeProvider = timeProvider;
+        ArgumentNullException.ThrowIfNull(protection); ArgumentNullException.ThrowIfNull(registry);
+        _protector = protection.CreateProtector("Kun.Identity.LoginChallenge.v1"); _registry = registry;
     }
 
     /// <summary>
@@ -75,6 +88,7 @@ public sealed class ChallengeHelper
         ArgumentException.ThrowIfNullOrWhiteSpace(oidcClientName);
         ArgumentException.ThrowIfNullOrWhiteSpace(redirectUri);
         ArgumentException.ThrowIfNullOrWhiteSpace(scope);
+        if (!IsLocalReturnUrl(returnUrl)) throw new ArgumentException("Return URL must be local.", nameof(returnUrl));
 
         var oidc = FindClient(oidcClientName);
         var discovery = await oidc.DiscoverAsync(cancellationToken).ConfigureAwait(false);
@@ -89,7 +103,8 @@ public sealed class ChallengeHelper
             CodeVerifier: codeVerifier,
             State: state,
             Nonce: nonce,
-            ReturnUrl: returnUrl));
+            ReturnUrl: returnUrl)
+        { RedirectUri = redirectUri });
 
         var clientOptions = _oidcOptions.Get(oidcClientName);
         if (string.IsNullOrWhiteSpace(clientOptions.ClientId))
@@ -114,36 +129,33 @@ public sealed class ChallengeHelper
         return query.ToString();
     }
 
-    /// <summary>
-    /// Reads and clears the challenge cookie written by
-    /// <see cref="BuildLoginUrlAsync"/>. Returns <see langword="null"/>
-    /// when the cookie is missing or malformed — callers treat that as
-    /// a failed / replayed callback and respond with a 400.
-    /// </summary>
-    /// <remarks>
-    /// The cookie is deleted as part of the read so even a replayed
-    /// callback with the same cookie cannot succeed twice.
-    /// </remarks>
+    /// <summary>Compatibility signature only; unprotected challenge consumption is disabled.</summary>
+    /// <remarks>Use ConsumeAsync for authenticated encryption, expiry, state and atomic replay checks.</remarks>
+    [Obsolete("Use ConsumeAsync to validate protected state, expiry and replay.", DiagnosticId = "KUNOIDC001")]
     public static ChallengePayload? ConsumeChallengeCookie(HttpContext context)
+        => throw new NotSupportedException("Unprotected challenge cookies are not accepted. Use ConsumeAsync.");
+
+    /// <summary>Consumes a protected browser transaction after state/expiry checks; rejects replay across replicas.</summary>
+    public async Task<ChallengePayload?> ConsumeAsync(HttpContext context, string state, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(context);
-
         var raw = context.Request.Cookies[ChallengeCookieName];
-        if (string.IsNullOrEmpty(raw))
+        context.Response.Cookies.Delete(ChallengeCookieName, new CookieOptions { Path = "/", HttpOnly = true, Secure = true, SameSite = SameSiteMode.None });
+        if (string.IsNullOrEmpty(raw) || raw.Length > 4096 || string.IsNullOrWhiteSpace(state)) return null;
+        try
         {
-            return null;
+            var protectedParts = _protector.Unprotect(raw).Split('|', 2);
+            if (protectedParts.Length != 2 || !long.TryParse(protectedParts[0], CultureInfo.InvariantCulture, out var expiry) || expiry <= _timeProvider.GetUtcNow().ToUnixTimeSeconds()) return null;
+            if (!ChallengePayload.TryParse(protectedParts[1], out var payload) || payload is null || !IsLocalReturnUrl(payload.ReturnUrl) || string.IsNullOrEmpty(payload.RedirectUri)) return null;
+            if (!CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(payload.State), Encoding.UTF8.GetBytes(state))) return null;
+            if (!await _registry.TryUseNonceAsync("oidc-challenge:" + payload.Client, payload.State, ChallengeCookieTtl, cancellationToken).ConfigureAwait(false)) return null;
+            return payload;
         }
-
-        context.Response.Cookies.Delete(ChallengeCookieName, new CookieOptions
-        {
-            Path = "/",
-            HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.None,
-        });
-
-        return ChallengePayload.TryParse(raw, out var payload) ? payload : null;
+        catch (CryptographicException) { return null; }
     }
+
+    private static bool IsLocalReturnUrl(string url) => !string.IsNullOrEmpty(url) && url[0] == '/' &&
+        (url.Length == 1 || url[1] != '/') && !url.Contains('\\', StringComparison.Ordinal) && !url.Any(char.IsControl);
 
     private IOidcClient FindClient(string name)
     {
@@ -180,7 +192,8 @@ public sealed class ChallengeHelper
 
     private void WriteChallengeCookie(HttpContext context, ChallengePayload payload)
     {
-        var serialized = payload.Serialize();
+        var expires = (_timeProvider.GetUtcNow() + ChallengeCookieTtl).ToUnixTimeSeconds().ToString(CultureInfo.InvariantCulture);
+        var serialized = _protector.Protect(expires + "|" + payload.Serialize());
         context.Response.Cookies.Append(
             ChallengeCookieName,
             serialized,
@@ -196,7 +209,7 @@ public sealed class ChallengeHelper
 /// <summary>
 /// Payload written to the one-shot challenge cookie by
 /// <see cref="ChallengeHelper.BuildLoginUrlAsync"/>. Consumer
-/// callback handlers read it via <see cref="ChallengeHelper.ConsumeChallengeCookie"/>.
+/// callback handlers read it via <see cref="ChallengeHelper.ConsumeAsync"/>.
 /// </summary>
 /// <param name="Client">OIDC client name.</param>
 /// <param name="CodeVerifier">PKCE code_verifier to replay at the token endpoint.</param>
@@ -210,7 +223,10 @@ public sealed record ChallengePayload(
     string Nonce,
     string ReturnUrl)
 {
-    /// <summary>Serializes the payload into the on-wire cookie string.</summary>
+    /// <summary>Original redirect URI, bound into the protected login transaction.</summary>
+    public string? RedirectUri { get; init; }
+
+    /// <summary>Serializes the internal payload before authenticated encryption; never write this plaintext directly to a cookie.</summary>
     /// <remarks>
     /// Pipe-separated format keeps the encoding reflection-free and
     /// auditable at a glance. Each field is assumed to be url-safe
@@ -225,7 +241,7 @@ public sealed record ChallengePayload(
             CodeVerifier, '|',
             State, '|',
             Nonce, '|',
-            Uri.EscapeDataString(ReturnUrl));
+            Uri.EscapeDataString(ReturnUrl), '|', Uri.EscapeDataString(RedirectUri ?? ""));
     }
 
     /// <summary>Parses the on-wire cookie string back into a <see cref="ChallengePayload"/>.</summary>
@@ -237,8 +253,8 @@ public sealed record ChallengePayload(
             return false;
         }
 
-        var parts = raw.Split('|', count: 5);
-        if (parts.Length != 5)
+        var parts = raw.Split('|', count: 6);
+        if (parts.Length is not 5 and not 6)
         {
             return false;
         }
@@ -248,7 +264,8 @@ public sealed record ChallengePayload(
             CodeVerifier: parts[1],
             State: parts[2],
             Nonce: parts[3],
-            ReturnUrl: Uri.UnescapeDataString(parts[4]));
+            ReturnUrl: Uri.UnescapeDataString(parts[4]))
+        { RedirectUri = parts.Length == 6 ? Uri.UnescapeDataString(parts[5]) : null };
         return true;
     }
 }

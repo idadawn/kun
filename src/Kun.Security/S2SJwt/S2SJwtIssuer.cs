@@ -17,6 +17,7 @@ namespace Kun.Security.S2SJwt;
 /// optional <c>project_id</c>, optional <c>trace_id</c>) and retains the pre-existing
 /// <c>scope</c> / <c>session_id</c> claims for OAuth2-style callers.
 /// </summary>
+[Obsolete("Use Kun.Gateway.S2sTokenIssuer and Kun.Security service authentication.", DiagnosticId = "KUNS2S001")]
 public sealed partial class S2SJwtIssuer : IS2SJwtIssuer
 {
     private readonly ECDsaSecurityKey _signingKey;

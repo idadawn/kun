@@ -1,3 +1,4 @@
+#pragma warning disable KUNSESSION001 // Legacy byte-cache compatibility tests; atomic Redis lifecycle is covered by integration tests.
 using System.Collections.Concurrent;
 using FluentAssertions;
 using Kun.Caching.Abstractions;

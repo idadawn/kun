@@ -127,3 +127,4 @@ Kun.Gateway.Configuration.KunGatewayOptions.KeyOverlapPeriod.set -> void
 Kun.Gateway.Configuration.KunGatewayOptions.KeyReloadInterval.get -> System.TimeSpan
 Kun.Gateway.Configuration.KunGatewayOptions.KeyReloadInterval.set -> void
 Kun.Gateway.S2sTokenIssuer.Dispose() -> void
+Kun.Gateway.S2sTokenIssuer.IssueForAudienceAsync(System.Security.Claims.ClaimsPrincipal! externalPrincipal, string! audience, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<string!>!

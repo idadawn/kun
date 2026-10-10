@@ -11,8 +11,8 @@ namespace Kun.Gateway.Identity;
 /// <remarks>
 /// The resolver runs on the Gateway's request path, so its implementation should be cheap:
 /// prefer cache-backed lookups over per-request database calls. Failures should surface as
-/// exceptions rather than empty principals — an empty principal will still mint a token,
-/// which is almost never what the caller wants.
+/// exceptions rather than empty principals. The issuer rejects unauthenticated/empty principals
+/// and missing canonical identity fields; session and authorization revisions must come from an authoritative source.
 /// </remarks>
 public interface IS2sPrincipalResolver
 {

@@ -6,6 +6,7 @@ namespace Kun.Security.S2SJwt;
 /// <summary>
 /// Extension methods for registering Kun S2S JWT issuer and verifier services.
 /// </summary>
+[Obsolete("Use Kun.Gateway.S2sTokenIssuer and Kun.Security service authentication.", DiagnosticId = "KUNS2S001")]
 public static class KunSecurityS2SJwtServiceCollectionExtensions
 {
     /// <summary>

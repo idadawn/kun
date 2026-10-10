@@ -13,7 +13,9 @@ namespace Kun.Sandbox.Internal;
     DefaultIgnoreCondition = JsonIgnoreCondition.Never,
     WriteIndented = false)]
 [JsonSerializable(typeof(SandboxCreateOptions))]
+#pragma warning disable CS0618 // Retain source-generated serialization for the explicit legacy compatibility field.
 [JsonSerializable(typeof(NeuroagentSandboxExtension))]
+#pragma warning restore CS0618
 [JsonSerializable(typeof(SecretScopeConfig))]
 [JsonSerializable(typeof(BrowserSessionConfig))]
 [JsonSerializable(typeof(ProcessRunOptions))]

@@ -43,10 +43,10 @@ public sealed class S2sTokenIssuerTraceIdTests : IDisposable
     }
 
     [Fact]
-    public void IssueFor_ActivityAndHttpContext_EmitsTraceIdClaim()
+    public void IssueFor_ActivityAndHttpContext_KeepsTraceOutsideCanonicalPayload()
     {
         var issuer = BuildIssuer(emitTraceId: true, hasHttpContext: true);
-        var principal = BuildPrincipal("u1", "t1");
+        var principal = BuildPrincipal("u1", "00000000-0000-4000-8000-000000000001");
 
         using var activity = new Activity("test").Start();
 
@@ -54,8 +54,7 @@ public sealed class S2sTokenIssuerTraceIdTests : IDisposable
 
         var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
         var traceIdClaim = jwt.Claims.FirstOrDefault(c => c.Type == "trace_id");
-        traceIdClaim.Should().NotBeNull();
-        traceIdClaim!.Value.Should().Be(activity.TraceId.ToHexString());
+        traceIdClaim.Should().BeNull();
     }
 
     [Fact]
@@ -63,7 +62,7 @@ public sealed class S2sTokenIssuerTraceIdTests : IDisposable
     {
         // M3 guard: background refresh contexts must NOT emit trace_id.
         var issuer = BuildIssuer(emitTraceId: true, hasHttpContext: false);
-        var principal = BuildPrincipal("u1", "t1");
+        var principal = BuildPrincipal("u1", "00000000-0000-4000-8000-000000000001");
 
         using var activity = new Activity("background").Start();
 
@@ -77,7 +76,7 @@ public sealed class S2sTokenIssuerTraceIdTests : IDisposable
     public void IssueFor_NoActivity_SuppressesTraceIdClaim()
     {
         var issuer = BuildIssuer(emitTraceId: true, hasHttpContext: true);
-        var principal = BuildPrincipal("u1", "t1");
+        var principal = BuildPrincipal("u1", "00000000-0000-4000-8000-000000000001");
 
         // Ensure no ambient Activity
         Activity.Current = null;
@@ -92,7 +91,7 @@ public sealed class S2sTokenIssuerTraceIdTests : IDisposable
     public void IssueFor_EmitTraceIdClaimOff_SuppressesEvenWithActivity()
     {
         var issuer = BuildIssuer(emitTraceId: false, hasHttpContext: true);
-        var principal = BuildPrincipal("u1", "t1");
+        var principal = BuildPrincipal("u1", "00000000-0000-4000-8000-000000000001");
 
         using var activity = new Activity("test").Start();
 
@@ -103,13 +102,13 @@ public sealed class S2sTokenIssuerTraceIdTests : IDisposable
     }
 
     [Fact]
-    public void IssueFor_DoesNotBreakStrictDownstream_WhenTraceIdEmitted()
+    public void IssueFor_StrictDownstream_AcceptsCanonicalTokenWithAmbientTrace()
     {
         // C3 guard test: a strict downstream validator (signature + issuer +
         // audience + lifetime) must still accept a token that carries the
         // additional trace_id claim.
         var issuer = BuildIssuer(emitTraceId: true, hasHttpContext: true);
-        var principal = BuildPrincipal("u1", "t1");
+        var principal = BuildPrincipal("u1", "00000000-0000-4000-8000-000000000001");
 
         using var activity = new Activity("test").Start();
 
@@ -164,7 +163,7 @@ public sealed class S2sTokenIssuerTraceIdTests : IDisposable
     {
         var claims = new List<Claim> { new(JwtRegisteredClaimNames.Sub, sub) };
         if (tenantId is not null) claims.Add(new Claim("tenant_id", tenantId));
-        return new ClaimsPrincipal(new ClaimsIdentity(claims, "test"));
+        return S2sPrincipalFixture.Complete(new ClaimsPrincipal(new ClaimsIdentity(claims, "test")));
     }
 
     private static IHostEnvironment CreateDevEnv()
