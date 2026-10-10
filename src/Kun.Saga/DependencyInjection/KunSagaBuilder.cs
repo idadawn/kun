@@ -16,9 +16,7 @@ public sealed class KunSagaBuilder
 {
     private readonly IServiceCollection _services;
 
-    // Holds (partial registration without StepCount, step-count resolver) pairs.
-    // StepCount is resolved from a temporary IServiceProvider in BuildRegistry().
-    private readonly List<(SagaRegistration Partial, Func<IServiceProvider, int> StepCountResolver)> _pending = new();
+    private readonly List<Func<IServiceProvider, SagaRegistration>> _factories = [];
 
     internal KunSagaBuilder(IServiceCollection services)
     {
@@ -28,7 +26,7 @@ public sealed class KunSagaBuilder
 
     /// <summary>
     /// Registers a saga type and its associated context. The saga is resolved from DI as a
-    /// singleton; steps are resolved as scoped services per execution.
+    /// scoped service; registration never constructs a temporary container.
     /// </summary>
     /// <typeparam name="TSaga">The saga type implementing <see cref="ISaga{TContext}"/>.</typeparam>
     /// <typeparam name="TContext">The saga context type implementing <see cref="ISagaContext"/>.</typeparam>
@@ -43,7 +41,7 @@ public sealed class KunSagaBuilder
     {
         ArgumentNullException.ThrowIfNull(typeInfo);
 
-        _services.AddSingleton<TSaga>();
+        _services.AddScoped<TSaga>();
 
         var sagaName = typeof(TSaga).Name;
 
@@ -70,7 +68,7 @@ public sealed class KunSagaBuilder
 
             var instance = new SagaInstance(
                 id: context.SagaId,
-                sagaName: sagaName,
+                sagaName: saga.Name,
                 tenantId: context.TenantId,
                 contextPayload: payload,
                 startedAt: now,
@@ -88,7 +86,7 @@ public sealed class KunSagaBuilder
         }
 
         // AOT-safe step execution delegate: captures TSaga, TContext, and typeInfo by closure.
-        async Task ExecuteStepDelegate(
+        async Task<SagaStepOutcome> ExecuteStepWithContext(
             int stepIndex,
             StepDirection direction,
             string contextPayload,
@@ -108,14 +106,23 @@ public sealed class KunSagaBuilder
 
             var step = saga.Steps[stepIndex];
 
-            if (direction == StepDirection.Execute)
+            Exception? failure = null;
+            try
             {
-                await step.ExecuteAsync(context, ct).ConfigureAwait(false);
+                if (direction == StepDirection.Execute)
+                    await step.ExecuteAsync(context, ct).ConfigureAwait(false);
+                else
+                    await step.CompensateAsync(context, ct).ConfigureAwait(false);
             }
-            else
-            {
-                await step.CompensateAsync(context, ct).ConfigureAwait(false);
-            }
+            catch (Exception error) { failure = error; }
+            // 失败步骤也可能产生供补偿使用的外部资源 ID，必须保存部分上下文。
+            return new SagaStepOutcome(JsonSerializer.Serialize(context, typeInfo), failure);
+        }
+
+        async Task ExecuteStepDelegate(int index, StepDirection direction, string payload, IServiceProvider sp, CancellationToken ct)
+        {
+            var outcome = await ExecuteStepWithContext(index, direction, payload, sp, ct).ConfigureAwait(false);
+            if (outcome.Error is not null) System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(outcome.Error).Throw();
         }
 
         // Returns the Timeout for a given step index by resolving the saga from DI.
@@ -123,41 +130,25 @@ public sealed class KunSagaBuilder
         {
             var saga = sp.GetRequiredService<TSaga>();
             if (stepIndex < 0 || stepIndex >= saga.Steps.Count) return null;
-            return saga.Steps[stepIndex].Timeout;
+            return saga.Steps[stepIndex].Timeout ?? saga.DefaultStepTimeout;
         }
 
-        // Partial registration without StepCount — resolved in BuildRegistry().
-        var partial = new SagaRegistration(
-            sagaName: sagaName,
-            startAsync: StartDelegate,
-            executeStepAsync: ExecuteStepDelegate,
-            getStepTimeout: GetStepTimeoutDelegate,
-            stepCount: 0);
-
-        _pending.Add((partial, sp => sp.GetRequiredService<TSaga>().Steps.Count));
-
+        _factories.Add(sp =>
+        {
+            var saga = sp.GetRequiredService<TSaga>();
+            ArgumentException.ThrowIfNullOrWhiteSpace(saga.Name);
+            if (saga.Steps.Count == 0) throw new InvalidOperationException($"Saga '{saga.Name}' must contain at least one step.");
+            return new SagaRegistration(saga.Name, StartDelegate, ExecuteStepDelegate, GetStepTimeoutDelegate, saga.Steps.Count)
+            {
+                LegacyTypeName = sagaName,
+                ExecuteWithContextAsync = ExecuteStepWithContext
+            };
+        });
         return this;
     }
 
-    internal SagaRegistry BuildRegistry()
-    {
-        // Build a temporary service provider to resolve each saga singleton once
-        // so we can read its Steps.Count and store it in the final SagaRegistration.
-        using var tempProvider = _services.BuildServiceProvider();
-
-        var registrations = _pending.Select(p =>
-        {
-            var stepCount = p.StepCountResolver(tempProvider);
-            return new SagaRegistration(
-                sagaName: p.Partial.SagaName,
-                startAsync: p.Partial.StartAsync,
-                executeStepAsync: p.Partial.ExecuteStepAsync,
-                getStepTimeout: p.Partial.GetStepTimeout,
-                stepCount: stepCount);
-        });
-
-        return new SagaRegistry(registrations);
-    }
+    internal SagaRegistry BuildRegistry(IServiceProvider serviceProvider)
+        => new(_factories.Select(factory => factory(serviceProvider)));
 
     private static async Task<Guid> StartCoreAsync(
         SagaInstance instance,

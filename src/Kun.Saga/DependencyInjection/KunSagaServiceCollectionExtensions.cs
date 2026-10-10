@@ -32,9 +32,8 @@ public static class KunSagaServiceCollectionExtensions
         var builder = new KunSagaBuilder(services);
         configure(builder);
 
-        // Register the saga registry as a singleton built from all registered sagas.
-        var registry = builder.BuildRegistry();
-        services.AddSingleton(registry);
+        // 仅在实际调用作用域内读取 Name/Steps，不构造临时容器或捕获 scoped 步骤。
+        services.AddScoped(builder.BuildRegistry);
 
         // Register core services.
         services.TryAddSingleton<ISystemClock>(SystemClock.Instance);

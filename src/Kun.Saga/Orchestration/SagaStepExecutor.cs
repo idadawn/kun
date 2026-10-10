@@ -3,6 +3,8 @@ using Kun.Core.MultiTenancy;
 using Kun.Core.Time;
 using Kun.EntityFrameworkCore;
 using Kun.Saga.Persistence;
+using Kun.Saga.Persistence.Ef;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -36,6 +38,8 @@ public sealed partial class SagaStepExecutor : BackgroundService
         ArgumentNullException.ThrowIfNull(scopeFactory);
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(options);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(options.MaxAttempts);
+        ArgumentOutOfRangeException.ThrowIfNegative(options.RetryBaseDelay.Ticks);
         _scopeFactory = scopeFactory;
         _logger = logger;
         _options = options;
@@ -74,182 +78,136 @@ public sealed partial class SagaStepExecutor : BackgroundService
     {
         await using var scope = _scopeFactory.CreateAsyncScope();
         var store = scope.ServiceProvider.GetRequiredService<ISagaInstanceStore>();
-        var registry = scope.ServiceProvider.GetRequiredService<SagaRegistry>();
-        var clock = scope.ServiceProvider.GetRequiredService<ISystemClock>();
-
         var entries = await store.FetchPendingStepsAsync(_options.BatchSize, ct).ConfigureAwait(false);
-
-        foreach (var entry in entries)
+        var processed = 0;
+        foreach (var candidate in entries)
         {
             await using var entryScope = _scopeFactory.CreateAsyncScope();
-            var entryStore = entryScope.ServiceProvider.GetRequiredService<ISagaInstanceStore>();
-            await ProcessEntryAsync(entry, entryStore, registry, clock, entryScope.ServiceProvider, ct).ConfigureAwait(false);
+            if (await ProcessEntryAsync(candidate, entryScope.ServiceProvider, ct).ConfigureAwait(false)) processed++;
         }
-
-        return entries.Count;
+        return processed;
     }
 
-    private async Task ProcessEntryAsync(
-        SagaStepQueueEntry entry,
-        ISagaInstanceStore store,
-        SagaRegistry registry,
-        ISystemClock clock,
-        IServiceProvider serviceProvider,
-        CancellationToken ct)
+    private async Task<bool> ProcessEntryAsync(SagaStepQueueEntry candidate, IServiceProvider services, CancellationToken ct)
     {
-        var spanName = entry.Direction == StepDirection.Execute
-            ? "saga.step.execute"
-            : "saga.step.compensate";
-
-        using var activity = s_activitySource.StartActivity(spanName, ActivityKind.Internal);
-        activity?.SetTag("saga.step_index", entry.StepIndex);
-        activity?.SetTag("saga.saga_id", entry.SagaId.ToString());
-        activity?.SetTag("saga.direction", entry.Direction.ToString());
-
-        entry.IncrementAttempt();
-
-        var instance = await store.FindAsync(entry.SagaId, ct).ConfigureAwait(false);
+        var db = services.GetRequiredService<KunDbContext>();
+        var clock = services.GetRequiredService<ISystemClock>();
+        var store = services.GetRequiredService<ISagaInstanceStore>();
+        await using var transaction = await db.Database.BeginTransactionAsync(ct).ConfigureAwait(false);
+        var instance = await SagaRowLock.TryAcquireAsync(db, candidate.SagaId, ct).ConfigureAwait(false);
+        if (instance is null && await db.Set<SagaInstance>().AnyAsync(value => value.Id == candidate.SagaId, ct).ConfigureAwait(false)) return false;
+        // 轮询结果不是租约。拿到实例行锁后重读队列，避免第二副本执行陈旧快照。
+        var entry = await db.Set<SagaStepQueueEntry>().SingleOrDefaultAsync(value => value.Id == candidate.Id, ct).ConfigureAwait(false);
+        if (entry is null || entry.ProcessedAt is not null || entry.NextAttemptAt > clock.UtcNow) return false;
+        var tenant = services.GetService<ITenantContext>();
+        if (instance is not null && tenant?.IsMultiTenant == true && !TenantIdValidation.IsValid(instance.TenantId))
+            throw new InvalidOperationException("A multi-tenant saga requires a valid tenant identifier.");
+        using var tenantScope = instance is not null && tenant?.IsMultiTenant == true ? tenant.BeginScope(instance.TenantId) : null;
         if (instance is null)
         {
             LogInstanceNotFound(_logger, entry.SagaId, entry.Id);
             entry.MarkProcessed(clock.UtcNow);
-            await store.UpdateStepAsync(entry, ct).ConfigureAwait(false);
-            return;
         }
-
-        activity?.SetTag("saga.name", instance.SagaName);
-
-        var registration = registry.Find(instance.SagaName);
-        if (registration is null)
+        else if (instance.CurrentStepIndex != entry.StepIndex ||
+            (entry.Direction == StepDirection.Execute ? instance.State != SagaState.Running : instance.State != SagaState.Compensating))
         {
-            LogRegistrationNotFound(_logger, instance.SagaName, instance.Id);
-            instance.Fail($"Saga type '{instance.SagaName}' not registered.", clock.UtcNow);
-            await store.UpdateAsync(instance, ct).ConfigureAwait(false);
+            // 过期执行/补偿条目仅退休，不能再次触发副作用或倒退状态。
             entry.MarkProcessed(clock.UtcNow);
-            await store.UpdateStepAsync(entry, ct).ConfigureAwait(false);
-            return;
         }
-
-        var tenantContext = serviceProvider.GetService<ITenantContext>();
-        if (tenantContext?.IsMultiTenant == true && !TenantIdValidation.IsValid(instance.TenantId))
+        else
         {
-            throw new InvalidOperationException("A multi-tenant saga requires a valid tenant identifier.");
-        }
-        using var tenantScope = tenantContext?.IsMultiTenant == true
-            ? tenantContext.BeginScope(instance.TenantId) : null;
-        var dbContext = serviceProvider.GetRequiredService<KunDbContext>();
-
-        try
-        {
-            await registration.ExecuteStepAsync(
-                entry.StepIndex,
-                entry.Direction,
-                instance.ContextPayload,
-                serviceProvider,
-                ct).ConfigureAwait(false);
-
-            var now = clock.UtcNow;
-
-            if (entry.Direction == StepDirection.Execute)
+            // Name/Steps 及其依赖只在恢复租户后的当前作用域内构造。
+            var registration = services.GetRequiredService<SagaRegistry>().Find(instance.SagaName);
+            if (registration is null)
             {
-                // Reload the instance from the DB to detect any concurrent state change
-                // (e.g. SagaTimeoutDetector moved it to Compensating while this step ran).
-                dbContext.Entry(instance).State = Microsoft.EntityFrameworkCore.EntityState.Detached;
-                var freshInstance = await store.FindAsync(instance.Id, ct).ConfigureAwait(false);
-
-                if (freshInstance is null || freshInstance.State != SagaState.Running)
-                {
-                    // Timeout detector (or another concurrent actor) already transitioned
-                    // the saga away from Running — just mark this queue entry processed and
-                    // let the compensation path handle the rest.
-                    LogStepSuperseded(_logger, entry.StepIndex, instance.Id, freshInstance?.State.ToString() ?? "null");
-                    entry.MarkProcessed(now);
-                    await store.UpdateStepAsync(entry, ct).ConfigureAwait(false);
-                    await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
-                    return;
-                }
-
-                var nextIndex = entry.StepIndex + 1;
-                if (nextIndex >= registration.StepCount)
-                {
-                    // All steps executed — saga is complete.
-                    freshInstance.MarkCompleted(now);
-                }
-                else
-                {
-                    // Advance to next step using that step's configured timeout (or 5 minutes default).
-                    var stepTimeout = registration.GetStepTimeout(nextIndex, serviceProvider)
-                        ?? TimeSpan.FromMinutes(5);
-                    var nextTimeoutAt = now.Add(stepTimeout);
-                    freshInstance.MoveToStep(nextIndex, now, nextTimeoutAt, freshInstance.ContextPayload);
-                    var nextEntry = new SagaStepQueueEntry(
-                        id: Guid.NewGuid(),
-                        sagaId: freshInstance.Id,
-                        stepIndex: nextIndex,
-                        direction: StepDirection.Execute,
-                        enqueuedAt: now);
-                    await store.EnqueueStepAsync(nextEntry, ct).ConfigureAwait(false);
-                }
-
-                await store.UpdateAsync(freshInstance, ct).ConfigureAwait(false);
+                LogRegistrationNotFound(_logger, instance.SagaName, instance.Id);
+                instance.Fail($"Saga type '{instance.SagaName}' not registered.", clock.UtcNow);
+                entry.MarkProcessed(clock.UtcNow);
             }
             else
             {
-                // Compensation direction.
-                var prevIndex = entry.StepIndex - 1;
-                if (prevIndex < 0)
+                using var activity = s_activitySource.StartActivity(entry.Direction == StepDirection.Execute ? "saga.step.execute" : "saga.step.compensate", ActivityKind.Internal);
+                activity?.SetTag("saga.step_index", entry.StepIndex);
+                activity?.SetTag("saga.saga_id", entry.SagaId.ToString());
+                activity?.SetTag("saga.direction", entry.Direction.ToString());
+                activity?.SetTag("saga.name", instance.SagaName);
+                using var stepCancellation = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                var deadline = entry.Direction == StepDirection.Execute && instance.TimeoutAt is not null
+                    ? instance.TimeoutAt.Value : clock.UtcNow + (registration.GetStepTimeout(entry.StepIndex, services) ?? TimeSpan.FromMinutes(5));
+                var remaining = deadline - clock.UtcNow;
+                await transaction.CreateSavepointAsync("kun_saga_step", ct).ConfigureAwait(false);
+                SagaStepOutcome outcome;
+                if (remaining <= TimeSpan.Zero) outcome = new(instance.ContextPayload, new TimeoutException("Saga step timed out before execution."));
+                else
                 {
-                    // All steps compensated.
-                    instance.MarkCompensated(now);
+                    stepCancellation.CancelAfter(remaining);
+                    outcome = await registration.ExecuteAndCaptureAsync(entry.StepIndex, entry.Direction, instance.ContextPayload, services, stepCancellation.Token).ConfigureAwait(false);
+                    if (outcome.Error is null && stepCancellation.IsCancellationRequested)
+                        outcome = outcome with { Error = new TimeoutException("Saga step exceeded its timeout.") };
+                }
+                // 宿主关闭回滚本轮，不把关闭误判为业务失败或补偿。
+                ct.ThrowIfCancellationRequested();
+                if (outcome.Error is not null)
+                {
+                    // 失败步骤可能调用过 SaveChanges；撤销其本地数据，保留部分外部上下文供重试/补偿。
+                    await transaction.RollbackToSavepointAsync("kun_saga_step", ct).ConfigureAwait(false);
+                    db.ChangeTracker.Clear();
+                    instance = (await store.FindAsync(entry.SagaId, ct).ConfigureAwait(false))!;
+                    entry = await db.Set<SagaStepQueueEntry>().SingleAsync(value => value.Id == candidate.Id, ct).ConfigureAwait(false);
+                    activity?.SetStatus(ActivityStatusCode.Error);
+                    LogStepFailed(_logger, entry.StepIndex, entry.Direction, entry.SagaId, outcome.Error);
+                }
+                instance.UpdateContext(outcome.ContextPayload, clock.UtcNow);
+                entry.IncrementAttempt();
+                if (outcome.Error is not null && entry.AttemptCount < _options.MaxAttempts && !stepCancellation.IsCancellationRequested && clock.UtcNow < deadline)
+                {
+                    var delay = TimeSpan.FromSeconds(Math.Min(60, _options.RetryBaseDelay.TotalSeconds * Math.Pow(2, Math.Min(entry.AttemptCount - 1, 20))));
+                    entry.ScheduleRetry(clock.UtcNow + delay);
                 }
                 else
                 {
-                    instance.MoveCompensationToStep(prevIndex, now);
-                    var prevEntry = new SagaStepQueueEntry(
-                        id: Guid.NewGuid(),
-                        sagaId: instance.Id,
-                        stepIndex: prevIndex,
-                        direction: StepDirection.Compensate,
-                        enqueuedAt: now);
-                    await store.EnqueueStepAsync(prevEntry, ct).ConfigureAwait(false);
+                    await AdvanceAsync(entry, instance, registration, outcome.Error, store, services, clock.UtcNow, ct).ConfigureAwait(false);
+                    entry.MarkProcessed(clock.UtcNow);
                 }
-
-                await store.UpdateAsync(instance, ct).ConfigureAwait(false);
             }
-
-            entry.MarkProcessed(now);
-            await store.UpdateStepAsync(entry, ct).ConfigureAwait(false);
-            await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
         }
-        catch (Exception ex)
+        await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        await transaction.CommitAsync(ct).ConfigureAwait(false);
+        return true;
+    }
+
+    private static async Task AdvanceAsync(SagaStepQueueEntry entry, SagaInstance instance, SagaRegistration registration, Exception? error,
+        ISagaInstanceStore store, IServiceProvider services, DateTimeOffset now, CancellationToken ct)
+    {
+        if (error is not null)
         {
-            LogStepFailed(_logger, entry.StepIndex, entry.Direction, entry.SagaId, ex);
-            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-
-            if (entry.Direction == StepDirection.Execute)
-            {
-                instance.StartCompensating(entry.StepIndex, ex.Message, clock.UtcNow);
-                await store.UpdateAsync(instance, ct).ConfigureAwait(false);
-
-                // Enqueue only the failed step for compensation; each compensate step
-                // enqueues the previous one on success (sequential chaining).
-                var compensateEntry = new SagaStepQueueEntry(
-                    id: Guid.NewGuid(),
-                    sagaId: instance.Id,
-                    stepIndex: entry.StepIndex,
-                    direction: StepDirection.Compensate,
-                    enqueuedAt: clock.UtcNow);
-                await store.EnqueueStepAsync(compensateEntry, ct).ConfigureAwait(false);
-            }
+            if (entry.Direction == StepDirection.Compensate)
+                instance.Fail($"Compensation step {entry.StepIndex} failed: {error.Message}", now);
             else
             {
-                instance.Fail($"Compensation step {entry.StepIndex} failed: {ex.Message}", clock.UtcNow);
-                await store.UpdateAsync(instance, ct).ConfigureAwait(false);
+                instance.StartCompensating(entry.StepIndex, error.Message, now);
+                await store.EnqueueStepAsync(new SagaStepQueueEntry(Guid.NewGuid(), instance.Id, entry.StepIndex, StepDirection.Compensate, now), ct).ConfigureAwait(false);
             }
-
-            entry.MarkProcessed(clock.UtcNow);
-            await store.UpdateStepAsync(entry, ct).ConfigureAwait(false);
-            await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
+        }
+        else if (entry.Direction == StepDirection.Execute)
+        {
+            var next = entry.StepIndex + 1;
+            if (next >= registration.StepCount) instance.MarkCompleted(now);
+            else
+            {
+                instance.MoveToStep(next, now, now + (registration.GetStepTimeout(next, services) ?? TimeSpan.FromMinutes(5)), instance.ContextPayload);
+                await store.EnqueueStepAsync(new SagaStepQueueEntry(Guid.NewGuid(), instance.Id, next, StepDirection.Execute, now), ct).ConfigureAwait(false);
+            }
+        }
+        else
+        {
+            var previous = entry.StepIndex - 1;
+            if (previous < 0) instance.MarkCompensated(now);
+            else
+            {
+                instance.MoveCompensationToStep(previous, now);
+                await store.EnqueueStepAsync(new SagaStepQueueEntry(Guid.NewGuid(), instance.Id, previous, StepDirection.Compensate, now), ct).ConfigureAwait(false);
+            }
         }
     }
 
@@ -283,6 +241,12 @@ public sealed class SagaStepExecutorOptions
 
     /// <summary>Gets or sets the delay before retrying after an unhandled error. Defaults to 5 seconds.</summary>
     public TimeSpan ErrorRetryDelay { get; set; } = TimeSpan.FromSeconds(5);
+
+    /// <summary>Maximum attempts per execute/compensate entry. Defaults to one for compatibility; retries require idempotent steps.</summary>
+    public int MaxAttempts { get; set; } = 1;
+
+    /// <summary>Initial persisted exponential retry delay, capped at one minute. Defaults to one second.</summary>
+    public TimeSpan RetryBaseDelay { get; set; } = TimeSpan.FromSeconds(1);
 
     /// <summary>Gets or sets the maximum number of step entries processed per poll cycle. Defaults to 10.</summary>
     public int BatchSize { get; set; } = 10;

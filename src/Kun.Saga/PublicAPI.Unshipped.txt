@@ -120,3 +120,8 @@ Kun.Saga.SagaRegistry
 Kun.Saga.SagaRegistry.Find(string! sagaName) -> Kun.Saga.SagaRegistration?
 Kun.Saga.SagaRegistry.RegisteredNames.get -> System.Collections.Generic.IEnumerable<string!>!
 Kun.Saga.SagaRegistry.SagaRegistry(System.Collections.Generic.IEnumerable<Kun.Saga.SagaRegistration!>! registrations) -> void
+Kun.Saga.Persistence.SagaStepQueueEntry.NextAttemptAt.get -> System.DateTimeOffset?
+Kun.Saga.Orchestration.SagaStepExecutorOptions.MaxAttempts.get -> int
+Kun.Saga.Orchestration.SagaStepExecutorOptions.MaxAttempts.set -> void
+Kun.Saga.Orchestration.SagaStepExecutorOptions.RetryBaseDelay.get -> System.TimeSpan
+Kun.Saga.Orchestration.SagaStepExecutorOptions.RetryBaseDelay.set -> void

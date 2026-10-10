@@ -68,7 +68,7 @@ public interface ISagaStep<TContext> where TContext : ISagaContext
                                                //   一起 commit 或一起回滚
 ```
 
-后台 `SagaStepExecutor` 拉 Outbox 里的 step-message、加载 `SagaInstance`、调对应 step 的 `ExecuteAsync`。成功则登记下一步的 Outbox 消息，失败（或超时）则切 `SagaInstance.State = Compensating` 并反向登记补偿消息。执行器本身 at-least-once，意味着 step 的 `ExecuteAsync` / `CompensateAsync` 可能被重放——所以二者都必须幂等（详见下文）。
+后台 `SagaStepExecutor` 轮询 `saga_step_queue` 中的步骤条目、加载 `SagaInstance`、调对应 step 的 `ExecuteAsync`。成功则登记下一步的队列条目，失败（或超时）则切 `SagaInstance.State = Compensating` 并反向登记补偿消息。执行器本身 at-least-once，意味着 step 的 `ExecuteAsync` / `CompensateAsync` 可能被重放——所以二者都必须幂等（详见下文）。
 
 ## Context + `JsonTypeInfo`（AOT-safe）
 
@@ -255,6 +255,18 @@ services.AddScoped<MarkShippedStep>();
 services.AddScoped<ISaga<OrderCreationContext>, OrderCreationSaga>();
 ```
 
+## 作用域、并发与持久化重试
+
+`AddSaga` 只登记工厂，不会在启动注册时构造临时容器。每次开始/执行/补偿的 Saga 与步骤都在实际 DI scope 中解析；后台执行器先恢复租户，再解析作用域内的注册表。新实例使用 `ISaga.Name` 持久化，旧版本按当前 CLR 类名保存的实例仍通过兼容别名查找；在旧实例排空前不要更名类或复用别名。
+
+默认执行器要求 PostgreSQL：先对实例取 `FOR UPDATE SKIP LOCKED` 行锁，再重读队列和实例状态。锁持续到步骤完成、上下文/下一个条目/处理时间共同提交。另一副本跳过忙实例，超时检测也取同一把行锁并复核最新状态；陈旧队列条目不会重复触发步骤。步骤只在当前事务里操作本地库，不要跨连接自行提交 Saga 状态。
+
+步骤修改的上下文会在成功、部分失败和补偿后序列化回写。失败步骤已执行的本地 SaveChanges 回滚到保存点，部分外部资源 ID 仍保留供补偿；实例状态与步骤队列在同一事务提交。进程崩溃后远程调用可能重放，框架不承诺外部系统恰好执行一次，幂等键仍不可省。
+
+`SagaStepExecutorOptions.MaxAttempts` 默认 1，保持失败立即补偿的既有行为；对幂等步骤可显式设为 3 等有界值。`RetryBaseDelay` 默认一秒，指数退避封顶一分钟，执行与补偿均适用。重试次数与 `NextAttemptAt` 持久化，重启不会跳过等待；耗尽执行重试后反向补偿，耗尽补偿重试后进入 Failed。部署前必须在消费方生成并应用 `saga_step_queue.NextAttemptAt` 可空列迁移，Order 示例附带 `SagaRetrySchedule`。
+
+执行器向步骤传递受单步期限约束的 CancellationToken，步骤必须响应取消；未开始的过期步骤由执行器或超时检测器触发补偿。宿主关闭仅回滚当前轮次并留待恢复，不将关闭误判为业务失败。若步骤忽略取消，当前事务行锁会保持到步骤返回，不会主动让另一副本重叠执行。
+
 ## 补偿 + 超时 生命周期
 
 `SagaInstance.State` 的状态机：
@@ -341,7 +353,7 @@ public async ValueTask ExecuteAsync(OrderCreationContext ctx, CancellationToken 
 }
 ```
 
-一旦 step 之间靠 event 触发，中心 coordinator 的可见性就废了——`SagaInstance.State` 和真实进度脱节、补偿顺序不确定、超时检测失效。`Steps` 顺序里下一个 step 怎么启动？`SagaStepExecutor` 在上一个成功后自己把下一个 step message 推进 Outbox，**不需要** step 自己发 event。
+一旦 step 之间靠 event 触发，中心 coordinator 的可见性就废了——`SagaInstance.State` 和真实进度脱节、补偿顺序不确定、超时检测失效。`Steps` 顺序里下一个 step 怎么启动？`SagaStepExecutor` 在上一个成功后自己把下一个步骤条目写入 `saga_step_queue`，**不需要** step 自己发 event。
 
 ## 边界 / 后续
 

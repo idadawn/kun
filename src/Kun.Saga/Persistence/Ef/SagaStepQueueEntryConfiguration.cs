@@ -33,6 +33,7 @@ public sealed class SagaStepQueueEntryConfiguration : IEntityTypeConfiguration<S
             .IsRequired();
 
         builder.Property(e => e.ProcessedAt);
+        builder.Property(e => e.NextAttemptAt);
 
         builder.Property(e => e.AttemptCount)
             .IsRequired();

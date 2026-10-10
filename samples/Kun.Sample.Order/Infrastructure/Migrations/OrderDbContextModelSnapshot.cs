@@ -148,6 +148,9 @@ namespace Kun.Sample.Order.Infrastructure.Migrations
                     b.Property<DateTimeOffset>("EnqueuedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTimeOffset?>("NextAttemptAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTimeOffset?>("ProcessedAt")
                         .HasColumnType("timestamp with time zone");
 

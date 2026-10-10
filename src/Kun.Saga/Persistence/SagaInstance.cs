@@ -79,6 +79,12 @@ public sealed class SagaInstance
         TraceId = traceId;
     }
 
+    internal void UpdateContext(string payload, DateTimeOffset now)
+    {
+        ContextPayload = payload;
+        UpdatedAt = now;
+    }
+
     // EF Core parameterless constructor.
     private SagaInstance()
     {

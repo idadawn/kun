@@ -59,7 +59,7 @@ public sealed class EfSagaInstanceStore : ISagaInstanceStore
         CancellationToken ct = default)
     {
         return await _dbContext.Set<SagaStepQueueEntry>()
-            .Where(e => e.ProcessedAt == null)
+            .Where(e => e.ProcessedAt == null && (e.NextAttemptAt == null || e.NextAttemptAt <= DateTimeOffset.UtcNow))
             .OrderBy(e => e.EnqueuedAt)
             .Take(batchSize)
             .ToListAsync(ct)

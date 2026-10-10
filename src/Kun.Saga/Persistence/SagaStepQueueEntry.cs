@@ -25,6 +25,11 @@ public sealed class SagaStepQueueEntry
     /// <summary>Gets the UTC timestamp when this entry was successfully processed; <see langword="null"/> while pending.</summary>
     public DateTimeOffset? ProcessedAt { get; private set; }
 
+    /// <summary>Earliest UTC time for the next attempt; null means immediately eligible.</summary>
+    public DateTimeOffset? NextAttemptAt { get; private set; }
+
+    internal void ScheduleRetry(DateTimeOffset nextAttemptAt) => NextAttemptAt = nextAttemptAt;
+
     /// <summary>Gets the number of execution attempts made for this entry.</summary>
     public int AttemptCount { get; private set; }
 

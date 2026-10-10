@@ -5,8 +5,8 @@ namespace Kun.Saga;
 
 /// <summary>
 /// Immutable, AOT-safe registry mapping saga names to their execution delegates.
-/// Built at application startup by <see cref="DependencyInjection.KunSagaBuilder"/> and
-/// stored as a singleton. Uses a <see cref="FrozenDictionary{TKey,TValue}"/> for O(1) lookup.
+/// Built in the current execution scope by <see cref="DependencyInjection.KunSagaBuilder"/> and
+/// resolved after tenant scope restoration. Uses a <see cref="FrozenDictionary{TKey,TValue}"/> for O(1) lookup.
 /// </summary>
 public sealed class SagaRegistry
 {
@@ -20,6 +20,9 @@ public sealed class SagaRegistry
     {
         ArgumentNullException.ThrowIfNull(registrations);
         _registrations = registrations.ToFrozenDictionary(r => r.SagaName);
+        foreach (var registration in _registrations.Values)
+            if (registration.LegacyTypeName is { } legacy && _registrations.TryGetValue(legacy, out var named) && !ReferenceEquals(named, registration))
+                throw new InvalidOperationException("A stable saga name cannot collide with another saga's legacy type name.");
     }
 
     /// <summary>
@@ -28,7 +31,8 @@ public sealed class SagaRegistry
     /// <param name="sagaName">The stable saga name (e.g. <c>OrderCreationSaga</c>).</param>
     /// <returns>The <see cref="SagaRegistration"/>, or <see langword="null"/> if not found.</returns>
     public SagaRegistration? Find(string sagaName)
-        => _registrations.TryGetValue(sagaName, out var reg) ? reg : null;
+        => _registrations.TryGetValue(sagaName, out var reg) ? reg
+            : _registrations.Values.SingleOrDefault(value => value.LegacyTypeName == sagaName);
 
     /// <summary>Gets all registered saga names.</summary>
     public IEnumerable<string> RegisteredNames => _registrations.Keys;
@@ -41,6 +45,16 @@ public sealed class SagaRegistry
 /// </summary>
 public sealed class SagaRegistration
 {
+    internal string? LegacyTypeName { get; init; }
+    internal Func<int, StepDirection, string, IServiceProvider, CancellationToken, Task<SagaStepOutcome>>? ExecuteWithContextAsync { get; init; }
+
+    internal async Task<SagaStepOutcome> ExecuteAndCaptureAsync(int index, StepDirection direction, string payload, IServiceProvider services, CancellationToken ct)
+    {
+        if (ExecuteWithContextAsync is not null) return await ExecuteWithContextAsync(index, direction, payload, services, ct).ConfigureAwait(false);
+        try { await ExecuteStepAsync(index, direction, payload, services, ct).ConfigureAwait(false); return new(payload, null); }
+        catch (Exception error) { return new(payload, error); }
+    }
+
     /// <summary>Gets the stable saga name (e.g. <c>OrderCreationSaga</c>).</summary>
     public string SagaName { get; }
 
@@ -105,3 +119,5 @@ public sealed class SagaRegistration
         GetStepTimeout = getStepTimeout ?? ((_, _) => null);
     }
 }
+
+internal sealed record SagaStepOutcome(string ContextPayload, Exception? Error);

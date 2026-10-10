@@ -23,8 +23,11 @@ Saga Orchestration engine — a central coordinator that drives a sequence of `I
   - Runs in reverse order of executed steps (`for i = failedStepIndex; i >= 0; i--`).
   - Each compensation must be **idempotent**: safe to call when the forward step never ran, ran partially, or ran fully.
   - Compensation must not throw for "nothing to undo" states — that's a normal path.
-- **Timeout**: every step has an optional `Timeout`; `SagaTimeoutDetector` scans `SagaInstance.TimeoutAt < UtcNow` every few seconds and moves the saga to `Compensating`.
-- **Context serialization** uses `KunJsonContext.Default.GetTypeInfo(typeof(TContext))!`. Every saga context type must be registered in `KunJsonContext`.
+- **Scope and names**: AddSaga registers scoped saga factories; the scoped registry reads stable `ISaga.Name` and step counts after tenant restoration. Never build a temporary DI container. Existing CLR-name rows remain readable via the legacy alias; new rows use `ISaga.Name`.
+- **Execution lock**: the default executor requires PostgreSQL and holds a SKIP LOCKED instance row lock through the step, context write-back, queue changes and transaction commit. Timeout detection takes the same lock and rechecks current state. Remote side effects remain at-least-once across crashes; steps must use idempotency keys.
+- **Retry**: MaxAttempts defaults to 1 for compatibility. Opt in to bounded retries only for idempotent steps; NextAttemptAt persists exponential backoff (one-minute cap). Add the nullable column through a consumer migration before deployment (Order sample includes one). Failed local writes roll back to a savepoint; partial context persists for retry/compensation.
+- **Timeout**: execution passes a linked cancellation token bounded by the current step deadline; steps must honor it. The detector catches expired idle/retry entries. Host shutdown rolls the current transaction back, without marking business failure or enqueuing compensation.
+- **Context serialization** uses the JsonTypeInfo passed to AddSaga. Mutable context is serialized after execution/compensation, including partial failure, and persisted with the state transition.
 - **Step identifiers are stable strings** (`"reserve-inventory"`, `"process-payment"`) — don't use class names; saga state persists across deployments where class names may be refactored.
 
 ### Testing Requirements
