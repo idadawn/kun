@@ -6,6 +6,8 @@
 
 ## [Unreleased]
 
+## [2026.10.9] - 2026-10-10
+
 ### Added / Fixed — 平台基础端口（S1-KUN-006）
 
 - 配置重载失败保留最后有效值并告警，支持关键／可选配置与源生成 JSON Schema；新增 Apollo HTTP provider（长轮询、AccessKey、通知修订、快照校验与缓存）。
@@ -1098,7 +1100,8 @@ MultiTenancy / Audit / RateLimit / Caching / Observability / Security / Configur
 Sandbox），全仓 AOT 一致性通过审计，Directory.Build.props 统一 AOT 策略，CI 新增
 `aot-audit` 矩阵 job 与 `sample-aot-integration` job。
 
-[Unreleased]: https://github.com/idadawn/kun/compare/v2026.10.8...HEAD
+[Unreleased]: https://github.com/idadawn/kun/compare/v2026.10.9...HEAD
+[2026.10.9]: https://github.com/idadawn/kun/compare/v2026.10.8...v2026.10.9
 [2026.10.8]: https://github.com/idadawn/kun/compare/v2026.9.13...v2026.10.8
 [2026.9.13]: https://github.com/idadawn/kun/compare/v2026.6.12...v2026.9.13
 [0.1.0-phase1]: https://github.com/idadawn/kun/releases/tag/v0.1.0-phase1
