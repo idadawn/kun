@@ -11,7 +11,7 @@ public interface ISaga<TContext>
     /// <summary>
     /// Gets the stable, unique name for this saga type.
     /// Used as the discriminator key in <c>saga_instances.saga_name</c>.
-    /// Convention: <c>PascalCase</c> matching the class name, e.g. <c>OrderCreationSaga</c>.
+    /// Keep it independent of CLR type names, e.g. <c>order.create.v1</c>. Do not change it while persisted instances still refer to it.
     /// </summary>
     string Name { get; }
 

@@ -1,6 +1,7 @@
 using Kun.Core.Time;
 using Kun.EntityFrameworkCore;
 using Kun.Saga.Persistence;
+using Kun.Saga.Persistence.Ef;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -73,7 +74,6 @@ public sealed partial class SagaTimeoutDetector : BackgroundService
         await using var scope = _scopeFactory.CreateAsyncScope();
         var store = scope.ServiceProvider.GetRequiredService<ISagaInstanceStore>();
         var clock = scope.ServiceProvider.GetRequiredService<ISystemClock>();
-        var dbContext = scope.ServiceProvider.GetRequiredService<KunDbContext>();
 
         var now = clock.UtcNow;
         var timedOut = await store.FindTimedOutAsync(now, _options.BatchSize, ct).ConfigureAwait(false);
@@ -89,7 +89,14 @@ public sealed partial class SagaTimeoutDetector : BackgroundService
         {
             try
             {
-                await TriggerCompensationAsync(instance, store, clock, dbContext, ct).ConfigureAwait(false);
+                await using var entryScope = _scopeFactory.CreateAsyncScope();
+                var db = entryScope.ServiceProvider.GetRequiredService<KunDbContext>();
+                var entryStore = entryScope.ServiceProvider.GetRequiredService<ISagaInstanceStore>();
+                await using var transaction = await db.Database.BeginTransactionAsync(ct).ConfigureAwait(false);
+                var current = await SagaRowLock.TryAcquireAsync(db, instance.Id, ct).ConfigureAwait(false);
+                if (current is null || current.State != SagaState.Running || current.TimeoutAt is null || current.TimeoutAt >= clock.UtcNow) continue;
+                await TriggerCompensationAsync(current, entryStore, clock, db, ct).ConfigureAwait(false);
+                await transaction.CommitAsync(ct).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
