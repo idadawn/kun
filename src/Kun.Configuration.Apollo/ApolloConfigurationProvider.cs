@@ -48,7 +48,7 @@ public sealed partial class ApolloConfigurationProvider : ConfigurationProvider,
     public override void Load()
     {
         try { RefreshAsync(_stop.Token).GetAwaiter().GetResult(); }
-        catch (Exception error) when (error is HttpRequestException or TaskCanceledException or IOException)
+        catch (Exception error) when (error is HttpRequestException or TaskCanceledException or IOException or InvalidDataException)
         {
             if (!TryReadCache()) throw new InvalidOperationException("Apollo 不可达且无有效本地缓存，拒绝以空配置启动。", error);
             LogCacheFallback(_logger);
@@ -129,7 +129,7 @@ public sealed partial class ApolloConfigurationProvider : ConfigurationProvider,
                 finally { _refresh.Release(); }
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested) { return; }
-            catch (Exception error) when (error is HttpRequestException or IOException or JsonException or OperationCanceledException or UnauthorizedAccessException)
+            catch (Exception error) when (error is HttpRequestException or IOException or InvalidDataException or JsonException or OperationCanceledException or UnauthorizedAccessException)
             {
                 LogPollFailed(_logger);
                 try { await Task.Delay(_options.RetryDelay, ct).ConfigureAwait(false); }
@@ -184,6 +184,8 @@ public sealed partial class ApolloConfigurationProvider : ConfigurationProvider,
         if (value.AppId != _options.AppId || value.Cluster != _options.Cluster || value.NamespaceName != name ||
             string.IsNullOrEmpty(value.ReleaseKey) || value.Configurations is null)
             throw new InvalidDataException("Apollo 快照的应用、集群、namespace 或修订无效。");
+        if (_options.ValidateNamespace?.Invoke(name, value.Configurations) == false)
+            throw new InvalidDataException("Apollo namespace 快照校验未通过。");
     }
 
     private string? CachePath => _options.CacheDirectory is null ? null : Path.Combine(_options.CacheDirectory,
@@ -218,7 +220,7 @@ public sealed partial class ApolloConfigurationProvider : ConfigurationProvider,
             Data = data;
             return true;
         }
-        catch (Exception error) when (error is IOException or JsonException or ArgumentException) { return false; }
+        catch (Exception error) when (error is IOException or InvalidDataException or JsonException or ArgumentException) { return false; }
     }
 
     private static string Escape(string value) => Uri.EscapeDataString(value);

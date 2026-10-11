@@ -1,4 +1,6 @@
 #nullable enable
+Kun.Configuration.Apollo.ApolloOptions.ValidateNamespace.get -> System.Func<string!, System.Collections.Generic.IReadOnlyDictionary<string!, string?>!, bool>?
+Kun.Configuration.Apollo.ApolloOptions.ValidateNamespace.init -> void
 Kun.Configuration.Apollo.ApolloOptions
 Kun.Configuration.Apollo.ApolloConfigurationExtensions
 Kun.Configuration.Apollo.ApolloOptions.ApolloOptions() -> void

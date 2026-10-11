@@ -23,4 +23,6 @@ public sealed class ApolloOptions
     public TimeSpan RetryDelay { get; init; } = TimeSpan.FromSeconds(5);
     /// <summary>可选的整份快照校验，失败时不替换数据与磁盘缓存。</summary>
     public Func<IReadOnlyDictionary<string, string?>, bool>? Validate { get; init; }
+    /// <summary>每份原始 namespace 在合并与缓存前校验；离线缓存读取时同样执行。</summary>
+    public Func<string, IReadOnlyDictionary<string, string?>, bool>? ValidateNamespace { get; init; }
 }

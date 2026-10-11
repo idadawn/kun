@@ -4,6 +4,7 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using FluentAssertions;
 using Kun.Configuration.Apollo;
 using Kun.Configuration.Extensions;
 using Microsoft.Extensions.Configuration;
@@ -114,15 +115,115 @@ public sealed class ApolloReloadTests
         ReloadOnChange = false,
         ResolveAccessKey = () => "test-access-key"
     };
+    [Fact]
+    public async Task Refresh_WithOverriddenRejectedNamespace_PreservesRootAndCache()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "kun-apollo-raw-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            using var handler = new ApolloHandler { CommonValue = "3" };
+            using var client = new HttpClient(handler);
+            var options = NamespaceOptions(directory);
+            using var root = (ConfigurationRoot)new ConfigurationBuilder().AddApollo(options, client).Build();
+            var file = Directory.GetFiles(directory).Single();
+            var original = await File.ReadAllTextAsync(file, TestContext.Current.CancellationToken);
+
+            handler.CommonValue = "synthetic-literal";
+            var refresh = () => ((ApolloConfigurationProvider)root.Providers.Single()).RefreshAsync(TestContext.Current.CancellationToken);
+
+            await refresh.Should().ThrowAsync<InvalidDataException>();
+            root["Service:Retries"].Should().Be("3");
+            (await File.ReadAllTextAsync(file, TestContext.Current.CancellationToken)).Should().Be(original);
+            handler.Offline = true;
+            using var cached = (ConfigurationRoot)new ConfigurationBuilder().AddApollo(options, client).Build();
+            cached["Service:Retries"].Should().Be("3");
+        }
+        finally { if (Directory.Exists(directory)) Directory.Delete(directory, recursive: true); }
+    }
+
+    [Fact]
+    public async Task Load_WithRejectedOverriddenNamespaceInCache_FailsClosed()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "kun-apollo-cache-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            using var handler = new ApolloHandler { CommonValue = "4" };
+            using var client = new HttpClient(handler);
+            var options = NamespaceOptions(directory);
+            using (var root = (ConfigurationRoot)new ConfigurationBuilder().AddApollo(options, client).Build())
+                root["Service:Retries"].Should().Be("3");
+            var file = Directory.GetFiles(directory).Single();
+            var contents = await File.ReadAllTextAsync(file, TestContext.Current.CancellationToken);
+            await File.WriteAllTextAsync(file, contents.Replace("\"4\"", "\"synthetic-literal\"", StringComparison.Ordinal), TestContext.Current.CancellationToken);
+            handler.Offline = true;
+
+            var load = () => new ConfigurationBuilder().AddApollo(options, client).Build();
+
+            load.Should().Throw<InvalidOperationException>();
+        }
+        finally { if (Directory.Exists(directory)) Directory.Delete(directory, recursive: true); }
+    }
+
+    private static ApolloOptions NamespaceOptions(string cache) => new()
+    {
+        AppId = "sample",
+        ConfigServers = [new Uri("https://apollo.test")],
+        Namespaces = ["common", "application"],
+        CacheDirectory = cache,
+        ReloadOnChange = false,
+        ResolveAccessKey = () => "test-access-key",
+        Validate = data => data["Service:Retries"] == "3",
+        ValidateNamespace = (_, data) => int.TryParse(data["Service:Retries"], out var count) && count > 0
+    };
+    [Fact]
+    public void Load_InvalidNamespaceWithoutCache_RejectsStartup()
+    {
+        using var handler = new ApolloHandler { CommonValue = "synthetic-literal" };
+        using var client = new HttpClient(handler);
+        var directory = Path.Combine(Path.GetTempPath(), "kun-apollo-absent-" + Guid.NewGuid().ToString("N"));
+        var load = () => new ConfigurationBuilder().AddApollo(NamespaceOptions(directory), client).Build();
+        load.Should().Throw<InvalidOperationException>();
+        Directory.Exists(directory).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Poll_RejectedNamespace_RecoversOnNextValidPublish()
+    {
+        using var handler = new ApolloHandler { LongPoll = true, RejectFirstUpdate = true };
+        using var client = new HttpClient(handler);
+        var rejected = false;
+        using var root = (ConfigurationRoot)new ConfigurationBuilder().AddApollo(new ApolloOptions
+        {
+            AppId = "sample",
+            ConfigServers = [new Uri("https://apollo.test")],
+            ResolveAccessKey = () => "test-access-key",
+            RetryDelay = TimeSpan.FromMilliseconds(10),
+            ValidateNamespace = (_, data) =>
+            {
+                if (data["Service:Retries"] != "0") return true;
+                rejected = true;
+                return false;
+            }
+        }, client).Build();
+
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(5);
+        while (root["Service:Retries"] != "5" && DateTimeOffset.UtcNow < deadline)
+            await Task.Delay(10, TestContext.Current.CancellationToken);
+
+        rejected.Should().BeTrue();
+        root["Service:Retries"].Should().Be("5");
+    }
     public sealed class Settings { [Range(1, 10)] public int Retries { get; set; } }
 
     private sealed class ApolloHandler : HttpMessageHandler
     {
         public string Value = "3";
+        public string? CommonValue;
         public bool Offline;
         public bool Denied;
         public int SignedRequests;
         public bool LongPoll;
+        public bool RejectFirstUpdate;
         public bool NotificationRevisionForwarded;
         private int _notifications;
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -137,11 +238,12 @@ public sealed class ApolloReloadTests
             SignedRequests++;
             if (LongPoll && request.RequestUri!.AbsolutePath.EndsWith("/notifications/v2", StringComparison.Ordinal))
             {
-                if (Interlocked.Increment(ref _notifications) == 1)
+                var notification = Interlocked.Increment(ref _notifications);
+                if (notification <= (RejectFirstUpdate ? 2 : 1))
                 {
-                    Value = "5";
+                    Value = RejectFirstUpdate && notification == 1 ? "0" : "5";
                     return new HttpResponseMessage(HttpStatusCode.OK)
-                    { Content = new StringContent("""[{"namespaceName":"application","notificationId":1}]""") };
+                    { Content = new StringContent("[{\"namespaceName\":\"application\",\"notificationId\":" + notification + "}]") };
                 }
                 await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
             }
@@ -149,16 +251,18 @@ public sealed class ApolloReloadTests
             {
                 var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(request.RequestUri!.Query);
                 using var messages = JsonDocument.Parse(query["messages"].ToString());
-                Assert.Equal(1, messages.RootElement.GetProperty("details").GetProperty("sample+default+application").GetInt64());
+                Assert.Equal(RejectFirstUpdate ? 2 : 1, messages.RootElement.GetProperty("details").GetProperty("sample+default+application").GetInt64());
                 NotificationRevisionForwarded = true;
             }
+            var name = request.RequestUri!.AbsolutePath.Split('/')[^1];
+            var value = name == "common" ? CommonValue! : Value;
             var payload = JsonSerializer.Serialize(new
             {
                 appId = "sample",
                 cluster = "default",
-                namespaceName = "application",
-                releaseKey = "revision-" + Value,
-                configurations = new Dictionary<string, string> { ["Service:Retries"] = Value }
+                namespaceName = name,
+                releaseKey = "revision-" + value,
+                configurations = new Dictionary<string, string> { ["Service:Retries"] = value }
             });
             return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(payload, Encoding.UTF8, "application/json") };
         }
