@@ -86,7 +86,7 @@ public sealed class CapabilityAndPermissionTests
         services.AddKunMediator(builder => builder
             .AddRequestHandler<ProtectedCommand, Result<int>, ProtectedHandler>()
             .AddPermissionBehavior<ProtectedCommand, Result<int>>(Result<int>.Fail));
-        await using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
+        await using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
         var result = await provider.GetRequiredService<ISender>().Send(new ProtectedCommand(), TestContext.Current.CancellationToken);
         Assert.Equal(allow == true, result.IsSuccess);
         if (allow == true) Assert.Equal(["check", "handler"], calls);
@@ -96,4 +96,28 @@ public sealed class CapabilityAndPermissionTests
             Assert.DoesNotContain("handler", calls);
         }
     }
+
+    [Fact]
+    public async Task PermissionCheck_WithoutOptionalPorts_StartsWithValidationAndDenies()
+    {
+        var calls = new List<string>();
+        var services = new ServiceCollection();
+        services.AddSingleton(calls);
+        services.AddKunMediator(builder => builder
+            .AddRequestHandler<ProtectedCommand, Result<int>, ProtectedHandler>()
+            .AddPermissionBehavior<ProtectedCommand, Result<int>>(Result<int>.Fail)
+            .AddPermissionBehavior<ProtectedCommand, Result<int>>(Result<int>.Fail));
+
+        await using var provider = services.BuildServiceProvider(new ServiceProviderOptions
+        {
+            ValidateScopes = true,
+            ValidateOnBuild = true
+        });
+        var result = await provider.GetRequiredService<ISender>().Send(new ProtectedCommand(), TestContext.Current.CancellationToken);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Unauthorized, result.Error.Type);
+        Assert.Empty(calls);
+    }
+
 }
