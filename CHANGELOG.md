@@ -6,6 +6,12 @@
 
 ## [Unreleased]
 
+## [2026.10.11] - 2026-10-11
+
+### Fixed — Mediator 权限行为启动校验
+
+- `AddPermissionBehavior` 移除通用管道登记附带的构造器注册，只保留能处理可选权限／身份／租户端口及拒绝回调的工厂。开启 `ValidateOnBuild` 时不再因重复登记报缺少服务；重复登记仍能通过依赖校验，缺少身份或引擎继续在 handler 前拒绝。
+
 ### Fixed — Identity 客户端与唯一 S2S 签发入口（S1-KUN-004）
 
 - 授权码交换必须发送原始 PKCE verifier 并验证签名/issuer/audience/nonce；补 refresh、client credentials 与有期限的 discovery 缓存。浏览器事务受保护并防重放，完成辅助服务与认证方案可直接解析，保留宿主显式方案。
@@ -1123,7 +1129,8 @@ MultiTenancy / Audit / RateLimit / Caching / Observability / Security / Configur
 Sandbox），全仓 AOT 一致性通过审计，Directory.Build.props 统一 AOT 策略，CI 新增
 `aot-audit` 矩阵 job 与 `sample-aot-integration` job。
 
-[Unreleased]: https://github.com/idadawn/kun/compare/v2026.10.9...HEAD
+[Unreleased]: https://github.com/idadawn/kun/compare/v2026.10.11...HEAD
+[2026.10.11]: https://github.com/idadawn/kun/compare/v2026.10.9...v2026.10.11
 [2026.10.9]: https://github.com/idadawn/kun/compare/v2026.10.8...v2026.10.9
 [2026.10.8]: https://github.com/idadawn/kun/compare/v2026.9.13...v2026.10.8
 [2026.9.13]: https://github.com/idadawn/kun/compare/v2026.6.12...v2026.9.13
