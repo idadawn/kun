@@ -16,6 +16,14 @@ the second layer.
 
 ---
 
+## 查询过滤器与共享模型
+
+`KunDbContext` 的租户过滤器通过当前执行查询的 DbContext 读取租户，不把第一个宿主的 `ITenantContext` 实例留在缓存模型里。这样同租户的多个宿主或请求访问器复用模型时，旧访问器退出作用域或切到其它租户都不会改变新请求的过滤条件。
+
+不继承 `KunDbContext` 的上下文须实现 `IKunMultiTenantDbContext`，并在 `OnModelCreating` 中调用 `modelBuilder.ApplyKunMultiTenantFilters(this)`。**迁移要求**：原 `ITenantContext` 重载标记 KUNTENANT001，保留方法签名但在模型构建时明确抛出异常，不能继续装载不安全过滤器。只捕获租户 ID 常量也无法兼容默认共享模型，因此旧调用者必须改为当前 DbContext 入口。继续使用 `AddKunTenantRls<TContext>()` 的双拦截器与模型缓存装配；模型缓存不能替代数据库隔离。
+
+`TenantContextBindingTests` 使用 PostgreSQL 和受限应用角色单独验证 EF 过滤层，明确复用同一个模型，并让前一个访问器退出作用域或切到另一个租户；基础类与 DbContext 重载在默认和按租户缓存两种配置下都须只返回当前请求的租户行。旧入口的明确拒绝另有回归。
+
 ## The TenantRlsConnectionInterceptor
 
 `src/Kun.EntityFrameworkCore/Interceptors/TenantRlsConnectionInterceptor.cs`

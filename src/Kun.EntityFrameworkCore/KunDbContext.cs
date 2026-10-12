@@ -87,7 +87,8 @@ public abstract class KunDbContext : DbContext, IKunMultiTenantDbContext
     /// <summary>
     /// Exposes the current tenant ID for use by a custom <c>IModelCacheKeyFactory</c>
     /// so EF Core builds a distinct compiled model per tenant rather than sharing the
-    /// first-built model across all instances of the same DbContext type.
+    /// first-built model across all instances of the same DbContext type. Query filters also
+    /// read this member through the executing DbContext, rather than retaining another host's accessor.
     /// </summary>
     public string? TenantIdForModelCacheKey => _tenantContext.TenantId;
 
@@ -111,10 +112,11 @@ public abstract class KunDbContext : DbContext, IKunMultiTenantDbContext
             {
                 var tenantIdProp = Expression.Property(parameter, nameof(IMultiTenant.TenantId));
                 var currentTenantId = Expression.Property(
-                    Expression.Constant(_tenantContext),
-                    nameof(ITenantContext.TenantId));
+                    Expression.Constant(this, typeof(KunDbContext)),
+                    nameof(TenantIdForModelCacheKey));
 
-                // e.TenantId == _tenantContext.TenantId
+                // EF binds a DbContext member to the executing context when reusing a cached model.
+                // A constant ITenantContext instead retains the first provider/request's accessor.
                 combined = Expression.Equal(tenantIdProp, currentTenantId);
             }
 

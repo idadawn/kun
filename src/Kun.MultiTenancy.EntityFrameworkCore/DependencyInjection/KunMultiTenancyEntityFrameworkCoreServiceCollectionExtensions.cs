@@ -10,7 +10,7 @@ public static class KunMultiTenancyEntityFrameworkCoreServiceCollectionExtension
     /// Registers <see cref="KunTenantSaveChangesInterceptor"/> as a
     /// scoped service so consumers can attach it to their
     /// <c>DbContextOptionsBuilder.AddInterceptors(...)</c> call.
-    /// Pair with <c>modelBuilder.ApplyKunMultiTenantFilters(tenantContext)</c>
+    /// Pair with <c>modelBuilder.ApplyKunMultiTenantFilters(this)</c> on an IKunMultiTenantDbContext
     /// in <c>OnModelCreating</c> for full read + write coverage.
     /// </summary>
     public static IServiceCollection AddKunMultiTenancyEntityFrameworkCore(this IServiceCollection services)
