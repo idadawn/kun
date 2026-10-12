@@ -30,6 +30,9 @@ jobs:
       - name: Restore
         run: dotnet restore
 
+      - name: Release version and artifact validation tests
+        run: python3 -m unittest discover -s scripts/tests -p 'test_release_version.py' -v
+
       - name: Build
         run: dotnet build --configuration Release --no-restore
 

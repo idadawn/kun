@@ -138,20 +138,22 @@ Closes #42
 
 ## 🏷️ 发布与版本规范
 
-**2026-06-11 起与 iclaw 版本号策略保持一致：CalVer，tag 一律在 `main` 上打**，CI 强制校验（见 `.github/workflows/release.yml`）：
+**使用 CalVer 日期，tag 一律在 `main` 上打；同日补丁使用 NuGet 兼容的 `hotfix.N` 后缀**。CLI 与 CI 共用 `scripts/release_version.py` 校验（需要 Python 3.9+，见 `.github/workflows/release.yml`）：
 
 | Tag 形式 | 语义 | 示例 |
 | :--- | :--- | :--- |
 | `vYYYY.M.D` | 正式版本 | `v2026.6.12` |
-| `vYYYY.M.D-N` | 同日补号 / 旧版本热修补号 | `v2026.6.12-2` |
+| `vYYYY.M.D-hotfix.N` | 同日正式修复 / 旧版本热修 | `v2026.6.12-hotfix.2` |
 | `vYYYY.M.D-beta.N` | 预发布（GitHub Release 标 prerelease） | `v2026.6.12-beta.1` |
 
 规则：
 
-- 月、日**不补零**（`v2026.6.2`，不是 `v2026.06.02`），与 iclaw 一致。
+- 月、日**不补零**，日期必须有效，后缀序号为无前导零的正整数。
 - 所有 tag 必须指向 `main` 上可达的 commit；其它形式（含旧的 `vX.Y.Z`、`-alpha`、`-rc`）一律被 Release workflow 拒绝。
-- 旧版本紧急修复：从旧 tag 拉 `hotfix/*`，修完打补号 tag（如 `v2026.6.12-2`），删分支——与 iclaw hotfix 流程相同。
-- **NuGet 排序注意**：SemVer 语义下 `-N` 与 `-beta.N` 都按 prerelease 排序（低于无后缀版本）。消费端（iclaw）经 `ProjectReference` 消费 `main`，不受影响；若需让 NuGet 用户拿到补号内容，直接打新日期的正式 tag。
+- 旧版本紧急修复：在独立分支完成修复与 CI，经 PR 合入 `main` 后，从已验证提交打补丁 tag，随后清理分支。
+- **NuGet 排序注意**：`-hotfix.N` 在项目语义中是正式修复版、推送 nuget.org，但 NuGet 按带后缀版本排序，低于同日无后缀版本。NuGet 消费端必须显式钉定修复版，不能依赖最新版排序；日期递进的版本继续使用无后缀格式。
+- `v2026.10.12-2` 的纯数字后缀已被 nuget.org 包清单校验拒绝。该失败标签保留历史，禁止重写或继续发布同类标签。字母加点分段后缀遵循 [NuGet 版本规则](https://learn.microsoft.com/en-us/nuget/concepts/package-versioning#semantic-versioning-200)。
+- 推送前校验全部发行包和符号包的实际版本、Kun 内部依赖版本及发行物闭包；缺包或混入其它版本即停止。beta 仅推送 GitHub Packages，GitHub Release 标记为 prerelease。
 - 历史 SemVer tag（`v0.1.0` 等）保留不动，仅作存档；2026-06-11 前的「`main`→稳定 / `develop`→`-beta`」策略作废。
 
 ## 🔀 Pull Request 流程

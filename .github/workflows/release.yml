@@ -29,20 +29,17 @@ jobs:
         with:
           global-json-file: global.json
 
-      # Policy (see CONTRIBUTING.md §Release & versioning), CalVer aligned
-      # with idadawn/iclaw since 2026-06-11:
-      #  - vYYYY.M.D / vYYYY.M.D-N / vYYYY.M.D-beta.N → all cut from main
+      # CalVer dates with NuGet-compatible hotfix labels (see CONTRIBUTING.md).
+      #  - vYYYY.M.D / vYYYY.M.D-hotfix.N / vYYYY.M.D-beta.N → all cut from main
       # main is the only long-lived branch (develop deleted 2026-06-11);
       # legacy vX.Y.Z tags predate this policy, new ones are rejected.
       - name: Validate tag matches branch policy
+        id: version
         run: |
           TAG="$GITHUB_REF_NAME"
           SHA="$GITHUB_SHA"
           BRANCHES=$(git branch -r --contains "$SHA" --format='%(refname:short)')
-          if ! [[ "$TAG" =~ ^v[0-9]{4}\.[0-9]{1,2}\.[0-9]{1,2}(-[0-9]+|-beta\.[0-9]+)?$ ]]; then
-            echo "::error::Tag $TAG does not match CalVer policy vYYYY.M.D[-N|-beta.N] (see CONTRIBUTING.md)."
-            exit 1
-          fi
+          python3 scripts/release_version.py --tag "$TAG" --github-output "$GITHUB_OUTPUT"
           if ! echo "$BRANCHES" | grep -qx 'origin/main'; then
             echo "::error::Tag $TAG must be cut from origin/main; commit $SHA is not reachable from main."
             exit 1
@@ -82,19 +79,6 @@ jobs:
             fi
           done
 
-      - name: Derive version from tag
-        id: version
-        run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          # Only -beta.N marks a prerelease; a -N patch tag is a full release
-          # (same semantics as iclaw CalVer).
-          if [[ "$GITHUB_REF_NAME" =~ -beta\. ]]; then
-            echo "prerelease=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "prerelease=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Pack
         run: |
           dotnet pack -c Release --no-build \
@@ -102,7 +86,11 @@ jobs:
             -p:ContinuousIntegrationBuild=true \
             -o artifacts/
 
+      - name: Validate package cohort before publishing
+        run: python3 scripts/release_version.py --version "${{ steps.version.outputs.version }}" --artifacts artifacts
+
       - name: Push to NuGet.org
+        if: steps.version.outputs.prerelease != 'true'
         run: |
           dotnet nuget push artifacts/*.nupkg \
             -k "${{ secrets.NUGET_API_KEY }}" \
