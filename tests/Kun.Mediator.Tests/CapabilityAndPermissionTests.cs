@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using FluentAssertions;
 using Kun.Authorization;
 using Kun.Core.Cqrs;
 using Kun.Core.MultiTenancy;
@@ -64,6 +65,7 @@ public sealed class CapabilityAndPermissionTests
         var user = Substitute.For<ICurrentUser>();
         user.IsAuthenticated.Returns(true);
         user.UserId.Returns("user-1");
+        user.PrincipalKind.Returns("user");
         var tenant = Substitute.For<ITenantContext>();
         tenant.TenantId.Returns("tenant-a");
         services.AddSingleton(user);
@@ -118,6 +120,34 @@ public sealed class CapabilityAndPermissionTests
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorType.Unauthorized, result.Error.Type);
         Assert.Empty(calls);
+    }
+
+    [Theory]
+    [InlineData("user", true)]
+    [InlineData("service", false)]
+    [InlineData("agent", false)]
+    [InlineData("unknown", false)]
+    public async Task PermissionCheck_SameIdDifferentKinds_NeverUsesUserGrantForService(string kind, bool expected)
+    {
+        var calls = new List<string>(); var services = new ServiceCollection(); services.AddSingleton(calls);
+        var user = Substitute.For<ICurrentUser>(); user.IsAuthenticated.Returns(true); user.UserId.Returns("shared-id"); user.PrincipalKind.Returns(kind);
+        var tenant = Substitute.For<ITenantContext>(); tenant.TenantId.Returns("tenant-a");
+        var checker = Substitute.For<IPermissionChecker>();
+#pragma warning disable CA2012 // 配置真实管道所消费的判定端口，检查主体元组。
+        checker.CheckAsync(Arg.Any<PermissionRequest>(), Arg.Any<CancellationToken>()).Returns(info =>
+        {
+            var subject = info.Arg<PermissionRequest>().Subject; subject.Id.Should().Be("shared-id"); subject.Kind.Should().Be(kind);
+            calls.Add("check"); return ValueTask.FromResult(new PermissionDecision(subject.Kind == "user", "user-only-grant", []));
+        });
+#pragma warning restore CA2012
+        services.AddSingleton(user); services.AddSingleton(tenant); services.AddSingleton(checker);
+        services.AddKunMediator(builder => builder.AddRequestHandler<ProtectedCommand, Result<int>, ProtectedHandler>()
+            .AddPermissionBehavior<ProtectedCommand, Result<int>>(Result<int>.Fail));
+        await using var provider = services.BuildServiceProvider();
+        var result = await provider.GetRequiredService<ISender>().Send(new ProtectedCommand(), TestContext.Current.CancellationToken);
+        result.IsSuccess.Should().Be(expected);
+        calls.Contains("handler", StringComparer.Ordinal).Should().Be(expected);
+        if (kind == "unknown") calls.Should().BeEmpty();
     }
 
 }

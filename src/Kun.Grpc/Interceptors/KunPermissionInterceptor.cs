@@ -1,6 +1,7 @@
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 using Kun.Authorization;
+using Kun.Security.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -14,8 +15,7 @@ internal sealed class KunPermissionInterceptor : Interceptor
         var http = context.GetHttpContext();
         var requirements = http.GetEndpoint()?.Metadata.GetOrderedMetadata<RequiresPermissionAttribute>();
         if (requirements is null || requirements.Count == 0) return;
-        var id = http.User.FindFirst("sub")?.Value ?? http.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        if (http.User.Identity?.IsAuthenticated != true || string.IsNullOrWhiteSpace(id))
+        if (!PrincipalClaims.TryRead(http.User, out var id, out var tenant, out var kind))
             throw new RpcException(new Status(StatusCode.Unauthenticated, "请求未认证。"));
         var checker = http.RequestServices.GetService<IPermissionChecker>();
         if (checker is null) throw new RpcException(new Status(StatusCode.PermissionDenied, "权限引擎未配置。"));
@@ -23,7 +23,7 @@ internal sealed class KunPermissionInterceptor : Interceptor
         {
             if (string.IsNullOrWhiteSpace(requirement.Permission) ||
                 !(await checker.CheckAsync(new PermissionRequest(
-                    new AuthorizationSubject(id, http.User.FindFirst("tenant_id")?.Value), requirement.Permission), context.CancellationToken).ConfigureAwait(false)).Allow)
+                    new AuthorizationSubject(id, tenant, kind), requirement.Permission), context.CancellationToken).ConfigureAwait(false)).Allow)
                 throw new RpcException(new Status(StatusCode.PermissionDenied, "不允许执行此操作。"));
         }
     }

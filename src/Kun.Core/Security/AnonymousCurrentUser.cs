@@ -15,6 +15,9 @@ public sealed class AnonymousCurrentUser : ICurrentUser
     public string? UserId => null;
 
     /// <inheritdoc />
+    public string PrincipalKind => string.Empty;
+
+    /// <inheritdoc />
     public IReadOnlyList<string> Roles { get; } = Array.Empty<string>();
 
     /// <inheritdoc />

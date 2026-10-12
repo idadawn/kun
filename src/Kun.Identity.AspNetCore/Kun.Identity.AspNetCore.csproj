@@ -16,6 +16,7 @@
       errors out if we list them explicitly, so they are omitted here.
     -->
     <ProjectReference Include="..\Kun.Core\Kun.Core.csproj" />
+    <ProjectReference Include="../Kun.Security/Kun.Security.csproj" />
     <ProjectReference Include="..\Kun.Identity\Kun.Identity.csproj" />
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>

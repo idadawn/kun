@@ -104,3 +104,6 @@ static Kun.Security.DependencyInjection.KunSecurityServiceCollectionExtensions.A
 static Kun.Security.Extensions.HttpClientBuilderExtensions.AddKunServiceAuth(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
 static Kun.Security.S2SJwt.JwksEndpointExtensions.UseS2SJwksEndpoint(this Microsoft.AspNetCore.Builder.IApplicationBuilder! app) -> Microsoft.AspNetCore.Builder.IApplicationBuilder!
 static Kun.Security.S2SJwt.KunSecurityS2SJwtServiceCollectionExtensions.AddS2SJwt(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kun.Security.S2SJwt.S2SJwtOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Kun.Security.Authentication.PrincipalClaims
+static Kun.Security.Authentication.PrincipalClaims.TryRead(System.Security.Claims.ClaimsPrincipal? principal, out string? subjectId, out string? tenantId, out string? principalKind) -> bool
+Kun.Security.Security.JwtCurrentUser.PrincipalKind.get -> string!

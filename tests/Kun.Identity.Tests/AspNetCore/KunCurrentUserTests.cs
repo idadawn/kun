@@ -60,4 +60,16 @@ public sealed class KunCurrentUserTests
 
         user.UserId.Should().Be("fallback-id");
     }
+    [Theory]
+    [InlineData("user")]
+    [InlineData("service")]
+    [InlineData("agent")]
+    public void PrincipalKind_AuthenticatedPrincipal_IsPreserved(string kind)
+    {
+        var identity = new System.Security.Claims.ClaimsIdentity([new System.Security.Claims.Claim("sub", "same-id"), new System.Security.Claims.Claim("principal_kind", kind)], "validated");
+        var accessor = new Microsoft.AspNetCore.Http.HttpContextAccessor { HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext { User = new System.Security.Claims.ClaimsPrincipal(identity) } };
+        var current = new Kun.Identity.AspNetCore.KunCurrentUser(accessor);
+        Assert.Equal(kind, current.PrincipalKind); Assert.Equal("same-id", current.UserId);
+    }
+
 }

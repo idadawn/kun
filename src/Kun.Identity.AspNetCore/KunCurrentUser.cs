@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Kun.Core.Security;
 using Kun.Identity.Abstractions;
+using Kun.Security.Authentication;
 using Microsoft.AspNetCore.Http;
 
 namespace Kun.Identity.AspNetCore;
@@ -39,38 +40,42 @@ public sealed class KunCurrentUser : IAuthenticatedUser
 
     /// <inheritdoc />
     public string? UserId
-        => Principal?.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? Principal?.FindFirstValue("sub");
+        => PrincipalClaims.TryRead(Principal, out var subject, out _, out _) ? subject : null;
 
     /// <inheritdoc />
-    public string? TenantId => Principal?.FindFirstValue(TenantIdClaimType);
+    public string PrincipalKind => PrincipalClaims.TryRead(Principal, out _, out _, out var kind) ? kind : string.Empty;
+
+    private ClaimsIdentity? AuthenticatedIdentity => Principal?.Identity is ClaimsIdentity { IsAuthenticated: true } identity ? identity : null;
+
+    /// <inheritdoc />
+    public string? TenantId => PrincipalClaims.TryRead(Principal, out _, out var tenant, out _) ? tenant : null;
 
     /// <inheritdoc />
     public string? Email
-        => Principal?.FindFirstValue(ClaimTypes.Email)
-            ?? Principal?.FindFirstValue("email");
+        => AuthenticatedIdentity?.FindFirst(ClaimTypes.Email)?.Value
+            ?? AuthenticatedIdentity?.FindFirst("email")?.Value;
 
     /// <inheritdoc />
     public string? Name
-        => Principal?.FindFirstValue(ClaimTypes.Name)
-            ?? Principal?.FindFirstValue("name");
+        => AuthenticatedIdentity?.FindFirst(ClaimTypes.Name)?.Value
+            ?? AuthenticatedIdentity?.FindFirst("name")?.Value;
 
     /// <inheritdoc />
     public IReadOnlyList<string> Roles
     {
         get
         {
-            if (Principal is null)
+            if (AuthenticatedIdentity is null)
             {
                 return Array.Empty<string>();
             }
 
             var roles = new List<string>(capacity: 4);
-            foreach (var claim in Principal.FindAll(ClaimTypes.Role))
+            foreach (var claim in AuthenticatedIdentity.FindAll(ClaimTypes.Role))
             {
                 roles.Add(claim.Value);
             }
-            foreach (var claim in Principal.FindAll("roles"))
+            foreach (var claim in AuthenticatedIdentity.FindAll("roles"))
             {
                 roles.Add(claim.Value);
             }

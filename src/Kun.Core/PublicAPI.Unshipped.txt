@@ -74,3 +74,5 @@ static Kun.Core.Results.ValueTaskResultExtensions.TapAsync<T>(this System.Thread
 Kun.Core.MultiTenancy.ITenantContext.BeginScope(string? tenantId) -> System.IDisposable!
 Kun.Core.MultiTenancy.TenantIdValidation
 static Kun.Core.MultiTenancy.TenantIdValidation.IsValid(string? tenantId) -> bool
+Kun.Core.Security.ICurrentUser.PrincipalKind.get -> string!
+Kun.Core.Security.AnonymousCurrentUser.PrincipalKind.get -> string!

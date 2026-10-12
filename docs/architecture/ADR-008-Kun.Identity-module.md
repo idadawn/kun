@@ -147,3 +147,9 @@ ADR-001 asked for.
 - `Kun.Security/S2SJwt/*` — existing S2S issuer / verifier that stays in place
 - `Kun.Gateway/S2sTokenIssuer.cs` — existing gateway-internal issuer, future follow-up to unify under `Kun.Identity.IJwtIssuer`
 - `Microsoft.IdentityModel.JsonWebTokens.JsonWebTokenHandler` — the AOT-clean 8.x primitive this module is built on
+
+## 主体类型字段补充（S1-KUN-013）
+
+ICurrentUser.PrincipalKind 属于当前身份的最小字段，来源是已经认证的 principal_kind claim，不是浏览器专有字段，也不是权限集合。依据当前身份扩展指南，字段放在已有 ICurrentUser 上，IAuthenticatedUser 继承，不增加第三个身份接口。
+
+旧实现通过默认接口值 user 保持兼容；框架 JWT / Cookie 适配器保留真实类型，无类型声明的旧浏览器身份按 user。权限执行点接受 user/service/agent 的显式类型，歧义/未知值拒绝，不能把机器服务悄悄当作用户。Agent 仅保留其主体维度，不因此开放 S2S 签发。主身份的 sub 与 NameIdentifier 若同时存在须一致，关键 claim 不能从次身份补齐。

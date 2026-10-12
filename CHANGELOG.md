@@ -6,6 +6,12 @@
 
 ## [Unreleased]
 
+### Fixed — 授权主体类型透传
+
+- HTTP、四种 gRPC 与 Mediator PEP 保留已认证主体的 user/service/agent 类型，服务身份不再默认按同名 user 查权限。未知或歧义类型在进入处理器前拒绝；不改变 S2S 签发端对 Agent 的保留限制。
+- ICurrentUser 增加来自 principal_kind 的只读 PrincipalKind，旧适配器通过默认接口实现保持 user；JWT 和浏览器适配器读取已认证主身份，拒绝冲突标识与重复关键 claim，不从次身份拼接权限主体。没有类型声明的旧浏览器身份继续按 user 处理，机器身份适配器必须提供真实类型。
+- 宿主复用 Kun.Security 的离线 claim 读取器；不增加身份接口族，不从普通请求头推断身份。回归覆盖真实 RSA 签名 HTTP、gRPC 四形态及 Mediator 的同名主体隔离。
+
 ## [2026.10.12-hotfix.2] - 2026-10-12
 
 ### Fixed — 同日修复版发布校验

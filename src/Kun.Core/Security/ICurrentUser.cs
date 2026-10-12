@@ -14,6 +14,9 @@ public interface ICurrentUser
     /// <summary>用户唯一标识（通常是 JWT 的 <c>sub</c> claim）。未登录时为 <see langword="null"/>。</summary>
     string? UserId { get; }
 
+    /// <summary>已认证主体类型（user / service / agent）；旧适配器默认按用户处理，身份适配器应透传真实类型。</summary>
+    string PrincipalKind => "user";
+
     /// <summary>用户当前持有的角色集合。</summary>
     IReadOnlyList<string> Roles { get; }
 

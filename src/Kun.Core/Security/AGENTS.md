@@ -11,7 +11,7 @@
 
 | File | Description |
 |------|-------------|
-| `ICurrentUser.cs` | `UserId` (nullable, from JWT `sub`), `Roles` (read-only list), `IsAuthenticated` |
+| `ICurrentUser.cs` | `UserId` (nullable, from JWT `sub`), `Roles` (read-only list), `IsAuthenticated`, `PrincipalKind` |
 
 ## For AI Agents
 

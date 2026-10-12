@@ -9,3 +9,7 @@
 三个入口在缺少引擎时拒绝，且在 handler 前判定。基础 HTTP/Mediator 适配器沿用现有用户身份上下文；服务或 Agent 的复杂主体与委托策略由平台身份及权限实现补充。权限集合不从令牌直接推导。
 
 设计与兼容说明见 [ADR-016](../../docs/architecture/ADR-016-platform-ports.md)。
+
+## 主体维度
+
+权限点的主体必须包含类型。HTTP、gRPC 与 Mediator 会保留 user/service/agent，不能只按相同 Id 认作同一个人。JWT 与浏览器当前身份通过 ICurrentUser.PrincipalKind 传递这一维度；缺少声明的旧浏览器身份按 user，未知或重复声明拒绝。引擎仍负责权限模型与持久化，类型透传不等于授予权限。
