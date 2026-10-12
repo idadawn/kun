@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../Kun.Authorization/Kun.Authorization.csproj" />
+    <ProjectReference Include="../Kun.Security/Kun.Security.csproj" />
     <ProjectReference Include="..\Kun.Core\Kun.Core.csproj" />
     <ProjectReference Include="..\Kun.Mediator\Kun.Mediator.csproj" />
     <ProjectReference Include="..\Kun.Validation\Kun.Validation.csproj" />

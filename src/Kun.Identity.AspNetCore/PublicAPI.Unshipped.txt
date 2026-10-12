@@ -55,3 +55,4 @@ Kun.Identity.AspNetCore.OidcLogoutService.OidcLogoutService(System.Collections.G
 Kun.Identity.AspNetCore.OidcLogoutEndpoint
 static Kun.Identity.AspNetCore.OidcLogoutEndpoint.MapKunBackChannelLogout(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, string! pattern, string! clientName) -> Microsoft.AspNetCore.Builder.IEndpointConventionBuilder!
 const Kun.Identity.AspNetCore.KunIdentityAspNetCoreServiceCollectionExtensions.CookieScheme = "KunCookieAuth" -> string!
+Kun.Identity.AspNetCore.KunCurrentUser.PrincipalKind.get -> string!

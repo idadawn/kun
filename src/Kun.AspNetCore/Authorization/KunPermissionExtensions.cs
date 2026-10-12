@@ -1,4 +1,5 @@
 using Kun.Authorization;
+using Kun.Security.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -38,15 +39,14 @@ internal sealed class KunPermissionHandler : AuthorizationHandler<KunPermissionR
 {
     protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, KunPermissionRequirement requirement)
     {
-        var subject = context.User.FindFirst("sub")?.Value ?? context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        if (context.Resource is not HttpContext http || context.User.Identity?.IsAuthenticated != true || string.IsNullOrWhiteSpace(subject))
+        if (context.Resource is not HttpContext http || !PrincipalClaims.TryRead(context.User, out var subject, out var tenant, out var kind))
         {
             context.Fail();
             return;
         }
         var checker = http.RequestServices.GetService<IPermissionChecker>();
         if (checker is null) { context.Fail(); return; }
-        var request = new PermissionRequest(new AuthorizationSubject(subject, context.User.FindFirst("tenant_id")?.Value), requirement.Permission);
+        var request = new PermissionRequest(new AuthorizationSubject(subject, tenant, kind), requirement.Permission);
         if ((await checker.CheckAsync(request, http.RequestAborted).ConfigureAwait(false)).Allow) context.Succeed(requirement);
         else context.Fail();
     }

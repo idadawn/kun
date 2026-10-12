@@ -19,7 +19,7 @@ invents a third adapter.
 
 ```
 Kun.Core.Security.ICurrentUser           ← minimal, S2S JWT-shaped
-    │  UserId, Roles, IsAuthenticated
+    │  UserId, Roles, IsAuthenticated, PrincipalKind
     │
     └── Kun.Identity.Abstractions.IAuthenticatedUser
            ← adds browser / cookie concerns
@@ -103,3 +103,7 @@ extra sprint of "injecting `IAuthenticatedUser` and casting to
 something" is far lower than the cost of shipping a third
 sibling abstraction that every downstream service then has to
 track.
+
+### 授权主体类型
+
+PrincipalKind 是 principal_kind 的只读身份投影。内置 JWT / Cookie 适配器与 HTTP/gRPC 权限入口使用同一个主身份读取规则，Mediator 从 ICurrentUser 取值。不能从调用请求的 JSON、头或角色名推断它。旧自定义适配器默认 user；如果适配器代表服务或 Agent，必须显式实现此属性，不能让机器身份继续使用用户默认值。

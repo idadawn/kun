@@ -37,7 +37,10 @@ internal sealed class PermissionBehavior<TRequest, TResponse>(IPermissionChecker
             return denied(Error.Unauthorized("authorization.unauthenticated", "请求未认证。"));
         if (checker is null || TRequest.RequiredPermissions.Count == 0)
             return denied(Error.Forbidden("authorization.denied", "权限引擎或权限声明未配置。"));
-        var subject = new AuthorizationSubject(user.UserId, tenant?.TenantId);
+        var kind = user.PrincipalKind;
+        if (kind is not ("user" or "service" or "agent"))
+            return denied(Error.Forbidden("authorization.denied", "主体类型无效。"));
+        var subject = new AuthorizationSubject(user.UserId, tenant?.TenantId, kind);
         foreach (var permission in TRequest.RequiredPermissions)
         {
             if (string.IsNullOrWhiteSpace(permission) ||

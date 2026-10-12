@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Kun.Core.Security;
+using Kun.Security.Authentication;
 using Microsoft.AspNetCore.Http;
 
 namespace Kun.Security.Security;
@@ -27,13 +28,16 @@ public sealed class JwtCurrentUser : ICurrentUser, ITracedCurrentUser
         _httpContextAccessor.HttpContext?.User;
 
     /// <inheritdoc />
-    public string? UserId =>
-        Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value
-        ?? Principal?.FindFirst("sub")?.Value;
+    public string? UserId => PrincipalClaims.TryRead(Principal, out var subject, out _, out _) ? subject : null;
+
+    /// <inheritdoc />
+    public string PrincipalKind => PrincipalClaims.TryRead(Principal, out _, out _, out var kind) ? kind : string.Empty;
+
+    private ClaimsIdentity? AuthenticatedIdentity => Principal?.Identity is ClaimsIdentity { IsAuthenticated: true } identity ? identity : null;
 
     /// <inheritdoc />
     public IReadOnlyList<string> Roles =>
-        Principal?.Claims
+        AuthenticatedIdentity?.Claims
             .Where(c => c.Type == ClaimTypes.Role || c.Type is "role" or "roles")
             .Select(c => c.Value)
             .Distinct(StringComparer.Ordinal)
@@ -46,5 +50,5 @@ public sealed class JwtCurrentUser : ICurrentUser, ITracedCurrentUser
 
     /// <inheritdoc />
     public string? TraceId =>
-        Principal?.FindFirst("trace_id")?.Value;
+        AuthenticatedIdentity?.FindFirst("trace_id")?.Value;
 }

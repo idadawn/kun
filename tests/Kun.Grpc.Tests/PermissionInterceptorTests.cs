@@ -57,4 +57,42 @@ public sealed class PermissionInterceptorTests
         Assert.Equal(allow ? 4 : 0, executed);
         await reader.DidNotReceive().MoveNext(Arg.Any<CancellationToken>());
     }
+    [Theory]
+    [InlineData("user", true)]
+    [InlineData("service", false)]
+    [InlineData("agent", false)]
+    public async Task AllRpcShapes_SameSubjectId_PreserveKindBeforeHandler(string kind, bool expected)
+    {
+        var checker = Substitute.For<IPermissionChecker>(); var seen = new List<string>();
+#pragma warning disable CA2012 // 只授予 user，验证服务主体不能借用同名用户权限。
+        checker.CheckAsync(Arg.Any<PermissionRequest>(), Arg.Any<CancellationToken>()).Returns(info =>
+        {
+            var subject = info.Arg<PermissionRequest>().Subject; seen.Add(subject.Kind);
+            Assert.Equal("same-id", subject.Id); Assert.Equal(kind, subject.Kind);
+            return ValueTask.FromResult(new PermissionDecision(subject.Kind == "user", "user-only-grant", []));
+        });
+#pragma warning restore CA2012
+        using var services = new ServiceCollection().AddSingleton(checker).BuildServiceProvider();
+        var http = new DefaultHttpContext
+        {
+            RequestServices = services,
+            User = new ClaimsPrincipal(new ClaimsIdentity([
+            new Claim("sub", "same-id"), new Claim("tenant_id", "tenant-a"), new Claim("principal_kind", kind)], "validated"))
+        };
+        http.SetEndpoint(new Endpoint(_ => Task.CompletedTask, new EndpointMetadataCollection(new RequiresPermissionAttribute("sample:item:read")), "test"));
+        var context = Substitute.For<ServerCallContext>(); context.UserState.Returns(new Dictionary<object, object> { ["__HttpContext"] = http });
+        var interceptor = new KunPermissionInterceptor(); var reader = Substitute.For<IAsyncStreamReader<string>>(); var writer = Substitute.For<IServerStreamWriter<string>>();
+        var calls = 0;
+        Func<Task>[] requests = [
+            async () => await interceptor.UnaryServerHandler("request", context, (_, _) => { calls++; return Task.FromResult("ok"); }),
+            () => interceptor.ServerStreamingServerHandler("request", writer, context, (_, _, _) => { calls++; return Task.CompletedTask; }),
+            async () => await interceptor.ClientStreamingServerHandler(reader, context, (_, _) => { calls++; return Task.FromResult("ok"); }),
+            () => interceptor.DuplexStreamingServerHandler(reader, writer, context, (_, _, _) => { calls++; return Task.CompletedTask; })
+        ];
+        foreach (var request in requests)
+            if (expected) await request(); else Assert.Equal(StatusCode.PermissionDenied, (await Assert.ThrowsAsync<RpcException>(request)).StatusCode);
+        Assert.Equal(expected ? 4 : 0, calls); Assert.Equal(4, seen.Count);
+        await reader.DidNotReceive().MoveNext(Arg.Any<CancellationToken>());
+    }
+
 }
