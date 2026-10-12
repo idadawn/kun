@@ -16,6 +16,6 @@ namespace Kun.MultiTenancy.EntityFrameworkCore;
 /// </remarks>
 public interface IKunMultiTenantDbContext
 {
-    /// <summary>Ambient tenant id, used purely as the EF model-cache key.</summary>
+    /// <summary>Ambient tenant id used by the model-cache key and the DbContext-bound query-filter overload.</summary>
     string? TenantIdForModelCacheKey { get; }
 }

@@ -95,7 +95,7 @@ internal sealed class TenantlessDbContext : DbContext
     public DbSet<TenantItem> Items => Set<TenantItem>();
 }
 
-internal sealed class TenantFilteredDbContext : DbContext
+internal sealed class TenantFilteredDbContext : DbContext, IKunMultiTenantDbContext
 {
     private readonly ITenantContext _tenantContext;
 
@@ -107,11 +107,13 @@ internal sealed class TenantFilteredDbContext : DbContext
 
     public DbSet<TenantItem> Items => Set<TenantItem>();
 
+    public string? TenantIdForModelCacheKey => _tenantContext.TenantId;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.Entity<TenantItem>();
-        modelBuilder.ApplyKunMultiTenantFilters(_tenantContext);
+        modelBuilder.ApplyKunMultiTenantFilters(this);
     }
 }
 

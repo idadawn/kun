@@ -87,7 +87,7 @@ app.MapControllers();
 protected override void OnModelCreating(ModelBuilder modelBuilder)
 {
     base.OnModelCreating(modelBuilder);
-    modelBuilder.ApplyKunMultiTenantFilters(_tenantContext);
+    modelBuilder.ApplyKunMultiTenantFilters(this);
 }
 ```
 
@@ -95,6 +95,8 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
 automatically and already exposes `TenantIdForModelCacheKey`; consumers
 who inherit from it only need the `AddKunMultiTenancy` side and the
 interceptor registration.
+
+2026.10.12-2 实现修正：非 `KunDbContext` 消费者实现 `IKunMultiTenantDbContext`，其 `TenantIdForModelCacheKey` 返回当前租户访问器的标识，并使用上面的 DbContext 重载。旧访问器重载已标记 KUNTENANT001 且在构建模型时明确拒绝；共享模型必须绑定当前执行上下文，迁移说明见 [多租户安全文档](../security/multi-tenancy-rls.md)。
 
 ---
 

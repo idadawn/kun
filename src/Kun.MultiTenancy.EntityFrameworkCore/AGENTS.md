@@ -7,10 +7,10 @@
 
 EF Core integration for `Kun.MultiTenancy`. Ships two things:
 
-- `ApplyKunMultiTenantFilters(ModelBuilder, ITenantContext)` — a
+- `ApplyKunMultiTenantFilters<TContext>(ModelBuilder, TContext)` — a
   ModelBuilder extension that walks the model, finds every entity
   implementing `Kun.Core.Domain.IMultiTenant`, and attaches a
-  `HasQueryFilter(e => e.TenantId == ctx.TenantId)` predicate so
+  predicate bound to the executing DbContext's tenant ID so
   cross-tenant reads are impossible through the EF pipeline.
 - `KunTenantSaveChangesInterceptor` — a `SaveChangesInterceptor`
   that walks `ChangeTracker.Entries<IMultiTenant>()` for added rows
@@ -44,13 +44,15 @@ services.AddKunMultiTenancyEntityFrameworkCore();   // registers the interceptor
 protected override void OnModelCreating(ModelBuilder modelBuilder)
 {
     base.OnModelCreating(modelBuilder);
-    modelBuilder.ApplyKunMultiTenantFilters(_tenantContext);
+    modelBuilder.ApplyKunMultiTenantFilters(this); // DbContext implements IKunMultiTenantDbContext
 }
 ```
 
 `KunDbContext` (the framework's base class) already applies the
 filter automatically; this module's extension is for consumers who
 inherit from a different DbContext base.
+
+DbContext 重载把租户条件绑定到当前执行查询的 DbContext，不保留第一次构建模型时的租户访问器。旧 `ITenantContext` 重载标记 KUNTENANT001 并在构建模型时明确拒绝；调用者必须迁移到 DbContext 重载，不能用捕获常量值代替（默认共享模型下仍会错误固定到首个租户）。
 
 ## For AI Agents
 

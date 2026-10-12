@@ -6,6 +6,14 @@
 
 ## [Unreleased]
 
+## [2026.10.12-2] - 2026-10-12
+
+### Fixed — 共享 EF 模型的租户上下文绑定
+
+- `KunDbContext` 查询过滤器改从当前执行查询的 DbContext 读取租户，修复缓存模型继续引用旧宿主或旧请求访问器的问题。旧访问器退出或换租户时，新请求不再查询空集或错误租户。
+- `ApplyKunMultiTenantFilters` 增加 DbContext 重载。**迁移要求**：原访问器重载标记 KUNTENANT001 并在模型构建时明确拒绝；非 KunDbContext 消费者须实现 IKunMultiTenantDbContext 并改传 `this`。仅捕获常量值无法兼容默认共享模型，因此不保留会固定到旧租户的降级路径。KunDbContext 消费者自动获得修复，RLS 双层装配保留。
+- 真实 PostgreSQL 回归验证同一模型在独立租户访问器之间复用的两种失效场景；同日修复版按既定规则发布，NuGet 消费者应精确钉定 `2026.10.12-2`，避免版本排序选回同日基础版。
+
 ## [2026.10.12] - 2026-10-12
 
 ### Fixed — Apollo 原始 namespace 校验

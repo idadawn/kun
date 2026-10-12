@@ -51,3 +51,5 @@ Integration tests require Docker + Testcontainers and are tracked separately (M2
 <!-- MANUAL: -->
 
 `AddKunTenantRls<TContext>()` 自动装配 RLS 双拦截器与 `KunMultiTenantModelCacheKeyFactory`；上文手动接线说明仅适用于无泛型旧入口。`KunDbContext` 已实现 `IKunMultiTenantDbContext`。
+
+租户查询过滤器通过 DbContext 自身的 `TenantIdForModelCacheKey` 读取当前访问器；不能把 `ITenantContext` 实例常量存进共享模型，后者会在多宿主或 scoped 访问器场景复用已经失效的租户上下文。
