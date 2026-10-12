@@ -73,3 +73,6 @@ src/Kun.Gateway/certs/
 
 # Clawhip local state
 .clawhip/
+
+# Python release preflight tests
+__pycache__/

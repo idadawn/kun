@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Usage: bash scripts/release.sh <version>
-#   CalVer, aligned with idadawn/iclaw since 2026-06-11 (YYYY.M.D[-N|-beta.N],
+#   CalVer with NuGet-compatible labels (YYYY.M.D[-hotfix.N|-beta.N],
 #   month/day not zero-padded, always cut from main):
 #   e.g. bash scripts/release.sh 2026.6.12
-#        bash scripts/release.sh 2026.6.12-2
+#        bash scripts/release.sh 2026.6.12-hotfix.2
 #        bash scripts/release.sh 2026.6.12-beta.1
 #
 # Release pre-flight + tag preparation for Kun Framework.
@@ -70,11 +70,8 @@ err()  { printf '\033[1;31m✗ %s\033[0m\n' "$*" >&2; }
 # ---------------------------------------------------------------------------
 log "Phase 0/5 · Gates (calver / branch / clean tree / tag-absence)"
 
-# Validate CalVer shape: YYYY.M.D[-N|-beta.N] (aligned with iclaw, no zero-padding)
-if ! echo "$VERSION" | grep -qE '^[0-9]{4}\.[0-9]{1,2}\.[0-9]{1,2}(-[0-9]+|-beta\.[0-9]+)?$'; then
-  err "'$VERSION' does not look like a CalVer version (e.g. 2026.6.12, 2026.6.12-2 or 2026.6.12-beta.1)"
-  exit 1
-fi
+# The same validator is used by CI, including the calendar and NuGet suffix constraints.
+python3 "$(dirname "${BASH_SOURCE[0]}")/release_version.py" --version "$VERSION"
 
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 if [[ "$BRANCH" != "main" && ! "$BRANCH" =~ ^hotfix/ ]]; then
@@ -191,7 +188,7 @@ cat <<EOF
 
   ℹ   Release workflow: .github/workflows/release.yml
       Pre-release ('vYYYY.M.D-beta.N')          → GitHub Packages
-      Stable ('vYYYY.M.D' / patch 'vYYYY.M.D-N') → nuget.org (needs NUGET_API_KEY)
+      Stable ('vYYYY.M.D' / 'vYYYY.M.D-hotfix.N') → nuget.org (needs NUGET_API_KEY)
 
   🛑  Never run 'git push --tags' — it would push every local tag,
       including experiments.

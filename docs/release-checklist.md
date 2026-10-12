@@ -46,17 +46,19 @@ auto-provided `GITHUB_TOKEN` — no extra secret needed.
 The release workflow derives the NuGet version directly from the git tag — no manual
 edit of `Directory.Build.props` is required.
 
-Tag naming convention — **CalVer, aligned with idadawn/iclaw since 2026-06-11**
-(`vYYYY.M.D[-N|-beta.N]`, month/day not zero-padded, always cut from `main`):
+Tag naming convention — **CalVer dates with NuGet-compatible suffixes**
+(`vYYYY.M.D[-hotfix.N|-beta.N]`, valid date without zero-padding, always cut from `main`):
 
 | Tag | NuGet version | Destination |
 |---|---|---|
 | `v2026.6.12` | `2026.6.12` | nuget.org (stable) |
-| `v2026.6.12-2` | `2026.6.12-2` | same-day / hotfix patch — full release, but NuGet sorts it as prerelease (below `2026.6.12`); iclaw consumes `main` via ProjectReference so this doesn't matter downstream |
+| `v2026.6.12-hotfix.2` | `2026.6.12-hotfix.2` | same-day full release to nuget.org; NuGet treats the suffix as prerelease ordering, so consumers must pin this exact version |
 | `v2026.6.12-beta.1` | `2026.6.12-beta.1` | GitHub Packages (pre-release) |
 
 Legacy `vX.Y.Z` tags (e.g. `v0.1.0`) are historical; the release workflow rejects
 new non-CalVer tags.
+
+The attempted numeric-suffix tag `v2026.10.12-2` was rejected by nuget.org's manifest validation. Keep the failed tag as history; do not overwrite it. `scripts/release_version.py` is now the shared preflight for the helper script and release workflow. It also checks every packed nupkg/snupkg and all Kun dependency versions before the first push. Passing the SDK parser alone is not proof of nuget.org acceptance.
 
 `Directory.Build.props` retains `<VersionPrefix>` / `<VersionSuffix>` for local and
 regular CI builds; the release workflow overrides with `-p:Version=<tag>`.
@@ -150,6 +152,6 @@ Deleting the tag does not undo an already-published NuGet package — unlist fir
 
 If a critical bug is found post-release:
 
-1. Branch from the release tag: `git checkout -b hotfix/2026.6.12-2 v2026.6.12`
-2. Fix, test, then cut the patch tag `v2026.6.12-2` using the same checklist, and delete the hotfix branch
+1. Prepare the fix on an isolated branch based on the affected release.
+2. Fix, test, merge through a green PR, then cut `v2026.6.12-hotfix.2` from the verified commit reachable on main and delete the branch.
 3. Cherry-pick the fix back to `main`
