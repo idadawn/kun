@@ -1,6 +1,7 @@
 using System.Collections.Frozen;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization.Metadata;
+using Kun.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -21,6 +22,9 @@ public sealed class KunMediatorBuilder
     // Per TRequest: ordered list of behavior factories (typed as object).
     // AddPipelineBehavior<TReq,TResp,TBehavior> guarantees each is IPipelineBehavior<TReq,TResp>.
     private readonly Dictionary<Type, List<Func<IServiceProvider, object>>> _behaviorEntries = [];
+
+    // 已经由 AddPermissionBehavior 装配权限判定的请求类型；Build() 据此拒绝漏装的受保护请求。
+    private readonly HashSet<Type> _permissionGuarded = [];
 
     // Per TNotification: the shared, growable factory list stored as object (non-generic dict).
     // Each entry is actually List<Func<IServiceProvider, INotificationHandler<TNotification>>>.
@@ -120,6 +124,9 @@ public sealed class KunMediatorBuilder
         return this;
     }
 
+    /// <summary>登记 <paramref name="requestType"/> 已装配权限行为，供 Build() 的运行期兜底核对。</summary>
+    internal void MarkPermissionGuarded(Type requestType) => _permissionGuarded.Add(requestType);
+
     /// <summary>
     /// Registers a notification handler. Multiple handlers may be registered for the same
     /// notification type; they are invoked sequentially in registration order.
@@ -164,6 +171,21 @@ public sealed class KunMediatorBuilder
     /// <returns>A fully configured, immutable <see cref="KunMediator"/>.</returns>
     internal KunMediator Build(IServiceScopeFactory scopeFactory)
     {
+        // 运行期兜底：实现 IPermissionProtectedRequest 的请求必须同时装配权限行为。
+        // 直接或经反射调用 AddRequestHandler 绕过编译期门禁时，Mediator 不构建，处理器不会被执行。
+        var unguarded = _handlerEntries
+            .Select(e => e.RequestType)
+            .Where(type => typeof(IPermissionProtectedRequest).IsAssignableFrom(type) && !_permissionGuarded.Contains(type))
+            .Select(type => type.FullName ?? type.Name)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+        if (unguarded.Length != 0)
+        {
+            throw new InvalidOperationException(
+                "受保护请求未装配权限行为：" + string.Join(", ", unguarded) +
+                "。请与处理器一起调用 AddPermissionBehavior<TRequest, TResponse>(denied)。");
+        }
+
         // Handler/dispatcher wrapper instances are stateless — build them once with a null SP.
         // The actual SP used at dispatch time comes from the per-call scope created in KunMediator.
         var handlers = _handlerEntries

@@ -100,6 +100,40 @@ public sealed class CapabilityAndPermissionTests
     }
 
     [Fact]
+    public void ProtectedHandler_WithoutPermissionBehavior_MediatorRefusesToBuild()
+    {
+        var calls = new List<string>();
+        var services = new ServiceCollection();
+        services.AddSingleton(calls);
+        services.AddKunMediator(builder => builder.AddRequestHandler<ProtectedCommand, Result<int>, ProtectedHandler>());
+        using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
+
+        var error = Assert.Throws<InvalidOperationException>(() => provider.GetRequiredService<ISender>());
+
+        Assert.Contains(typeof(ProtectedCommand).FullName!, error.Message, StringComparison.Ordinal);
+        Assert.Contains("AddPermissionBehavior", error.Message, StringComparison.Ordinal);
+        Assert.Empty(calls);
+    }
+
+    [Fact]
+    public void ProtectedHandler_RegisteredByReflection_IsStillRefusedBeforeAnyHandlerRuns()
+    {
+        // 编译期门禁拦不住反射注册；运行期兜底必须让 Mediator 整体拒绝构建，而不是放行处理器。
+        var calls = new List<string>();
+        var services = new ServiceCollection();
+        services.AddSingleton(calls);
+        services.AddKunMediator(builder => typeof(KunMediatorBuilder).GetMethods()
+            .Single(method => method.Name == nameof(KunMediatorBuilder.AddRequestHandler) && method.GetParameters().Length == 0)
+            .MakeGenericMethod(typeof(ProtectedCommand), typeof(Result<int>), typeof(ProtectedHandler))
+            .Invoke(builder, null));
+        using var provider = services.BuildServiceProvider();
+
+        Assert.Throws<InvalidOperationException>(() => provider.GetRequiredService<ISender>());
+        Assert.Throws<InvalidOperationException>(() => provider.GetRequiredService<IPublisher>());
+        Assert.Empty(calls);
+    }
+
+    [Fact]
     public async Task PermissionCheck_WithoutOptionalPorts_StartsWithValidationAndDenies()
     {
         var calls = new List<string>();

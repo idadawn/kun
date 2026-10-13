@@ -5,7 +5,7 @@
 ## 决策
 
 - 新增 `Kun.Authorization` 抽象包，仅定义主体、可解释判定、`IPermissionChecker`、`IDataPermissionFilter`、`IFieldPolicy`、命令静态权限声明与端点元数据，不提供 RBAC/ABAC 引擎或数据库实现。
-- HTTP 经 `AddKunAuthorization()` 与 `RequireKunPermission()` 接入 ASP.NET Core 策略；Mediator 命令实现 `IPermissionProtectedRequest` 并装配 `AddPermissionBehavior`；gRPC 的四种调用形态读取 `[RequiresPermission]` 元数据。缺少引擎一律拒绝，判定先于 handler 与流首帧读取。身份认证由已有 Security/Identity 入口提供；平台策略与权限管理属于下游。
+- HTTP 经 `AddKunAuthorization()` 与 `RequireKunPermission()` 接入 ASP.NET Core 策略；Mediator 命令实现 `IPermissionProtectedRequest` 并装配 `AddPermissionBehavior`，漏装时 Mediator 构建即拒绝（2026.10.13 起）；gRPC 的四种调用形态读取 `[RequiresPermission]` 元数据。缺少引擎一律拒绝，判定先于 handler 与流首帧读取。身份认证由已有 Security/Identity 入口提供；平台策略与权限管理属于下游。
 - `Kun.Mediator` 的 handler 注册可同时接收稳定能力 ID、请求和响应 `JsonTypeInfo`，经 `ICapabilityRegistry` 枚举 JSON Schema 2020-12。目录本身不等于调用授权；上层必须按权限与 scope 过滤后对外暴露。
 - `AddKunOptions<T>` 在变更后重新创建和校验候选值，成功才替换当前值；拒绝时保留旧对象并增加 `kun.configuration.reload.rejected`，日志不写配置内容。关键配置维持 ValidateOnStart，可选配置可延后至首次读取。Schema 导出表达 JSON 形状；DataAnnotations 与自定义语义校验仍由 validator 执行。
 - `Kun.Configuration.Apollo` 是独立 HTTP 配置源，支持 properties namespace 的有序叠加、长轮询、通知修订回传、AccessKey HMAC-SHA1、服务端故障转移与本地缓存。HMAC-SHA1 仅用于遵守 Apollo 既有协议，不用于新密码学设计。配置源不负责租户配置、secretRef 解析、发布审批或审计，这些由平台 Provider 负责。
