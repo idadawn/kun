@@ -52,7 +52,7 @@ Tag naming convention — **CalVer dates with NuGet-compatible suffixes**
 | Tag | NuGet version | Destination |
 |---|---|---|
 | `v2026.6.12` | `2026.6.12` | nuget.org (stable) |
-| `v2026.6.12-hotfix.2` | `2026.6.12-hotfix.2` | same-day full release to nuget.org; NuGet treats the suffix as prerelease ordering, so consumers must pin this exact version |
+| `v2026.6.12-hotfix.2` | `2026.6.12-hotfix.2` | same-day full release to nuget.org; NuGet treats the suffix as prerelease ordering, so consumers must pin this exact version and an unsuffixed stable release follows on the next working day (see §5) |
 | `v2026.6.12-beta.1` | `2026.6.12-beta.1` | GitHub Packages (pre-release) |
 
 Legacy `vX.Y.Z` tags (e.g. `v0.1.0`) are historical; the release workflow rejects
@@ -118,6 +118,7 @@ Once the tag is pushed the GitHub Actions workflow starts automatically.
   dotnet build
   ```
 - [ ] If docs site exists, verify it reflects the new version
+- [ ] **Hotfix follow-up** (`-hotfix.N` releases only): cut an unsuffixed stable release on the next working day even if nothing else changed, so that the latest stable on nuget.org includes the fix; tell consumers pinned to the hotfix to move back to the unsuffixed version (first applied: `2026.10.12-hotfix.3`, followed by `2026.10.13`)
 
 ---
 
@@ -155,3 +156,4 @@ If a critical bug is found post-release:
 1. Prepare the fix on an isolated branch based on the affected release.
 2. Fix, test, merge through a green PR, then cut `v2026.6.12-hotfix.2` from the verified commit reachable on main and delete the branch.
 3. Cherry-pick the fix back to `main`
+4. On the next working day, cut an unsuffixed stable release even if nothing else changed: NuGet sorts `-hotfix.N` as prerelease, so the latest stable on nuget.org would otherwise stay on the pre-fix version
