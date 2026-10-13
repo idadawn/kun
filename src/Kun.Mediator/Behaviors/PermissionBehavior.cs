@@ -18,6 +18,7 @@ public static class PermissionBehaviorExtensions
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(denied);
         builder.AddPipelineBehavior<TRequest, TResponse, PermissionBehavior<TRequest, TResponse>>();
+        builder.MarkPermissionGuarded(typeof(TRequest));
         // AddPipelineBehavior also registers constructor activation. Replace it with the
         // factory: optional ports and the per-command denied delegate are not DI services.
         builder.Services.RemoveAll<PermissionBehavior<TRequest, TResponse>>();
