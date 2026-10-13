@@ -94,6 +94,7 @@ jobs:
           - Kun.Configuration
           - Kun.Core
           - Kun.EventBus
+          - Kun.EventBus.Abstractions
           - Kun.EventBus.RabbitMQ
           - Kun.Gateway
           - Kun.Grpc

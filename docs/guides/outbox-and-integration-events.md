@@ -62,6 +62,8 @@ e.g.  order.placed.v1
 
 ### 定义 Integration Event
 
+只发布事件定义的 Contracts 包引用 `Kun.EventBus.Abstractions`，即可使用稳定标记、含 `JsonTypeInfo<T>` 的注册端口与 `Kun.Core.Domain.IIntegrationEvent`；无需引用带 Redis 和后台宿主的 `Kun.EventBus`。标记接口继续由 `Kun.Core` 定义，新包导出同一类型。应用宿主仍引用 `Kun.EventBus` 装配实际注册表与 Outbox；原包通过类型转发兼容原程序集里的三个迁移类型。
+
 ```csharp
 public sealed record OrderPlacedIntegrationEvent(
     Guid OrderId,

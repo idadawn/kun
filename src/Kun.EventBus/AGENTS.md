@@ -17,7 +17,7 @@ Event-bus abstractions: integration event base (`IIntegrationEvent`), event-type
 
 | File | Description |
 |------|-------------|
-| `Kun.EventBus.csproj` | `IsAotCandidate=true`, references `Kun.Core` |
+| `Kun.EventBus.csproj` | `IsAotCandidate=true`, references `Kun.EventBus.Abstractions` |
 
 ## For AI Agents
 
@@ -44,6 +44,7 @@ For tests that assert EF-persisted `OutboxMessage` state (e.g. "did the command 
 
 ### Internal
 
+- `Kun.EventBus.Abstractions` — 稳定事件标记、注册与查询端口；原包以类型转发兼容。
 - `Kun.Core` — `IDomainEvent`, `IIntegrationEvent`, `ITenantContext`.
 
 ### External

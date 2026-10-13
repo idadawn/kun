@@ -49,18 +49,18 @@ Kun.EventBus.EventTypeRegistry.GetEventType(System.Type! clrType) -> string?
 Kun.EventBus.EventTypeRegistry.Resolve(string! eventType) -> System.Type?
 Kun.EventBus.EventTypeRegistry.GetAll() -> System.Collections.Generic.IReadOnlyCollection<(string! EventId, System.Type! ClrType)>!
 Kun.EventBus.EventTypeRegistry.GetJsonTypeInfo(System.Type! clrType) -> System.Text.Json.Serialization.Metadata.JsonTypeInfo?
-Kun.EventBus.IEventTypeRegistrar
-Kun.EventBus.IEventTypeRegistrar.Register<TEvent>(string! eventType) -> Kun.EventBus.IEventTypeRegistrar!
-Kun.EventBus.IEventTypeRegistrar.Register<TEvent>(string! eventType, System.Text.Json.Serialization.Metadata.JsonTypeInfo<TEvent!>! typeInfo) -> Kun.EventBus.IEventTypeRegistrar!
-Kun.EventBus.IEventTypeRegistrar.Register<TEvent>() -> Kun.EventBus.IEventTypeRegistrar!
-Kun.EventBus.IntegrationEventIdAttribute
-Kun.EventBus.IntegrationEventIdAttribute.IntegrationEventIdAttribute(string! eventType) -> void
-Kun.EventBus.IntegrationEventIdAttribute.EventType.get -> string!
-Kun.EventBus.IEventTypeRegistry
-Kun.EventBus.IEventTypeRegistry.GetEventType(System.Type! clrType) -> string?
-Kun.EventBus.IEventTypeRegistry.Resolve(string! eventType) -> System.Type?
-Kun.EventBus.IEventTypeRegistry.GetAll() -> System.Collections.Generic.IReadOnlyCollection<(string! EventId, System.Type! ClrType)>!
-Kun.EventBus.IEventTypeRegistry.GetJsonTypeInfo(System.Type! clrType) -> System.Text.Json.Serialization.Metadata.JsonTypeInfo?
+Kun.EventBus.IEventTypeRegistrar (forwarded, contained in Kun.EventBus.Abstractions)
+Kun.EventBus.IEventTypeRegistrar.Register<TEvent>(string! eventType) -> Kun.EventBus.IEventTypeRegistrar! (forwarded, contained in Kun.EventBus.Abstractions)
+Kun.EventBus.IEventTypeRegistrar.Register<TEvent>(string! eventType, System.Text.Json.Serialization.Metadata.JsonTypeInfo<TEvent!>! typeInfo) -> Kun.EventBus.IEventTypeRegistrar! (forwarded, contained in Kun.EventBus.Abstractions)
+Kun.EventBus.IEventTypeRegistrar.Register<TEvent>() -> Kun.EventBus.IEventTypeRegistrar! (forwarded, contained in Kun.EventBus.Abstractions)
+Kun.EventBus.IntegrationEventIdAttribute (forwarded, contained in Kun.EventBus.Abstractions)
+Kun.EventBus.IntegrationEventIdAttribute.IntegrationEventIdAttribute(string! eventType) -> void (forwarded, contained in Kun.EventBus.Abstractions)
+Kun.EventBus.IntegrationEventIdAttribute.EventType.get -> string! (forwarded, contained in Kun.EventBus.Abstractions)
+Kun.EventBus.IEventTypeRegistry (forwarded, contained in Kun.EventBus.Abstractions)
+Kun.EventBus.IEventTypeRegistry.GetEventType(System.Type! clrType) -> string? (forwarded, contained in Kun.EventBus.Abstractions)
+Kun.EventBus.IEventTypeRegistry.Resolve(string! eventType) -> System.Type? (forwarded, contained in Kun.EventBus.Abstractions)
+Kun.EventBus.IEventTypeRegistry.GetAll() -> System.Collections.Generic.IReadOnlyCollection<(string! EventId, System.Type! ClrType)>! (forwarded, contained in Kun.EventBus.Abstractions)
+Kun.EventBus.IEventTypeRegistry.GetJsonTypeInfo(System.Type! clrType) -> System.Text.Json.Serialization.Metadata.JsonTypeInfo? (forwarded, contained in Kun.EventBus.Abstractions)
 Kun.EventBus.Idempotency.IProcessedMessageStore
 Kun.EventBus.Idempotency.IProcessedMessageStore.TryMarkProcessedAsync(string! consumerName, System.Guid messageId, System.TimeSpan ttl, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<bool>
 Kun.EventBus.IIntegrationEventPublisher

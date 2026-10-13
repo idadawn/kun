@@ -88,7 +88,8 @@
 graph TD
     Core[Kun.Core<br/>领域抽象/CQRS 接口/Result] --> Mediator[Kun.Mediator<br/>无反射调度器]
     Core --> Infra[Kun.Infrastructure<br/>仓储/UoW/规约/租户抽象]
-    Core --> EventBus[Kun.EventBus<br/>事件分发/Outbox 抽象]
+    Core --> EventContracts[Kun.EventBus.Abstractions<br/>稳定事件契约]
+    EventContracts --> EventBus[Kun.EventBus<br/>事件分发/Outbox 实现]
     Core --> Security[Kun.Security<br/>S2S JWT/租户上下文]
     Core --> Validation[Kun.Validation<br/>SourceGen 验证器]
     Core --> Authorization[Kun.Authorization<br/>权限判定端口]
@@ -130,6 +131,7 @@ graph TD
 | `Kun.Infrastructure` | 仓储接口、UoW、规约、`IProcessedMessageStore` | `Kun.Core` |
 | `Kun.EntityFrameworkCore` | 写侧 EF Core 实现、Outbox 落库、租户过滤器 | `Kun.Infrastructure` |
 | `Kun.Dapper` | 读侧 Dapper AOT 封装、只读连接工厂 | `Kun.Infrastructure` |
+| `Kun.EventBus.Abstractions` | 稳定事件标记与 JSON 注册端口 | `Kun.Core` |
 | `Kun.EventBus` | 领域事件、集成事件抽象、Outbox 发布器 | `Kun.Core` |
 | `Kun.EventBus.RabbitMQ` | RabbitMQ 传输、消费端幂等中间件 | `Kun.EventBus` |
 | `Kun.Saga` | Saga 定义、编排器、补偿调度、超时检测 | `Kun.EventBus` |

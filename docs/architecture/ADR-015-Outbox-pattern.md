@@ -216,3 +216,9 @@ this ADR land as part of KN-SELF-011 AC-2.
   [docs/guides/validating-commands.md](../guides/validating-commands.md)
   for the validation-side sibling guide that KN-SELF-013
   shipped.
+
+## 事件契约包拆分（S1-KUN-010，2026-10-14）
+
+`IntegrationEventIdAttribute`、`IEventTypeRegistrar`（含源生成 `JsonTypeInfo<T>` 重载）与 `IEventTypeRegistry` 迁入 `Kun.EventBus.Abstractions`，保持 `Kun.EventBus` 命名空间。该包只依赖 `Kun.Core`，不带 Redis、broker、DI 或宿主实现。`Kun.EventBus` 依赖新包并为迁移类型保留类型转发，现有注册表和 Outbox 行为不变。
+
+`IIntegrationEvent` 原本定义于 `Kun.Core.Domain`，仍保留唯一类型；新抽象包通过传递依赖与类型转发导出它。这样契约包只引用新包即可声明事件，同时保持 Core 的根层地位、旧消费者的类型身份与源/二进制兼容性。

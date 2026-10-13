@@ -42,6 +42,7 @@ Mediator、ASP.NET Core 和 gRPC 增加对 Authorization 的依赖；具体语�
 
 | 模块 | 职责 | Phase 1 下游用途 | 主要 API | AOT | 测试 |
 |---|---|---|---|:---:|:---:|
+| `Kun.EventBus.Abstractions` | 稳定事件标记、注册与查询端口 | 只声明事件的契约包 | `IEventTypeRegistrar` / `IIntegrationEvent` | ✅ | 3 |
 | `Kun.EventBus` | 集成事件 / Outbox 抽象 + 后台发布器 + 消费端幂等 | 跨服务发布/消费 `*.IntegrationEvent` | `AddKunEventBus(eb => eb.Register<T>("id.v1"))` / `IOutboxWriter` | ✅ | 21 |
 | `Kun.EventBus.RabbitMQ` | RabbitMQ broker 适配 + 消费者 + DLQ | NeuroAgent 各服务间事件总线的默认 broker | `AddRabbitMq(...)` / `.Subscribe<TEvent, THandler>()` | ✅ | — |
 | `Kun.Saga` | Saga Orchestration（步骤 / 反向补偿 / 超时 / 实例持久化） | 跨服务长事务（下单-支付-发货） | `AddKunSaga()` / `ISagaStep<TContext>` | ⚠️ trim-safe | 18 |
@@ -96,7 +97,8 @@ Mediator、ASP.NET Core 和 gRPC 增加对 Authorization 的依赖；具体语�
 graph TD
     Core[Kun.Core<br/>领域抽象/CQRS 接口/Result] --> Mediator[Kun.Mediator<br/>无反射调度器]
     Core --> Infra[Kun.Infrastructure<br/>仓储/UoW/规约/租户抽象]
-    Core --> EventBus[Kun.EventBus<br/>事件分发/Outbox 抽象]
+    Core --> EventContracts[Kun.EventBus.Abstractions<br/>稳定事件契约]
+    EventContracts --> EventBus[Kun.EventBus<br/>事件分发/Outbox 实现]
     Core --> Security[Kun.Security<br/>S2S JWT/租户上下文]
     Core --> Validation[Kun.Validation<br/>SourceGen 验证器]
     Core --> Authorization[Kun.Authorization<br/>权限判定端口]
