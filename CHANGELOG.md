@@ -6,6 +6,13 @@
 
 ## [Unreleased]
 
+## [2026.10.14] - 2026-10-14
+
+### Added — 事件契约独立包（S1-KUN-010）
+
+- 新增 `Kun.EventBus.Abstractions`，提供稳定事件标记、事件类型查询及含 `JsonTypeInfo<T>` 的注册端口，只依赖 `Kun.Core`；事件契约包不再传递引入 Redis 或宿主实现。
+- `IIntegrationEvent` 复用 Core 中既有类型并通过新包导出；原 `Kun.EventBus` 对迁移类型保留转发，命名空间、公开签名和持久化事件 ID 均兼容。宿主继续引用 `Kun.EventBus`。
+
 ## [2026.10.13] - 2026-10-13
 
 ### Fixed — 受保护请求的运行期兜底（S1-KUN-014）

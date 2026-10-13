@@ -145,6 +145,7 @@ Phase 1 顶层速览（完整矩阵请见 [`docs/architecture/module-map.md`](do
 | `Kun.Infrastructure` | 仓储/UoW/规约接口、`IProcessedMessageStore` | ✅ |
 | `Kun.EntityFrameworkCore` | 写侧 EF Core 实现、Outbox 落库、租户过滤器 | ⚠️ trim-safe |
 | `Kun.Dapper` | 读侧 Dapper AOT 封装 | ⚠️ trim-safe |
+| `Kun.EventBus.Abstractions` | 稳定事件标记与 JSON 注册端口（只依赖 Core） | ✅ |
 | `Kun.EventBus` | 领域/集成事件抽象、Outbox 发布器 | ✅ |
 | `Kun.EventBus.RabbitMQ` | RabbitMQ 传输、消费端幂等 | ✅ |
 | `Kun.Saga` | Saga Orchestration 编排器 | ⚠️ trim-safe（Phase 2 拆 EF 子模块） |

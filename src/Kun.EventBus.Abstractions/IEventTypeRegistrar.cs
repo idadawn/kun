@@ -34,7 +34,7 @@ public interface IEventTypeRegistrar
     /// </summary>
     /// <remarks>
     /// Reads the attribute reflectively once at DI-registration time; the resulting
-    /// registry is the same O(1) <see cref="EventTypeRegistry"/> used at steady state.
+    /// registry is the same O(1) <see cref="IEventTypeRegistry"/> used at steady state.
     /// AOT-strict callers can stick with <see cref="Register{TEvent}(string)"/> or
     /// <see cref="Register{TEvent}(string, JsonTypeInfo{TEvent})"/> to avoid the reflection entirely.
     /// </remarks>
