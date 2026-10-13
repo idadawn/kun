@@ -152,6 +152,7 @@ Closes #42
 - 所有 tag 必须指向 `main` 上可达的 commit；其它形式（含旧的 `vX.Y.Z`、`-alpha`、`-rc`）一律被 Release workflow 拒绝。
 - 旧版本紧急修复：在独立分支完成修复与 CI，经 PR 合入 `main` 后，从已验证提交打补丁 tag，随后清理分支。
 - **NuGet 排序注意**：`-hotfix.N` 在项目语义中是正式修复版、推送 nuget.org，但 NuGet 按带后缀版本排序，低于同日无后缀版本。NuGet 消费端必须显式钉定修复版，不能依赖最新版排序；日期递进的版本继续使用无后缀格式。
+- **修复版之后补发正式版**：发布 `-hotfix.N` 之后，下一个工作日补发无后缀正式版，即使没有其他变更，让 nuget.org 的最新稳定版包含该修复；钉在修复版上的消费端在正式版发布后升级回无后缀版本。首例：`2026.10.12-hotfix.3` 之后补发 `2026.10.13`。
 - `v2026.10.12-2` 的纯数字后缀已被 nuget.org 包清单校验拒绝。该失败标签保留历史，禁止重写或继续发布同类标签。字母加点分段后缀遵循 [NuGet 版本规则](https://learn.microsoft.com/en-us/nuget/concepts/package-versioning#semantic-versioning-200)。
 - 推送前校验全部发行包和符号包的实际版本、Kun 内部依赖版本及发行物闭包；缺包或混入其它版本即停止。beta 仅推送 GitHub Packages，GitHub Release 标记为 prerelease。
 - 历史 SemVer tag（`v0.1.0` 等）保留不动，仅作存档；2026-06-11 前的「`main`→稳定 / `develop`→`-beta`」策略作废。
