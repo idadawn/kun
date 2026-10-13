@@ -6,11 +6,24 @@
 
 ## [Unreleased]
 
+## [2026.10.13] - 2026-10-13
+
+### Fixed — 受保护请求的运行期兜底（S1-KUN-014）
+
+- `KunMediatorBuilder` 构建 Mediator 时核对：实现 `IPermissionProtectedRequest` 的请求必须同时经 `AddPermissionBehavior<TRequest, TResponse>(denied)` 装配权限行为，否则首次解析 `ISender` / `IPublisher` 即抛出 `InvalidOperationException` 并列出漏装的请求类型，处理器不会执行。直接或经反射调用 `AddRequestHandler` 绕过下游编译期门禁的注册同样被拒绝。**行为变更**：此前漏装权限行为的受保护请求会被直接执行，升级后须补齐 `AddPermissionBehavior`。
+
+### Changed — 同日修复版之后的无后缀正式版
+
+- 首个包含 `2026.10.12-hotfix.2`（共享 EF 模型的租户上下文绑定）与 `2026.10.12-hotfix.3`（授权主体类型透传）修复的无后缀版本。`-hotfix.N` 在 NuGet 中按预发布排序，此前 nuget.org 的最新稳定版仍是不含这两处修复的 `2026.10.12`。
+
+## [2026.10.12-hotfix.3] - 2026-10-12
+
 ### Fixed — 授权主体类型透传
 
 - HTTP、四种 gRPC 与 Mediator PEP 保留已认证主体的 user/service/agent 类型，服务身份不再默认按同名 user 查权限。未知或歧义类型在进入处理器前拒绝；不改变 S2S 签发端对 Agent 的保留限制。
 - ICurrentUser 增加来自 principal_kind 的只读 PrincipalKind，旧适配器通过默认接口实现保持 user；JWT 和浏览器适配器读取已认证主身份，拒绝冲突标识与重复关键 claim，不从次身份拼接权限主体。没有类型声明的旧浏览器身份继续按 user 处理，机器身份适配器必须提供真实类型。
 - 宿主复用 Kun.Security 的离线 claim 读取器；不增加身份接口族，不从普通请求头推断身份。回归覆盖真实 RSA 签名 HTTP、gRPC 四形态及 Mediator 的同名主体隔离。
+- 补记：该标签发布时本节仍留在 [Unreleased]，2026-10-13 随 2026.10.13 归入本版本。
 
 ## [2026.10.12-hotfix.2] - 2026-10-12
 
@@ -1153,7 +1166,11 @@ MultiTenancy / Audit / RateLimit / Caching / Observability / Security / Configur
 Sandbox），全仓 AOT 一致性通过审计，Directory.Build.props 统一 AOT 策略，CI 新增
 `aot-audit` 矩阵 job 与 `sample-aot-integration` job。
 
-[Unreleased]: https://github.com/idadawn/kun/compare/v2026.10.11...HEAD
+[Unreleased]: https://github.com/idadawn/kun/compare/v2026.10.13...HEAD
+[2026.10.13]: https://github.com/idadawn/kun/compare/v2026.10.12-hotfix.3...v2026.10.13
+[2026.10.12-hotfix.3]: https://github.com/idadawn/kun/compare/v2026.10.12-hotfix.2...v2026.10.12-hotfix.3
+[2026.10.12-hotfix.2]: https://github.com/idadawn/kun/compare/v2026.10.12...v2026.10.12-hotfix.2
+[2026.10.12]: https://github.com/idadawn/kun/compare/v2026.10.11...v2026.10.12
 [2026.10.11]: https://github.com/idadawn/kun/compare/v2026.10.9...v2026.10.11
 [2026.10.9]: https://github.com/idadawn/kun/compare/v2026.10.8...v2026.10.9
 [2026.10.8]: https://github.com/idadawn/kun/compare/v2026.9.13...v2026.10.8
