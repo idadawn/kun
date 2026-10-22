@@ -47,12 +47,12 @@ public static class KunInternalJwksEndpoint
         ArgumentNullException.ThrowIfNull(endpoints);
         ArgumentException.ThrowIfNullOrWhiteSpace(pattern);
 
-        return endpoints.MapGet(pattern, (
-            HttpContext httpContext,
-            Microsoft.Extensions.Options.IOptions<KunGatewayOptions> options,
-            IHostEnvironment environment,
-            JwksResponseBuilder builder) =>
+        // 与公开入口一致，普通包中直接保留 AOT 安全的 RequestDelegate。
+        RequestDelegate handler = httpContext =>
         {
+            var options = httpContext.RequestServices.GetRequiredService<Microsoft.Extensions.Options.IOptions<KunGatewayOptions>>();
+            var environment = httpContext.RequestServices.GetRequiredService<IHostEnvironment>();
+            var builder = httpContext.RequestServices.GetRequiredService<JwksResponseBuilder>();
             var opts = options.Value;
 
             // Fail closed: in any non-Development environment, require an explicit opt-in.
@@ -60,7 +60,7 @@ public static class KunInternalJwksEndpoint
             // internal path.
             if (!environment.IsDevelopment() && !opts.ExposeInternalJwks)
             {
-                return Results.NotFound();
+                return Results.NotFound().ExecuteAsync(httpContext);
             }
 
             // Caller-supplied gate (defence-in-depth). Runs after the env/options check so
@@ -68,12 +68,13 @@ public static class KunInternalJwksEndpoint
             // for production deployments that can't rely on NetworkPolicy.
             if (additionalGate is not null && !additionalGate(httpContext))
             {
-                return Results.NotFound();
+                return Results.NotFound().ExecuteAsync(httpContext);
             }
 
             var keySet = httpContext.RequestServices.GetService<S2sSigningKeyRing>()?.PublicKeys() ?? builder.Build(opts.PublicKeyPath);
             httpContext.Response.Headers.CacheControl = "no-store";
-            return Results.Json(keySet, JwksJsonContext.Default.JwksResponse);
-        }).AllowAnonymous();
+            return Results.Json(keySet, JwksJsonContext.Default.JwksResponse).ExecuteAsync(httpContext);
+        };
+        return endpoints.MapGet(pattern, handler).AllowAnonymous();
     }
 }
