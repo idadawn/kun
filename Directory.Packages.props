@@ -87,6 +87,10 @@
     <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.2.0" />
     <PackageVersion Include="Microsoft.IdentityModel.Tokens" Version="8.2.0" />
     <PackageVersion Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.2.0" />
+    <!-- Catalog/Order 的 EF Design/Roslyn 工具链经 Microsoft.Build.Tasks.Core 17.14.28
+         引入 Pkcs 9.0.0；9.0.21 修复 GHSA-2fmv-rv2c-59x7 / GHSA-846f-f764-76mx。
+         保留 NuGetAudit 和 warnings-as-errors，通过中央传递钉定修复。 -->
+    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="9.0.21" />
   </ItemGroup>
 
   <ItemGroup Label="OpenTelemetry">

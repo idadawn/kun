@@ -13,6 +13,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- 独立包消费者复制到仓库外后再编译，不参与测试程序集编译。 -->
+    <Compile Remove="Fixtures/**/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!--
       No ProjectReference to Kun.Sample.Minimal: we deliberately
       shell out to `dotnet publish` against its csproj so the

@@ -21,3 +21,9 @@ Replace the private PEM at `SigningKeyPath` atomically. The gateway checks it on
 The standalone host registers `AddKunObservability` under service name `kun-gateway` with EF instrumentation disabled. `/healthz`, `/readyz` and JWKS are explicitly anonymous; the internal JWKS endpoint retains its existing environment/additional gate. Client-credentials authentication and machine-principal storage belong to the consuming identity authority; this host exchanges already validated external principals.
 
 See the repository's docs/security/s2s-jwt.md for the full contract, key handling and validation requirements. Source and package are MIT licensed.
+
+## 普通包的 NativeAOT 消费
+
+`MapKunJwks` 和 `MapKunInternalJwks` 使用显式 `RequestDelegate`，无需消费者重新生成库内部端点或开启反射 JSON。两个入口保持 `AllowAnonymous` 和成功响应的 `Cache-Control: no-store`；`additionalGate` 拒绝时返回 404，内部入口在非 Development 环境仍须显式设置 `ExposeInternalJwks=true`。不要通过关闭 AOT 诊断来规避端点绑定错误。
+
+仓库的 `tests/Kun.Integration.AotTests/GatewayPackageAotPublishTests.cs` 先普通打包本库及依赖，再从仓库外以 PackageReference 发布独立 Linux 原生宿主，执行门控与密钥热轮换回归。它与本库自身的 `dotnet publish` 门禁共同覆盖宿主和包消费两条路径。

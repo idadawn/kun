@@ -135,6 +135,7 @@ jobs:
 
   # Runs Kun.Integration.AotTests, which AOT-publishes
   # samples/Kun.Sample.Minimal and executes the produced native binary.
+  # 同时普通打包 Kun.Gateway，再发布独立 NuGet 消费者并请求原生 JWKS 端点。
   # Requires clang + zlib1g-dev for the NativeAOT linker step. See
   # tests/Kun.Integration.AotTests/AGENTS.md.
   sample-aot-integration:

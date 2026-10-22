@@ -6,6 +6,18 @@
 
 ## [Unreleased]
 
+## [2026.10.23] - 2026-10-23
+
+### Fixed — 普通网关包的 JWKS NativeAOT 消费（S1-KUN-016）
+
+- 公开与内部 JWKS 映射改用显式 RequestDelegate，消除普通 NuGet 制品被独立 NativeAOT 宿主引用时的运行时端点绑定。保持公开签名、匿名元数据、additionalGate 的 404、内部端点的生产 opt-in、no-store、源生成 JSON 与共享密钥轮换行为。
+- 普通网关包也生成既有宿主配置绑定，修复同一消费链路内网关／观测配置的反射绑定诊断；配置字段与 EF 观测的运行时守卫不变。
+- 新增普通打包后再独立发布的 Linux 原生回归，实际请求两个端点并验证轮换重叠及旧钥退役。库打包和消费者均不依赖 RDG，不以 ProjectReference 重新编译库来代替制品验证。
+
+### Fixed — 工具依赖的安全补丁
+
+- Catalog／Order 的 EF Design／Roslyn 工具依赖通过 Microsoft.Build.Tasks.Core 17.14.28 引入 Pkcs 9.0.0。中央传递钉定 `System.Security.Cryptography.Pkcs` 9.0.21，修复 [GHSA-2fmv-rv2c-59x7](https://github.com/advisories/GHSA-2fmv-rv2c-59x7) 与 [GHSA-846f-f764-76mx](https://github.com/advisories/GHSA-846f-f764-76mx)；保持 NuGet 安全审计和警告即错误，不升级 SDK 或业务依赖族。
+
 ## [2026.10.14] - 2026-10-14
 
 ### Added — 事件契约独立包（S1-KUN-010）

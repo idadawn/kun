@@ -31,20 +31,21 @@ public static class JwksEndpoint
     {
         ArgumentNullException.ThrowIfNull(endpoints);
 
-        return endpoints.MapGet("/.well-known/jwks.json",
-            (HttpContext httpContext,
-             IOptions<KunGatewayOptions> options,
-             JwksResponseBuilder builder) =>
+        // 显式选择 RequestDelegate 重载；普通 NuGet 包不能依赖消费宿主重生成库内端点。
+        RequestDelegate handler = httpContext =>
+        {
+            var options = httpContext.RequestServices.GetRequiredService<IOptions<KunGatewayOptions>>();
+            var builder = httpContext.RequestServices.GetRequiredService<JwksResponseBuilder>();
+            if (additionalGate is not null && !additionalGate(httpContext))
             {
-                if (additionalGate is not null && !additionalGate(httpContext))
-                {
-                    return Results.NotFound();
-                }
+                return Results.NotFound().ExecuteAsync(httpContext);
+            }
 
-                var keySet = httpContext.RequestServices.GetService<S2sSigningKeyRing>()?.PublicKeys() ?? builder.Build(options.Value.PublicKeyPath);
-                httpContext.Response.Headers.CacheControl = "no-store";
-                return Results.Json(keySet, JwksJsonContext.Default.JwksResponse);
-            }).AllowAnonymous();
+            var keySet = httpContext.RequestServices.GetService<S2sSigningKeyRing>()?.PublicKeys() ?? builder.Build(options.Value.PublicKeyPath);
+            httpContext.Response.Headers.CacheControl = "no-store";
+            return Results.Json(keySet, JwksJsonContext.Default.JwksResponse).ExecuteAsync(httpContext);
+        };
+        return endpoints.MapGet("/.well-known/jwks.json", handler).AllowAnonymous();
     }
 }
 
