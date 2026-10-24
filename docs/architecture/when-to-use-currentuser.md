@@ -3,7 +3,7 @@
 **Status**: guidance (not an ADR — implements the direction set in
 [ADR-008](./ADR-008-Kun.Identity-module.md) and
 [ADR-010](./ADR-010-Kun.Identity-cookie-session.md))
-**Last touched**: 2026-04-24 (KN-SELF-005)
+**Last touched**: 2026-10-25 (S1-KUN-017：端口登记与次序)
 
 Kun Framework exposes two user-context interfaces. They are **not**
 competing abstractions — they are layered, with
@@ -107,3 +107,11 @@ track.
 ### 授权主体类型
 
 PrincipalKind 是 principal_kind 的只读身份投影。内置 JWT / Cookie 适配器与 HTTP/gRPC 权限入口使用同一个主身份读取规则，Mediator 从 ICurrentUser 取值。不能从调用请求的 JSON、头或角色名推断它。旧自定义适配器默认 user；如果适配器代表服务或 Agent，必须显式实现此属性，不能让机器身份继续使用用户默认值。
+
+### 端口登记与次序
+
+`ICurrentUser` 与 `ITenantContext` 只由身份 / 多租户适配器登记：`AddKunSecurity()`（`JwtCurrentUser`、`AsyncLocalTenantContext`）、`AddKunIdentityAspNetCore()`（`KunCurrentUser`）、`AddKunMultiTenancy()`，或宿主自己的适配器。数据与审计组件不占这两个端口：`AddKunDataConventions<TContext>()` 与 `AddKunAuditing<TContext>()` 的拦截器在上下文创建时按需解析，没有登记时按匿名（`AnonymousCurrentUser`）、无租户（`NullTenantContext`）记录。所以适配器在数据组件之前或之后登记都生效，不存在「先登记数据组件就把身份适配器挤掉」的次序约束。
+
+- `AddKunSecurity()`、`AddKunIdentityAspNetCore()` 以 `TryAdd` 登记：同一宿主装了多个真实适配器时先登记者生效，要换实现就显式 `Replace`；`AddKunMultiTenancy()` 以 `Add` 登记租户端口，覆盖之前的登记。
+- 宿主自己的服务构造注入 `ICurrentUser`、而宿主又没有身份适配器时（后台作业、迁移任务），显式登记 `AnonymousCurrentUser.Instance`；框架不再顺带替它登记。
+- `KunDbContext` 的构造需要 `ITenantContext`：单租户宿主显式登记 `NullTenantContext.Instance`。

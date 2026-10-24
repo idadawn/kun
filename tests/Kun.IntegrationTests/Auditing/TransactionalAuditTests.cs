@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Text.Json;
 using Kun.Audit;
 using Kun.Audit.Abstractions;
@@ -14,8 +15,11 @@ using Kun.EntityFrameworkCore.Conventions;
 using Kun.EntityFrameworkCore.DependencyInjection;
 using Kun.EntityFrameworkCore.Extensions;
 using Kun.IntegrationTests.Fixtures;
+using Kun.Security.DependencyInjection;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Xunit;
 
 namespace Kun.IntegrationTests.Auditing;
@@ -251,6 +255,66 @@ public sealed class TransactionalAuditTests : IClassFixture<PostgresFixture>
         {
             await foreach (var _ in reader.QueryAsync(new AuditQuery("other-tenant"), TestContext.Current.CancellationToken)) { }
         });
+    }
+
+    // 数据约定与实体审计不占租户和当前主体端口：宿主之后才以 TryAdd 登记的两个端口照样生效。
+    [Fact]
+    public async Task Save_PortsRegisteredAfterDataComponents_StampTenantAndActor()
+    {
+        var tenant = Guid.NewGuid().ToString();
+        var services = DataComponentsFirst();
+        services.TryAddSingleton<ITenantContext>(new Tenant(tenant));
+        services.TryAddScoped<ICurrentUser>(_ => new User(true));
+        await using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
+        await AssertStampedAsync(provider, tenant, User.Id);
+    }
+
+    // 先登记数据组件、再 AddKunSecurity：JwtCurrentUser 与按令牌取租户的上下文生效，审计字段与审计日志记令牌主体与租户。
+    [Fact]
+    public async Task Save_KunSecurityRegisteredAfterDataComponents_StampsTokenSubjectAndTenant()
+    {
+        var tenant = Guid.NewGuid().ToString();
+        var subject = Guid.NewGuid();
+        var services = DataComponentsFirst();
+        services.AddKunSecurity();
+        await using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
+        provider.GetRequiredService<IHttpContextAccessor>().HttpContext = new DefaultHttpContext
+        {
+            User = new ClaimsPrincipal(new ClaimsIdentity([new Claim("sub", subject.ToString()), new Claim("tenant_id", tenant)], "test"))
+        };
+        await AssertStampedAsync(provider, tenant, subject);
+    }
+
+    private ServiceCollection DataComponentsFirst()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddDbContext<TransactionalAuditDbContext>(options => options.UseNpgsql(_postgres.ConnectionString));
+        services.AddKunDataConventions<TransactionalAuditDbContext>();
+        services.AddKunAuditing<TransactionalAuditDbContext>();
+        services.AddAuditable<TransactionalOrder>();
+        services.AddKunTenantRls<TransactionalAuditDbContext>();
+        return services;
+    }
+
+    private static async Task AssertStampedAsync(ServiceProvider provider, string tenant, Guid actor)
+    {
+        Guid id;
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<TransactionalAuditDbContext>();
+            await db.Database.EnsureCreatedAsync(TestContext.Current.CancellationToken);
+            var order = TransactionalOrder.Create(tenant, "ports-registered-late");
+            db.Add(order);
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+            Assert.Equal(actor, order.CreatedBy);
+            id = order.Id;
+        }
+        await using var verifyScope = provider.CreateAsyncScope();
+        var verify = verifyScope.ServiceProvider.GetRequiredService<TransactionalAuditDbContext>();
+        var log = await verify.Set<AuditLog>().SingleAsync(x => x.ResourceId == id.ToString(), TestContext.Current.CancellationToken);
+        Assert.Equal(tenant, log.TenantId);
+        Assert.Equal(actor.ToString(), log.ActorId);
     }
 
     private sealed class Tenant(string id) : ITenantContext

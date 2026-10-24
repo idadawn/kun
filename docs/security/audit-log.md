@@ -13,7 +13,7 @@ services.AddKunAudit().UseEntityFramework<AppDbContext>();
 services.AddKunEventBus(registry => registry.RegisterAuditing());
 ```
 
-宿主必须提供可信的 `ITenantContext`、`ICurrentUser`；若未提供则使用无租户、匿名上下文。`AddKunAuditing<TContext>()` 在宿主 `OnModelCreating` 前登记 `AuditLog`，使 `KunDbContext` 对它应用租户过滤。多租户宿主仍需装配 `AddKunTenantRls<TContext>()` 和数据库 RLS 策略。
+`AddKunAuditing<TContext>()` 与 `AddKunDataConventions<TContext>()` 不登记 `ITenantContext`、`ICurrentUser` 这两个端口，由宿主提供可信实现（`AddKunSecurity()`、`AddKunMultiTenancy()` 等），在数据组件之前或之后登记都生效（见 [When to use ICurrentUser](../architecture/when-to-use-currentuser.md) 的「端口登记与次序」）。拦截器在上下文创建时按需解析：宿主没有登记 `ICurrentUser` 时按匿名记录；`KunDbContext` 的构造本身需要 `ITenantContext`，单租户宿主显式登记 `NullTenantContext.Instance`。`AddKunAuditing<TContext>()` 在宿主 `OnModelCreating` 前登记 `AuditLog`，使 `KunDbContext` 对它应用租户过滤。多租户宿主仍需装配 `AddKunTenantRls<TContext>()` 和数据库 RLS 策略。
 
 - 每个被 `AddAuditable<TEntity>()` 声明的实体变更生成一行 `audit_logs` 与一行 Outbox，二者共享 Guid v7 标识。
 - `kun.audit.event.v2` 使用字符串 `tenantId` / `userId`，从上下文填写；`AuditContext` 可覆盖 actor、来源 IP 与 trace，`ActorType` 支持 `user/service/agent/system`。
@@ -28,6 +28,7 @@ services.AddKunEventBus(registry => registry.RegisterAuditing());
 - 表、列、键、索引使用 snake_case；未赋值的 Guid 主键生成 v7，显式主键保持不变。
 - `IAuditedObject` 新增时写 `created_at/created_by`，修改时仅刷新 `updated_at/updated_by`，禁止改写创建字段。
 - 主体支持 `string`、`Guid?`、`long?`、`int?`。匿名或系统操作写 null，不用空 Guid 或 0 冒充主体；无法转换的已认证主体拒绝保存。
+- 主体取自上下文创建时解析到的 `ICurrentUser`；宿主没有登记身份适配器时按匿名写 null。数据约定不登记 `ICurrentUser`，身份适配器与它的登记先后不影响结果。
 - C# 无约束泛型的 `T?` 不会把值类型自动变成可空值类型。已有 `AggregateRoot<TKey>`（Guid 主体）需显式迁移为 `AggregateRoot<TKey, Guid?>`，并生成相应数据库迁移；旧公共基类保持兼容。
 - 审计实体映射 shadow `KunRowVersion` 至 PostgreSQL `xmin`。冲突保留 `DbUpdateConcurrencyException`；需要 Result 边界时调用 `SaveChangesResultAsync()`，映射为 `data.concurrency_conflict` / `Conflict`，不自动覆盖获胜写入。
 

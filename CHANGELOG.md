@@ -6,6 +6,15 @@
 
 ## [Unreleased]
 
+## [2026.10.25] - 2026-10-25
+
+### Fixed — 数据约定与实体审计不再占用当前主体 / 租户端口（S1-KUN-017）
+
+- `AddKunDataConventions<TContext>()` 不再以 `TryAdd` 把 `AnonymousCurrentUser` 登记进 `ICurrentUser`；`AuditFieldsSaveChangesInterceptor` 改为工厂登记，在上下文创建时按需解析 `ICurrentUser`，宿主没有身份适配器时仍按匿名写 null。此前宿主先登记数据约定、后调用 `AddKunSecurity()` 时，后者的 `TryAdd` 落空，`ICurrentUser` 恒为匿名：审计字段写 null，比对框架主体的下游（如命令管道）对一切请求判拒。
+- `AddKunAuditing<TContext>()` 同样不再登记 `NullTenantContext` / `AnonymousCurrentUser` 兜底，`TransactionalAuditingSaveChangesInterceptor` 按需解析两个端口。此前先登记实体审计、后调用 `AddKunSecurity()` 时，租户端口落成无租户，审计与 RLS 拿不到请求租户。
+- 公开 API 不变。新增用例覆盖身份适配器在数据约定之前 / 之后登记、以及真实 `AddKunSecurity()` 晚于数据组件登记时的同事务审计（审计字段与 `AuditLog` 记令牌主体与租户）；登记次序约定写进 `docs/architecture/when-to-use-currentuser.md`。
+- **行为变更**：框架不再顺带登记这两个端口。没有身份适配器、又在自己的服务里构造注入 `ICurrentUser` 的宿主（后台作业、迁移任务等），升级后首次解析即报无法解析，须显式登记 `AnonymousCurrentUser.Instance`；只用 `AddKunAuditing<TContext>()`、没有任何租户登记的单租户宿主，构造 `KunDbContext` 时报无法解析 `ITenantContext`，须显式登记 `NullTenantContext.Instance`。
+
 ## [2026.10.23] - 2026-10-23
 
 ### Fixed — 普通网关包的 JWKS NativeAOT 消费（S1-KUN-016）
@@ -1185,7 +1194,10 @@ MultiTenancy / Audit / RateLimit / Caching / Observability / Security / Configur
 Sandbox），全仓 AOT 一致性通过审计，Directory.Build.props 统一 AOT 策略，CI 新增
 `aot-audit` 矩阵 job 与 `sample-aot-integration` job。
 
-[Unreleased]: https://github.com/idadawn/kun/compare/v2026.10.13...HEAD
+[Unreleased]: https://github.com/idadawn/kun/compare/v2026.10.25...HEAD
+[2026.10.25]: https://github.com/idadawn/kun/compare/v2026.10.23...v2026.10.25
+[2026.10.23]: https://github.com/idadawn/kun/compare/v2026.10.14...v2026.10.23
+[2026.10.14]: https://github.com/idadawn/kun/compare/v2026.10.13...v2026.10.14
 [2026.10.13]: https://github.com/idadawn/kun/compare/v2026.10.12-hotfix.3...v2026.10.13
 [2026.10.12-hotfix.3]: https://github.com/idadawn/kun/compare/v2026.10.12-hotfix.2...v2026.10.12-hotfix.3
 [2026.10.12-hotfix.2]: https://github.com/idadawn/kun/compare/v2026.10.12...v2026.10.12-hotfix.2

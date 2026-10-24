@@ -92,13 +92,18 @@ public static class KunEntityFrameworkCoreServiceCollectionExtensions
         return services;
     }
     /// <summary>为上下文装配审计字段自动填充；模型内配合 ApplyKunDataConventions。</summary>
+    /// <remarks>
+    /// 不登记 <see cref="ICurrentUser"/>：拦截器在上下文创建时按需解析，宿主未登记身份适配器时按匿名处理（主体字段写 null）。
+    /// 因此身份适配器（如 <c>AddKunSecurity()</c>）在本方法之前或之后登记都生效。
+    /// </remarks>
     public static IServiceCollection AddKunDataConventions<TContext>(this IServiceCollection services)
         where TContext : DbContext
     {
         ArgumentNullException.ThrowIfNull(services);
         services.TryAddSingleton(TimeProvider.System);
-        services.TryAddScoped<ICurrentUser>(_ => AnonymousCurrentUser.Instance);
-        services.TryAddScoped<AuditFieldsSaveChangesInterceptor>();
+        // 以 TryAdd 登记匿名兜底会抢先占住当前主体端口，之后身份适配器的 TryAdd 全部落空；改为解析时才取。
+        services.TryAddScoped(sp => new AuditFieldsSaveChangesInterceptor(
+            sp.GetService<ICurrentUser>() ?? AnonymousCurrentUser.Instance, sp.GetRequiredService<TimeProvider>()));
         services.ConfigureDbContext<TContext>((sp, options) =>
             options.AddInterceptors(sp.GetRequiredService<AuditFieldsSaveChangesInterceptor>()));
         return services;
